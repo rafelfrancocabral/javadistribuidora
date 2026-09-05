@@ -6,6 +6,6 @@
 // 3. R2_WORKER_SECRET -> mesma senha de UPLOAD_SECRET configurada no Worker
 // ============================================================
 
-const R2_WORKER_URL = '';
-const R2_PUBLIC_BASE_URL = '';
-const R2_WORKER_SECRET = '';
+const R2_WORKER_URL        = 'https://javadistribuidora-uploader.rafaelfrancocabral.workers.dev';
+const R2_PUBLIC_BASE_URL   = 'https://pub-3898e6d68e494c019d1a509264328a33.r2.dev';
+const R2_WORKER_SECRET     = 'kobesabauna66';

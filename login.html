@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Painel Java Distribuidora</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --accent: #581c87;
+            --accent-dark: #3b0764;
+            --gradient-tech: linear-gradient(135deg, #00e5ff, #a855f7 50%, #ff2fe6);
+            --gradient-accent: linear-gradient(135deg, #6d28d9, #581c87 45%, #3b0764);
+            --neon-cyan: #00e5ff;
+            --neon-fuchsia: #ff2fe6;
+            --bg: #0f0b1a;
+            --card: #1a1230;
+            --border: rgba(168,85,247,0.25);
+            --text: #ffffff;
+            --text-muted: rgba(255,255,255,0.5);
+            --danger: #ff4757;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            overflow: hidden;
+        }
+        .glow-bg {
+            position: fixed; width: 600px; height: 600px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,47,230,0.18), transparent 65%);
+            filter: blur(40px); top: -200px; right: -200px; pointer-events: none;
+        }
+        .glow-bg2 {
+            position: fixed; width: 500px; height: 500px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,229,255,0.14), transparent 65%);
+            filter: blur(40px); bottom: -200px; left: -200px; pointer-events: none;
+        }
+        .login-card {
+            position: relative; z-index: 1;
+            background: rgba(26,18,48,0.86);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 44px 36px 36px;
+            width: min(400px, 92vw);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+        }
+        .login-logo {
+            text-align: center; margin-bottom: 24px;
+        }
+        .login-logo img { height: 52px; }
+        .login-logo span { display: block; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 20px; margin-top: 6px; }
+        .login-logo small { display: block; color: var(--neon-fuchsia); font-family: 'Orbitron', sans-serif; font-size: 9px; letter-spacing: 3px; margin-top: 2px; }
+        .form-field { margin-bottom: 18px; }
+        .form-field label {
+            display: block; font-family: 'Chakra Petch', sans-serif;
+            font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 6px;
+        }
+        .form-field input {
+            width: 100%; padding: 14px 16px; border-radius: 12px; border: 1.5px solid var(--border);
+            background: rgba(255,255,255,0.06); color: #fff; font-size: 15px; outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .form-field input::placeholder { color: rgba(255,255,255,0.25); }
+        .form-field input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 0 4px rgba(0,229,255,0.12); }
+        .error-box {
+            background: rgba(255,71,87,0.12); color: var(--danger);
+            border: 1px solid rgba(255,71,87,0.3); border-radius: 10px;
+            padding: 10px 14px; font-size: 14px; margin-bottom: 16px;
+            display: none;
+        }
+        .error-box i { margin-right: 6px; }
+        .login-btn {
+            width: 100%; padding: 15px; border: none; border-radius: 14px; cursor: pointer;
+            background: var(--gradient-accent); color: #fff;
+            font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 16px;
+            transition: transform .18s, box-shadow .18s;
+            box-shadow: 0 10px 28px rgba(88,28,135,0.4);
+        }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(88,28,135,0.5), 0 0 24px rgba(255,47,230,0.5); }
+        .login-btn:disabled { opacity:.5; cursor: not-allowed; transform: none; }
+        .back-link { text-align: center; margin-top: 18px; }
+        .back-link a { color: var(--text-muted); font-size: 13px; text-decoration: none; }
+        .back-link a:hover { color: var(--neon-cyan); }
+        .hint { color: var(--text-muted); font-size: 12px; text-align: center; margin-top: 14px; }
+    </style>
+</head>
+<body>
+    <div class="glow-bg"></div>
+    <div class="glow-bg2"></div>
+    <div class="login-card">
+        <div class="login-logo">
+            <span>JAVA</span>
+            <small>DISTRIBUIDORA</small>
+        </div>
+        <form id="loginForm">
+            <div class="form-field">
+                <label for="loginUser"><i class="fas fa-user"></i> Usuário</label>
+                <input type="text" id="loginUser" placeholder="Login" required autocomplete="username">
+            </div>
+            <div class="form-field">
+                <label for="loginPass"><i class="fas fa-lock"></i> Senha</label>
+                <input type="password" id="loginPass" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+            <div class="error-box" id="loginError"><i class="fas fa-exclamation-circle"></i> <span id="loginErrorText"></span></div>
+            <button type="submit" class="login-btn" id="loginSubmit"><i class="fas fa-sign-in-alt"></i> Entrar no Painel</button>
+        </form>
+        <p class="hint">Acesso restrito ao administrador da loja.</p>
+        <div class="back-link"><a href="index.html"><i class="fas fa-arrow-left"></i> Voltar ao site</a></div>
+    </div>
+    <script>
+        const ADMIN_USER = 'savfer';
+        const ADMIN_PASS = 'kobesabauna66';
+        const AUTH_KEY = 'jv2_admin_auth';
+        if (localStorage.getItem(AUTH_KEY) === 'true') { window.location.href = 'dashboard.html'; }
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            const errBox = document.getElementById('loginError');
+            const errText = document.getElementById('loginErrorText');
+            errBox.style.display = 'none';
+            if (user === ADMIN_USER && pass === ADMIN_PASS) {
+                localStorage.setItem(AUTH_KEY, 'true');
+                window.location.href = 'dashboard.html';
+            } else {
+                errText.textContent = 'Usuário ou senha incorretos.';
+                errBox.style.display = '';
+            }
+        });
+    </script>
+</body>
+</html>

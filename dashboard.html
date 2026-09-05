@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel — Java Distribuidora</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/dashboard.css?v=5">
+</head>
+<body>
+    <script>
+        if (localStorage.getItem('jv2_admin_auth') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+
+    <aside class="dash-sidebar" id="dashSidebar">
+        <div class="dash-logo">
+            <span class="dash-logo-txt">JAVA<span class="dash-logo-acc">DISTRIBUIDORA</span></span>
+        </div>
+        <nav class="dash-nav">
+            <a href="#" class="dash-nav-item active" data-view="dashboard"><i class="fas fa-gauge-high"></i> Visão Geral</a>
+            <a href="#" class="dash-nav-item" data-view="orcamentos"><i class="fas fa-file-invoice-dollar"></i> Orçamentos <span class="dash-badge" id="pendingQuotesBadge">0</span></a>
+            <a href="#" class="dash-nav-item" data-view="produtos"><i class="fas fa-boxes-stacked"></i> Produtos</a>
+            <a href="#" class="dash-nav-item" data-view="categorias"><i class="fas fa-folder-tree"></i> Categorias</a>
+            <a href="#" class="dash-nav-item" data-view="clientes"><i class="fas fa-users"></i> Clientes</a>
+            <a href="#" class="dash-nav-item" data-view="agendar"><i class="fas fa-calendar-check"></i> Agendar Visita</a>
+        </nav>
+        <div class="dash-sidebar-footer">
+            <a href="index.html" class="dash-nav-item"><i class="fas fa-store"></i> Ver Catálogo</a>
+            <a href="#" class="dash-nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </div>
+    </aside>
+
+    <div class="dash-main">
+        <header class="dash-header">
+            <button class="dash-menu-toggle" id="dashMenuToggle"><i class="fas fa-bars"></i></button>
+            <h1 id="dashPageTitle">Painel do Lojista</h1>
+            <div class="dash-header-actions">
+                <div class="chart-period-tabs" id="quotePeriodTabs">
+                    <button class="chart-tab active" data-period="today">Hoje</button>
+                    <button class="chart-tab" data-period="7">7 dias</button>
+                    <button class="chart-tab" data-period="month">Este mês</button>
+                    <button class="chart-tab" data-period="30">30 dias</button>
+                    <button class="chart-tab" data-period="90">90 dias</button>
+                    <button class="chart-tab" data-period="365">365 dias</button>
+                </div>
+                <span class="dash-live"><i class="fas fa-circle"></i> Online</span>
+            </div>
+        </header>
+
+        <div class="dash-content">
+            <!-- ===== Visão Geral ===== -->
+            <section class="dash-view" id="view-dashboard">
+                <div class="dash-cards">
+                    <div class="dash-card"><div class="dash-card-icon blue"><i class="fas fa-file-invoice-dollar"></i></div><div><h3 id="metricQuotes">0</h3><span>Orçamentos</span></div></div>
+                    <div class="dash-card"><div class="dash-card-icon green"><i class="fas fa-cart-shopping"></i></div><div><h3 id="metricSales">0</h3><span>Vendas</span></div></div>
+                    <div class="dash-card"><div class="dash-card-icon orange"><i class="fas fa-money-bill-wave"></i></div><div><h3 id="metricSold">R$ 0,00</h3><span>Total vendido</span></div></div>
+                    <div class="dash-card"><div class="dash-card-icon purple"><i class="fas fa-users"></i></div><div><h3 id="metricClients">0</h3><span>Clientes</span></div></div>
+                    <div class="dash-card"><div class="dash-card-icon purple"><i class="fas fa-boxes-stacked"></i></div><div><h3 id="metricSoldItems">0</h3><span>Produtos vendidos</span></div></div>
+                </div>
+
+                <div class="dash-charts-grid">
+                    <div class="dash-chart-panel">
+                        <h3><i class="fas fa-chart-bar"></i> Pedidos por período</h3>
+                        <canvas id="chartQuotes" width="500" height="260"></canvas>
+                        <p class="chart-empty-msg" id="chartQuotesEmpty" style="display:none;">Nenhum orçamento neste período.</p>
+                    </div>
+                    <div class="dash-chart-panel">
+                        <h3><i class="fas fa-chart-pie"></i> Vendas por categoria</h3>
+                        <canvas id="chartPayments" width="500" height="260"></canvas>
+                        <p class="chart-empty-msg" id="chartPaymentsEmpty" style="display:none;">Nenhuma venda concluída.</p>
+                    </div>
+                </div>
+
+                <div class="dash-three-col">
+                    <div class="dash-panel">
+                        <h3><i class="fas fa-trophy"></i> Top 10 Clientes</h3>
+                        <div id="topClients"></div>
+                    </div>
+                    <div class="dash-panel">
+                        <h3><i class="fas fa-arrow-trend-up"></i> Top 10 Produtos Mais Vendidos</h3>
+                        <div id="topSellers"></div>
+                    </div>
+                    <div class="dash-panel">
+                        <h3><i class="fas fa-triangle-exclamation"></i> Top 7 Produtos com Menor Saída</h3>
+                        <div id="lowSellers"></div>
+                    </div>
+                </div>
+
+                <div class="dash-panel">
+                    <h3><i class="fas fa-file-invoice-dollar"></i> Últimos Orçamentos</h3>
+                    <div id="recentQuotes"></div>
+                </div>
+            </section>
+
+            <!-- ===== Orçamentos ===== -->
+            <section class="dash-view" id="view-orcamentos" style="display:none;">
+                <div class="dash-toolbar">
+                    <div class="dash-toolbar-left">
+                        <button class="btn btn-primary" id="btnNewQuote"><i class="fas fa-plus"></i> Novo Orçamento</button>
+                        <select id="statusFilter" class="dash-select">
+                            <option value="all">Todos os status</option>
+                            <option value="recebido">Recebido</option>
+                            <option value="analise">Em análise</option>
+                            <option value="aprovado">Aprovado</option>
+                            <option value="concluido">Concluído</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <input type="text" id="quoteSearch" class="dash-input" placeholder="Buscar por cliente ou telefone...">
+                </div>
+                <div class="quote-list" id="quoteList"></div>
+            </section>
+
+            <!-- ===== Produtos ===== -->
+            <section class="dash-view" id="view-produtos" style="display:none;">
+                <div class="dash-toolbar">
+                    <div class="dash-toolbar-left">
+                        <button class="btn btn-primary" id="btnNewProduct"><i class="fas fa-plus"></i> Novo Produto</button>
+                    </div>
+                    <input type="text" id="productSearch" class="dash-input" placeholder="Buscar produto...">
+                </div>
+                <div class="product-table-wrap">
+                    <table class="dash-table" id="productTable">
+                        <thead>
+                            <tr>
+                                <th>Imagem</th><th>Código</th><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ===== Categorias ===== -->
+            <section class="dash-view" id="view-categorias" style="display:none;">
+                <div class="dash-panel">
+                    <h3><i class="fas fa-folder-tree"></i> Categorias</h3>
+                    <div class="cats-add-form">
+                        <input type="text" id="newCategoryName" class="dash-input" placeholder="Nome da nova categoria">
+                        <button class="btn btn-primary" id="btnAddCategory"><i class="fas fa-plus"></i> Adicionar</button>
+                    </div>
+                    <div id="categoryList" class="cat-list"></div>
+                </div>
+            </section>
+
+            <!-- ===== Clientes ===== -->
+            <section class="dash-view" id="view-clientes" style="display:none;">
+                <div class="dash-toolbar">
+                    <div class="dash-toolbar-left">
+                        <button class="btn btn-primary" id="btnNewClient"><i class="fas fa-plus"></i> Novo Cliente</button>
+                    </div>
+                    <input type="text" id="clientSearch" class="dash-input" placeholder="Buscar por razão social, CNPJ ou email...">
+                </div>
+                <div class="dash-panel">
+                    <h3><i class="fas fa-users"></i> Clientes Cadastrados <small class="dash-panel-sub">(somente estes emails podem finalizar o orçamento no checkout)</small></h3>
+                    <div id="clientList" class="client-list"></div>
+                </div>
+            </section>
+
+            <!-- ===== Agendar Visita ===== -->
+            <section class="dash-view" id="view-agendar" style="display:none;">
+                <div class="dash-toolbar">
+                    <div class="dash-toolbar-left">
+                        <span class="dash-live" id="visitCountInfo"><i class="fas fa-calendar-check"></i> Visit</span>
+                    </div>
+                    <input type="text" id="visitSearch" class="dash-input" placeholder="Buscar cliente inativo...">
+                </div>
+                <div class="dash-panel">
+                    <h3><i class="fas fa-calendar-check"></i> Clientes para Agendar Visita <small class="dash-panel-sub">(mais de 45 dias sem compra concluída)</small></h3>
+                    <div id="visitList" class="client-list"></div>
+                </div>
+                <div class="dash-panel" style="margin-top:20px;">
+                    <h3><i class="fas fa-chart-line"></i> Prioridade por Frequência de Compra <small class="dash-panel-sub">(comparado ao intervalo médio de cada cliente)</small></h3>
+                    <div id="visitFreqList" class="client-list"></div>
+                </div>
+                <div id="visitFreqEmpty" class="empty-state" style="display:none;"><i class="fas fa-check-circle"></i><p>Todos os clientes estão dentro do ritmo habitual de compra.</p></div>
+            </section>
+        </div>
+    </div>
+
+    <!-- ===== Modal Produto ===== -->
+    <div class="modal-overlay" id="productModal">
+        <div class="modal modal-lg">
+            <div class="modal-header"><h3 id="productModalTitle">Novo Produto</h3><button class="modal-close" id="productModalClose"><i class="fas fa-xmark"></i></button></div>
+            <form id="productForm" class="modal-body">
+                <input type="hidden" id="productId">
+                <div class="form-grid">
+                    <div class="form-field"><label>Código *</label><input type="text" id="prodCodigo" required placeholder="Ex: 00123"></div>
+                    <div class="form-field"><label>Unidade</label><select id="prodUnidade"><option>UN</option><option>KG</option><option>MT</option><option>M2</option><option>M3</option><option>LT</option><option>PAR</option><option>KIT</option><option>CX</option><option>PC</option></select></div>
+                    <div class="form-field span-2"><label>Nome do Produto *</label><input type="text" id="prodNome" required placeholder="Descrição do produto"></div>
+                    <div class="form-field"><label>Marca</label><input type="text" id="prodMarca" placeholder="Marca"></div>
+                    <div class="form-field"><label>Categoria</label><select id="prodCategoria"></select></div>
+                    <div class="form-field"><label>Subcategoria</label><select id="prodSubcategoria"></select></div>
+                    <div class="form-field"><label>Preço (R$) *</label><input type="text" id="prodPreco" required placeholder="0,00"></div>
+                    <div class="form-field"><label>Estoque *</label><input type="number" id="prodEstoque" required value="0"></div>
+                    <div class="form-field span-2"><label>Palavras-chave</label><input type="text" id="prodKeywords" placeholder="Separe por vírgula: furadeira, broca, parede..."></div>
+                </div>
+                <div class="form-field"><label>Descrição</label><textarea id="prodDescricao" rows="3"></textarea></div>
+                <div class="form-field">
+                    <label>Imagens (máx. 5)</label>
+                    <div class="img-upload-zone" id="imgUploadZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Clique ou arraste imagens aqui</p>
+                        <span>As imagens são enviadas para o R2 e otimizadas em WebP</span>
+                        <input type="file" id="imgFileInput" accept="image/*" multiple hidden>
+                    </div>
+                    <div class="img-previews" id="imgPreviews"></div>
+                    <div class="img-url-fields">
+                        <input type="text" class="dash-input" id="prodImg1" placeholder="URL imagem 1 (opcional)">
+                        <input type="text" class="dash-input" id="prodImg2" placeholder="URL imagem 2 (opcional)">
+                        <input type="text" class="dash-input" id="prodImg3" placeholder="URL imagem 3 (opcional)">
+                        <input type="text" class="dash-input" id="prodImg4" placeholder="URL imagem 4 (opcional)">
+                        <input type="text" class="dash-input" id="prodImg5" placeholder="URL imagem 5 (opcional)">
+                    </div>
+                </div>
+                <div class="form-checkboxes">
+                    <label class="dash-checkbox"><input type="checkbox" id="prodDestaque"> <span>Destaque</span></label>
+                    <label class="dash-checkbox"><input type="checkbox" id="prodPromocao"> <span>Em promoção</span></label>
+                </div>
+                <div class="form-field" id="promoPriceField" style="display:none;"><label>Preço Promocional (R$)</label><input type="text" id="prodPrecoPromo" placeholder="0,00"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="productCancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="productSubmit">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== Modal Novo Orçamento ===== -->
+    <div class="modal-overlay" id="quoteModal">
+        <div class="modal modal-lg">
+            <div class="modal-header"><h3>Novo Orçamento Manual</h3><button class="modal-close" id="quoteModalClose"><i class="fas fa-xmark"></i></button></div>
+            <form id="quoteForm" class="modal-body">
+                <input type="hidden" id="mqEditId" value="">
+                <div class="form-row">
+                    <div class="form-field"><label>Cliente *</label><input type="text" id="mqName" list="mqClientList" autocomplete="off" required placeholder="Nome do cliente..."><datalist id="mqClientList"></datalist></div>
+                    <div class="form-field"><label>Telefone</label><input type="text" id="mqPhone" placeholder="(00) 00000-0000"></div>
+                </div>
+                <div class="quote-items-head"><span>Itens do Orçamento</span><button type="button" class="btn btn-ghost btn-sm" id="mqAddItem"><i class="fas fa-plus"></i> Adicionar Produto</button></div>
+                <div id="mqItems" class="quote-items"></div>
+                <div class="quote-items-empty" id="mqItemsEmpty">Nenhum item. Clique em "Adicionar Produto".</div>
+                <div class="quote-items-total"><span>Total</span><span id="mqTotalDisplay">R$ 0,00</span></div>
+                <div class="form-field">
+                    <label>Forma de Pagamento</label>
+                    <select id="mqPayment" class="dash-input">
+                        <option value="">Selecione...</option>
+                        <option value="A vista">À vista</option>
+                        <option value="7 dias">7 dias</option>
+                        <option value="15 dias">15 dias</option>
+                        <option value="30 dias">30 dias</option>
+                        <option value="30 60">30/60 dias</option>
+                        <option value="30 60 90">30/60/90 dias</option>
+                        <option value="45 dias">45 dias</option>
+                        <option value="60 dias">60 dias</option>
+                        <option value="a combinar">A combinar</option>
+                    </select>
+                </div>
+                <div class="form-field"><label>Observações</label><textarea id="mqObs" rows="2" placeholder="Observações adicionais"></textarea></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="quoteCancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Orçamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== Modal Detalhes Orçamento ===== -->
+    <div class="modal-overlay" id="quoteDetailModal">
+        <div class="modal">
+            <div class="modal-header"><h3>Detalhes do Orçamento</h3><button class="modal-close" id="quoteDetailClose"><i class="fas fa-xmark"></i></button></div>
+            <div class="modal-body" id="quoteDetailBody"></div>
+        </div>
+    </div>
+
+    <!-- ===== Modal Cliente ===== -->
+    <div class="modal-overlay" id="clientModal">
+        <div class="modal">
+            <div class="modal-header"><h3 id="clientModalTitle">Novo Cliente</h3><button class="modal-close" id="clientModalClose"><i class="fas fa-xmark"></i></button></div>
+            <form id="clientForm" class="modal-body">
+                <input type="hidden" id="clientId">
+                <div class="form-field"><label>Razão Social *</label><input type="text" id="clRazao" required placeholder="Nome da empresa / lojista"></div>
+                <div class="form-field"><label>CNPJ</label><input type="text" id="clCnpj" placeholder="00.000.000/0000-00"></div>
+                <div class="form-field"><label>Email *</label><input type="email" id="clEmail" required placeholder="cliente@email.com"></div>
+                <div class="form-field"><label>Telefone</label><input type="text" id="clTelefone" placeholder="(00) 00000-0000"></div>
+                <div class="form-field"><label>Senha</label><input type="text" id="clSenha" placeholder="Em branco = usa o CNPJ (somente números)"><small id="clSenhaHint" style="color:var(--text-secondary);font-size:0.75rem;display:block;margin-top:4px"></small></div>
+                <div class="form-field"><label class="dash-checkbox" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="clTrocarSenha"> <span>Exigir troca de senha no próximo login</span></label></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="clientCancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/jspdf.umd.min.js"></script>
+    <script src="js/logo-data.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase-config.js?v=1"></script>
+    <script src="js/dashboard.js?v=9"></script>
+</body>
+</html>

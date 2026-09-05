@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Java Distribuidora — Faturamento e Distribuição</title>
+<meta name="description" content="Distribuidora de bebidas e produtos essenciais. Monte seu orçamento online e receba no seu WhatsApp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+
+<!-- ===== HEADER / NAV ===== -->
+<header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+        <a href="#home" class="brand">
+            <span class="brand-text">JAVA<span class="brand-acc">DISTRIBUIDORA</span></span>
+        </a>
+        <nav class="main-nav" id="mainNav">
+            <a href="#home">Início</a>
+            <a href="#como-fazer">Como fazer seu orçamento</a>
+            <a href="#produtos">Produtos</a>
+            <a href="#contato">Contato</a>
+        </nav>
+        <div class="nav-actions">
+            <button class="nav-cart-btn" id="navCartBtn" title="Carrinho" aria-label="Abrir carrinho">
+                <i class="fas fa-cart-shopping"></i>
+                <span class="cart-badge" id="cartBadge">0</span>
+            </button>
+            <button class="btn btn-login" id="navLoginBtn"><i class="fas fa-user"></i> Entrar</button>
+            <button class="btn btn-login user-chip" id="navUserChip" style="display:none;"><i class="fas fa-user-check"></i> <span id="navUserName">Cliente</span></button>
+            <button class="nav-toggle" id="navToggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
+            <a href="login.html" class="nav-lock-btn" id="navLockBtn" title="Acesso administrativo" aria-label="Abrir login do painel">
+                <i class="fas fa-lock"></i>
+            </a>
+        </div>
+    </div>
+</header>
+
+<!-- ===== HERO ===== -->
+<section class="hero" id="home">
+    <div class="hero-grid-layer"></div>
+    <div class="hero-glow"></div>
+    <div class="container hero-content">
+        <div class="hero-text">
+            <span class="hero-tag"><i class="fas fa-bolt"></i> Área exclusiva para lojistas cadastrados</span>
+            <h1>Melhor Preço para <span class="grad-text">Lojistas</span></h1>
+            <p>Catálogo exclusivo para revenda. Aproveite condições especiais para o seu comércio e faça o orçamento rápido pelo WhatsApp.</p>
+            <div class="hero-actions">
+                <a href="#produtos" class="btn btn-primary btn-lg"><i class="fas fa-box-open"></i> Ver produtos</a>
+                <a href="#como-fazer" class="btn btn-outline btn-lg"><i class="fas fa-circle-play"></i> Como funciona</a>
+                <a href="https://wa.me/5512997780047" target="_blank" rel="noopener" class="btn btn-whatsapp btn-lg"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+            </div>
+        </div>
+        <div class="hero-card">
+            <div class="hero-card-top">
+                <i class="fas fa-crown"></i>
+                <span>Condições de Compra</span>
+            </div>
+            <div class="hero-card-body">
+                <div class="hero-card-line"><div><i class="fas fa-cart-shopping"></i> Pedido mínimo</div><strong>R$ 300,00</strong></div>
+                <div class="hero-card-line"><div><i class="fas fa-truck-fast"></i> Entregas</div><strong>Seg a Sex</strong></div>
+                <div class="hero-card-line"><div><i class="fas fa-store"></i> Lojistas</div><strong>CNPJ ativo</strong></div>
+            </div>
+            <div class="hero-card-foot">
+                <i class="fas fa-shield-halved"></i> Preços e condições liberados após o login do lojista.
+            </div>
+        </div>
+    </div>
+    <div class="scroll-hint"><i class="fas fa-chevron-down"></i></div>
+</section>
+
+<!-- ===== COMO FAZER SEU ORÇAMENTO ===== -->
+<section class="howto section" id="como-fazer">
+    <div class="container">
+        <div class="section-head">
+            <span class="section-eyebrow"><i class="fas fa-compass"></i> PASSO A PASSO</span>
+            <h2>Como fazer seu <span class="grad-text">orçamento</span></h2>
+            <p>Em poucos minutos você tem uma cotação completa e recebe a confirmação no WhatsApp.</p>
+        </div>
+        <div class="howto-grid">
+            <div class="howto-card">
+                <div class="howto-num">1</div>
+                <i class="fas fa-user-lock"></i>
+                <h3>Crie seu acesso</h3>
+                <p>Faça login com o email cadastrado ou CNPJ. Preços exclusivos aparecem após o acesso do lojista.</p>
+            </div>
+            <div class="howto-card">
+                <div class="howto-num">2</div>
+                <i class="fas fa-cart-plus"></i>
+                <h3>Selecione os produtos</h3>
+                <p>Navegue pelo catálogo, escolha as quantidades e adicione ao carrinho.</p>
+            </div>
+            <div class="howto-card">
+                <div class="howto-num">3</div>
+                <i class="fas fa-calendar-check"></i>
+                <h3>Escolha o prazo</h3>
+                <p>Defina a forma e o prazo de pagamento: à vista, 7, 15, 30, 45, 60 ou 30/60/90.</p>
+            </div>
+            <div class="howto-card">
+                <div class="howto-num">4</div>
+                <i class="fab fa-whatsapp"></i>
+                <h3>Receba no WhatsApp</h3>
+                <p>Seu orçamento é enviado automaticamente. Nossa equipe confirma disponibilidade e valores.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== PRODUTOS ===== -->
+<section class="catalog section" id="produtos">
+    <div class="container">
+        <div class="section-head">
+            <span class="section-eyebrow"><i class="fas fa-box-open"></i> CATÁLOGO</span>
+            <h2>Nossos <span class="grad-text">produtos</span></h2>
+            <p>Faça login para visualizar os preços e montar seu orçamento.</p>
+        </div>
+        <div class="catalog-toolbar">
+            <div class="catalog-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Buscar produto, marca ou código...">
+            </div>
+            <div class="catalog-cats" id="catalogCats"></div>
+        </div>
+        <p class="catalog-count" id="catalogCount"></p>
+        <div class="grid-catalog" id="gridAll"></div>
+        <div class="catalog-empty" id="catalogEmpty" style="display:none;">
+            <i class="fas fa-box-open"></i>
+            <p>Nenhum produto encontrado.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ===== CONTATO ===== -->
+<section class="contact section" id="contato">
+    <div class="container">
+        <div class="section-head">
+            <span class="section-eyebrow"><i class="fas fa-headset"></i> FALE CONOSCO</span>
+            <h2>Precisa de ajuda? <span class="grad-text">Fale com a gente</span></h2>
+            <p>Atendimento comercial para lojistas e distribuidores.</p>
+        </div>
+        <div class="contact-grid">
+            <div class="contact-card">
+                <i class="fab fa-whatsapp"></i>
+                <h3>WhatsApp</h3>
+                <a href="https://wa.me/5512997780047" target="_blank">(12) 99778-0047</a>
+            </div>
+            <div class="contact-card">
+                <i class="fas fa-clock"></i>
+                <h3>Horário</h3>
+                <p>SEG-SEX • 8h às 17h</p>
+            </div>
+            <div class="contact-card">
+                <i class="fas fa-truck-fast"></i>
+                <h3>Atendimento</h3>
+                <p>Entrega programada para sua cidade no Vale do Paraíba</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+    <div class="container footer-inner">
+        <div class="footer-brand">
+            <span class="brand-text">JAVA<span class="brand-acc">DISTRIBUIDORA</span></span>
+            <p>Distribuição de ferragens e ferramentas essenciais para lojistas, a mais de 10 anos no mercado!</p>
+        </div>
+        <div class="footer-links">
+            <a href="#home">Início</a>
+            <a href="#como-fazer">Como funciona</a>
+            <a href="#produtos">Produtos</a>
+            <a href="#contato">Contato</a>
+        </div>
+        <div class="footer-copy">© 2026 Java Distribuidora. Todos os direitos reservados. <span class="footer-credit">Developed by <strong>Blackshell</strong></span></div>
+    </div>
+</footer>
+
+<!-- ===== CART SIDEBAR ===== -->
+<div class="cart-overlay" id="cartOverlay"></div>
+<div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+        <h3><i class="fas fa-cart-shopping"></i> Meu Carrinho</h3>
+        <button class="cart-close" id="cartClose"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="cart-items" id="cartItems">
+        <div class="cart-empty" id="cartEmpty">
+            <i class="fas fa-shopping-basket"></i>
+            <p>Seu carrinho está vazio</p>
+        </div>
+    </div>
+    <div class="cart-footer" id="cartFooter" style="display:none;">
+        <div class="cart-total">
+            <span>Total</span>
+            <span class="cart-total-value" id="cartTotal">R$ 0,00</span>
+        </div>
+        <button class="cart-checkout-btn" id="cartCheckout">
+            <i class="fab fa-whatsapp"></i> Finalizar pelo WhatsApp
+        </button>
+    </div>
+</div>
+
+<!-- ===== CHECKOUT MODAL ===== -->
+<div class="checkout-overlay" id="checkoutOverlay">
+    <div class="checkout-modal">
+        <div class="checkout-header">
+            <h3><i class="fab fa-whatsapp"></i> Finalizar Orçamento</h3>
+            <button class="checkout-close" id="checkoutClose"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="checkout-body">
+            <div class="checkout-items" id="checkoutItems"></div>
+            <div class="checkout-total">
+                <span>Total</span>
+                <span class="checkout-total-value" id="checkoutSubtotal">R$ 0,00</span>
+            </div>
+            <form class="checkout-form" id="checkoutForm">
+                <div class="checkout-field">
+                    <label for="checkoutPayment"><i class="fas fa-credit-card"></i> Prazo de pagamento *</label>
+                    <select id="checkoutPayment" class="checkout-select" required>
+                        <option value="">Selecione o prazo...</option>
+                        <option value="A vista">À vista</option>
+                        <option value="7 dias">7 dias</option>
+                        <option value="15 dias">15 dias</option>
+                        <option value="30 dias">30 dias</option>
+                        <option value="30 60">30/60</option>
+                        <option value="30 60 90">30/60/90</option>
+                        <option value="45 dias">45 dias</option>
+                        <option value="60 dias">60 dias</option>
+                    </select>
+                </div>
+                <div class="checkout-error" id="checkoutError" style="display:none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="checkoutErrorText">Faça login para finalizar.</span>
+                </div>
+                <button type="submit" class="checkout-send-btn" id="checkoutSendBtn">
+                    <i class="fab fa-whatsapp"></i> Enviar Orçamento pelo WhatsApp
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== LOGIN / AUTH MODAL ===== -->
+<div class="auth-overlay" id="clientLoginOverlay">
+    <div class="auth-modal">
+        <div class="auth-header">
+            <h3><i class="fas fa-store"></i> Acesso do Lojista</h3>
+            <button class="auth-close" id="clientLoginClose"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div id="clientLoginView">
+            <form id="clientLoginForm">
+                <div class="auth-field">
+                    <label for="clLoginEmail"><i class="fas fa-envelope"></i> Email ou CNPJ</label>
+                    <input type="text" id="clLoginEmail" placeholder="seu@email.com ou CNPJ" required autocomplete="username">
+                </div>
+                <div class="auth-field">
+                    <label for="clLoginSenha"><i class="fas fa-lock"></i> Senha</label>
+                    <input type="password" id="clLoginSenha" placeholder="••••••••" required autocomplete="current-password">
+                    <small class="auth-hint">Primeiro acesso? Use o CNPJ (somente números) como senha.</small>
+                </div>
+                <div class="auth-error" id="clientLoginError" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary btn-block" id="clientLoginSubmit"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+            </form>
+        </div>
+        <div id="clientPwdView" style="display:none;">
+            <form id="clientPwdForm">
+                <div class="auth-field">
+                    <label for="clPwdOld"><i class="fas fa-key"></i> Senha atual</label>
+                    <input type="password" id="clPwdOld" required autocomplete="current-password">
+                </div>
+                <div class="auth-field">
+                    <label for="clPwdNew"><i class="fas fa-lock"></i> Nova senha</label>
+                    <input type="password" id="clPwdNew" required autocomplete="new-password" minlength="4">
+                </div>
+                <div class="auth-field">
+                    <label for="clPwdConfirm"><i class="fas fa-lock"></i> Confirmar nova senha</label>
+                    <input type="password" id="clPwdConfirm" required autocomplete="new-password">
+                </div>
+                <div class="auth-error" id="clientPwdError" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-check"></i> Salvar nova senha</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== PRODUCT MODAL (detalhe) ===== -->
+<div class="product-overlay" id="productOverlay">
+    <div class="product-modal" id="productModalBody"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js?v=2"></script>
+<script src="js/script.js?v=2"></script>
+</body>
+</html>

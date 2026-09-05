@@ -277,7 +277,7 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 .cat-code { font-size: 11px; color: var(--text-muted); font-family: 'Chakra Petch', sans-serif; letter-spacing: 1px; }
 .cat-name { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 4px 0 8px; cursor: pointer; height: 42px; }
 .cat-name:hover { color: var(--neon-fuchsia); }
-.cat-meta { font-size: 13px; color: var(--text-muted); }
+.cat-meta { font-size: 13px; color: var(--text-muted); font-family: 'Inter', sans-serif; }
 
 /* Preço: visível só com login (via .isAuth no body) */
 .cat-price { display: none; margin-top: 10px; }
@@ -415,7 +415,7 @@ body.isAuth .price-lock { display: none; }
 .pm-img img { max-width: 92%; max-height: 320px; object-fit: contain; }
 .pm-info h2 { font-size: 24px; margin-bottom: 6px; }
 .pm-code { color: var(--text-muted); font-size: 12.5px; font-family: 'Chakra Petch', sans-serif; margin-bottom: 12px; }
-.pm-desc { color: var(--text-secondary); font-size: 15px; margin-bottom: 16px; }
+.pm-desc { color: var(--text-secondary); font-size: 15px; margin-bottom: 16px; font-family: 'Inter', sans-serif; line-height: 1.7; }
 .pm-price { margin: 14px 0; }
 body.isAuth .pm-price .price-now { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 700;
     background: var(--gradient-sunset); -webkit-background-clip:text; background-clip:text; color:transparent; }

@@ -159,7 +159,7 @@ async function loadProducts() {
             const { data, error } = await db.from(SUPABASE_PRODUCTS_TABLE)
                 .select(PRODUCT_SELECT_FIELDS)
                 .eq('visivel', true)
-                .eq('somente_orcamento', false)
+                .or('somente_orcamento.eq.false,somente_orcamento.is.null')
                 .order('id', { ascending: true })
                 .range(from, from + PAGE_SIZE - 1);
             if (error) throw error;

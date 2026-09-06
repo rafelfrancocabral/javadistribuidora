@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=5">
+    <link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
 
@@ -291,8 +291,25 @@
     <div class="product-modal" id="productModalBody"></div>
 </div>
 
+<!-- ===== COOKIE CONSENT ===== -->
+<div class="cookie-consent" id="cookieConsent" role="dialog" aria-live="polite" aria-label="Consentimento de cookies">
+    <div class="cookie-content">
+        <div class="cookie-text">
+            <i class="fas fa-cookie-bite"></i>
+            <div>
+                <strong>Usamos cookies</strong>
+                <p>Este site utiliza cookies para melhorar sua experiência, analisar tráfego e personalizar conteúdo. Ao continuar, você concorda com nossa <a href="#politica-privacidade">Política de Privacidade</a>.</p>
+            </div>
+        </div>
+        <div class="cookie-actions">
+            <button class="btn btn-ghost" id="cookieReject">Recusar</button>
+            <button class="btn btn-primary" id="cookieAccept">Aceitar todos</button>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-config.js?v=2"></script>
-<script src="js/script.js?v=2"></script>
+<script src="js/script.js?v=3"></script>
 </body>
 </html>

@@ -805,4 +805,24 @@ function setupUI() {
     window.addEventListener('scroll', () => {
         if (header) header.classList.toggle('scrolled', window.scrollY > 40);
     });
+
+    // ===== Cookie Consent =====
+    const cookieConsent = document.getElementById('cookieConsent');
+    if (cookieConsent && !localStorage.getItem('cookie_consent')) {
+        setTimeout(() => cookieConsent.classList.add('show'), 500);
+    }
+    const cookieAccept = document.getElementById('cookieAccept');
+    const cookieReject = document.getElementById('cookieReject');
+    if (cookieAccept) {
+        cookieAccept.addEventListener('click', () => {
+            localStorage.setItem('cookie_consent', 'accepted');
+            cookieConsent.classList.remove('show');
+        });
+    }
+    if (cookieReject) {
+        cookieReject.addEventListener('click', () => {
+            localStorage.setItem('cookie_consent', 'rejected');
+            cookieConsent.classList.remove('show');
+        });
+    }
 }

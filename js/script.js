@@ -333,6 +333,13 @@ function saveCart(cart) {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
     updateCartBadge();
     renderCartSidebar();
+    // Trigger pulse animation on badge
+    const badge = document.getElementById('cartBadge');
+    if (badge && badge.style.display !== 'none') {
+        badge.style.animation = 'none';
+        badge.offsetHeight; // force reflow
+        badge.style.animation = 'badgePulse 0.4s ease-out';
+    }
 }
 function updateCartBadge() {
     const badge = document.getElementById('cartBadge');

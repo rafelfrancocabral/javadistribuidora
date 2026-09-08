@@ -295,7 +295,7 @@ function renderCatalog() {
                         <input type="number" value="1" min="1" max="999" data-pid="${escapeHtml(p.id)}">
                         <button onclick="catalogQtyChange(this, 1)"><i class="fas fa-plus"></i></button>
                     </div>
-                    <button class="btn-add-cart" onclick="addToCart('${escapeHtml(p.id)}')">
+                    <button class="btn-add-cart" onclick="addToCart(event, '${escapeHtml(p.id)}')">
                         <i class="fas fa-cart-plus"></i> Adicionar
                     </button>
                 </div>
@@ -357,7 +357,7 @@ function getQtyForEl(btn) {
     return input ? (parseInt(input.value) || 1) : 1;
 }
 
-function addToCart(productId) {
+function addToCart(event, productId) {
     if (!isClientLoggedIn()) { openClientLoginModal(); showToast('Faça login para ver preços e montar o orçamento.', true); return; }
     const product = _allProducts.find(p => p.id === productId);
     if (!product) return;
@@ -493,7 +493,7 @@ function openProductModal(productId) {
                         <input type="number" value="1" min="1" max="999">
                         <button onclick="catalogQtyChange(this, 1)"><i class="fas fa-plus"></i></button>
                     </div>
-                    <button class="btn-add-cart" style="flex:1;" onclick="addToCart('${product.id}')">
+                    <button class="btn-add-cart" style="flex:1;" onclick="addToCart(event, '${product.id}')">
                         <i class="fas fa-cart-plus"></i> Adicionar ao carrinho
                     </button>
                 </div>

@@ -76,8 +76,27 @@ async function clientLogin(identifier, senha) {
             (digits && String(r.cnpj || '').replace(/\D/g, '') === digits)
         );
         if (!rec) return { ok: false, error: 'Cliente não cadastrado. Contate a loja.' };
-        const hash = await sha256Hex(senha);
-        if (hash !== rec.senha) return { ok: false, error: 'Senha incorreta.' };
+        
+        // Detecta se o login foi por CNPJ (digits matched)
+        const matchedByCnpj = digits && String(rec.cnpj || '').replace(/\D/g, '') === digits;
+        
+        // Se login por CNPJ, a senha também deve ser só números (remove formatação)
+        const passwordToHash = matchedByCnpj ? senha.replace(/\D/g, '') : senha;
+        
+        console.log('[LOGIN DEBUG]', {
+            identifier,
+            matchedByCnpj,
+            cnpjDigits: digits,
+            passwordProvided: senha,
+            passwordToHash,
+            storedHash: rec.senha?.substring(0, 16) + '...'
+        });
+        
+        const hash = await sha256Hex(passwordToHash);
+        if (hash !== rec.senha) {
+            console.log('[LOGIN DEBUG] Hash mismatch', { computed: hash.substring(0, 16) + '...', stored: rec.senha?.substring(0, 16) + '...' });
+            return { ok: false, error: 'Senha incorreta.' };
+        }
         const mustChange = !rec.senha_trocada;
         saveClientSession({ id: rec.id, email: rec.email, razao: rec.razao_social, mustChange });
         return { ok: true, mustChange };

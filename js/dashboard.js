@@ -329,17 +329,20 @@ function renderQuotes() {
             <div class="quote-card-main">
                 <div class="quote-card-top">
                     <span class="quote-card-name">${escapeHtml(q.nome_cliente)}</span>
+                    <span class="quote-code-badge">#${escapeHtml(q.codigo_cliente || q.id)}</span>
                     <span class="status-pill status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span>
                 </div>
                 <div class="quote-card-meta">
                     <span><i class="fas fa-envelope"></i>${escapeHtml(q.email || '')}</span>
                     ${q.telefone ? `<span><i class="fas fa-phone"></i>${escapeHtml(q.telefone)}</span>` : ''}
-                    <span><i class="fas fa-hashtag"></i>${escapeHtml(q.codigo_cliente || '')}</span>
                     ${q.codigo_retirada ? `<span><i class="fas fa-barcode"></i>Retirada: ${escapeHtml(q.codigo_retirada)}</span>` : ''}
                     <span><i class="fas fa-clock"></i>${formatDate(q.created_at)}</span>
                 </div>
             </div>
-            <div class="quote-card-total">${formatPrice(q.total)}</div>
+            <div class="quote-card-footer">
+                <span class="quote-status-before-total status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span>
+                <div class="quote-card-total">${formatPrice(q.total)}</div>
+            </div>
             <div class="quote-card-actions">
                 <button class="icon-btn" onclick="openQuoteDetail('${q.id}')" title="Detalhes"><i class="fas fa-eye"></i></button>
                 <button class="icon-btn pdf" onclick="downloadQuotePDF('${q.id}')" title="Baixar PDF"><i class="fas fa-file-pdf"></i></button>
@@ -348,8 +351,7 @@ function renderQuotes() {
                 <a class="icon-btn" href="https://wa.me/${(q.telefone||'').replace(/\D/g,'') || WHATSAPP_NUMBER}" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                 <button class="icon-btn danger" onclick="deleteQuote('${q.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
             </div>
-        </div>
-    `).join('');
+        </div>`).join('');
 }
 
 function openQuoteDetail(id) {
@@ -412,32 +414,95 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     if (typeof COMPANY_LOGO_DATA === 'string' && COMPANY_LOGO_DATA) { try { if (hStyle === 3) { doc.setFillColor(255, 255, 255); doc.rect(margin, 5, 34, 24, 'F'); doc.addImage(COMPANY_LOGO_DATA, 'PNG', margin + 2, 7, 30, 20); } else { doc.addImage(COMPANY_LOGO_DATA, 'PNG', margin, 8, 34, 24); } } catch (e) {} }
 
     doc.setTextColor(sc[0], sc[1], sc[2]); doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.text('EMITIDO EM ' + formatDate(q.created_at), pageW - margin, 12, { align: 'right' });
-    doc.setTextColor(tc[0], tc[1], tc[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text('ORÇAMENTO N° ' + String(q.id || '').padStart(5, '0'), pageW / 2, 20, { align: 'center' });
+    doc.setTextColor(tc[0], tc[1], tc[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text('ORÇAMENTO N° ' + String(q.codigo_cliente || q.id || '').padStart(5, '0'), pageW / 2, 20, { align: 'center' });
     doc.setDrawColor(divC[0], divC[1], divC[2]); doc.setLineWidth(0.4); doc.line(pageW / 2 - 42, 24.5, pageW / 2 + 42, 24.5);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(sc[0], sc[1], sc[2]); doc.text('Java Distribuidora', pageW / 2, 30, { align: 'center' }); doc.setLineWidth(0.2);
     y = Hd + 12;
 
-    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('DADOS DO CLIENTE', margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
-    doc.setTextColor(30, 30, 40); doc.setFontSize(10);
-    let cnpjCliente = ''; const cCliente = clients.find(c => c && c.razao_social && c.razao_social.toLowerCase() === String(q.nome_cliente || '').toLowerCase()); if (cCliente && cCliente.cnpj) cnpjCliente = formatCnpj(cCliente.cnpj);
-    const colHalf = pageW / 2; let colIdx = 0;
-    [['Cliente', q.nome_cliente], ['CNPJ', cnpjCliente], ['Email', q.email], ['Telefone', q.telefone]].filter(r => r[1]).forEach(row => { const cx = colIdx % 2 === 0 ? margin : colHalf; const cy = y + Math.floor(colIdx / 2) * 12; doc.setFont('helvetica', 'bold'); doc.setTextColor(light); doc.setFontSize(8); doc.text(row[0].toUpperCase(), cx, cy); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(10); let val = String(row[1]); if (doc.getTextWidth(val) > colHalf - margin - 4) val = doc.splitTextToSize(val, colHalf - margin - 4)[0]; doc.text(val, cx, cy + 6); colIdx++; });
-    y += Math.ceil(colIdx / 2) * 12 + 4;
+    // ===== HEADER SECTION =====
+    doc.setDrawColor(brand); doc.setLineWidth(0.5); doc.rect(margin, y - 3, width, 52, 'S');
+    y += 3;
+    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('DADOS DO ORÇAMENTO', margin + 3, y + 6);
+    doc.setDrawColor(brand); doc.setLineWidth(0.3); doc.line(margin + 3, y + 7, pageW - margin - 3, y + 7); y += 12;
 
-    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('ITENS DO ORÇAMENTO', margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
-    const codeX = margin, descX = margin + 26, qtyX = subX - 70, unitX = subX - 44;
-    doc.setFillColor(247, 243, 255); doc.rect(margin, y, width, 9, 'F');
-    doc.setTextColor(brand); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-    doc.text('CÓDIGO', codeX, y + 6); doc.text('PRODUTO', descX, y + 6); doc.text('QTDE', qtyX, y + 6, { align: 'right' }); doc.text('UNIT', unitX, y + 6, { align: 'right' }); doc.text('SUBTOTAL', subX, y + 6, { align: 'right' }); y += 15;
-    doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(9.5);
+    let cnpjCliente = ''; const cCliente = clients.find(c => c && c.razao_social && c.razao_social.toLowerCase() === String(q.nome_cliente || '').toLowerCase()); if (cCliente && cCliente.cnpj) cnpjCliente = formatCnpj(cCliente.cnpj);
+    const dataEmissao = formatDate(q.created_at);
+    const codigoOrcamento = q.codigo_cliente || q.id;
+    const razaoSocial = q.nome_cliente || 'Cliente não identificado';
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(brand);
+    doc.text('ORÇAMENTO:', margin + 3, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(30, 30, 40);
+    doc.text(String(codigoOrcamento), margin + 25, y);
+    doc.setFont('helvetica', 'bold'); doc.text('DATA:', margin + 70, y);
+    doc.setFont('helvetica', 'normal'); doc.text(dataEmissao, margin + 85, y);
+    doc.setFont('helvetica', 'bold'); doc.text('STATUS:', margin + 140, y);
+    doc.setFont('helvetica', 'normal'); doc.text(statusLabel(q.status), margin + 155, y);
+    y += 8;
+
+    doc.setFont('helvetica', 'bold'); doc.text('CLIENTE:', margin + 3, y);
+    doc.setFont('helvetica', 'normal'); doc.text(razaoSocial, margin + 25, y);
+    y += 7;
+    if (cnpjCliente) { doc.setFont('helvetica', 'bold'); doc.text('CNPJ:', margin + 3, y); doc.setFont('helvetica', 'normal'); doc.text(cnpjCliente, margin + 25, y); y += 7; }
+    if (q.email) { doc.setFont('helvetica', 'bold'); doc.text('EMAIL:', margin + 3, y); doc.setFont('helvetica', 'normal'); doc.text(q.email, margin + 25, y); y += 7; }
+    if (q.telefone) { doc.setFont('helvetica', 'bold'); doc.text('TELEFONE:', margin + 3, y); doc.setFont('helvetica', 'normal'); doc.text(q.telefone, margin + 25, y); y += 7; }
+    y += 5;
+
+    // Close header box
+    doc.setDrawColor(brand); doc.setLineWidth(0.5); doc.rect(margin, y - 60, width, 52, 'S');
+
+    // ===== PRODUTOS SECTION =====
+    y += 10;
+    doc.setDrawColor(brand); doc.setLineWidth(0.5); doc.rect(margin, y - 3, width, 14, 'S');
+    doc.setFillColor(240, 240, 245); doc.rect(margin, y - 3, width, 14, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(brand);
+    doc.text('ITENS DO ORÇAMENTO', margin + 3, y + 6);
+    y += 18;
+
+    // Table header
+    doc.setFillColor(240, 240, 245); doc.rect(margin, y, width, 10, 'F');
+    doc.setDrawColor(brand); doc.setLineWidth(0.2); doc.rect(margin, y, width, 10, 'S');
+    const codeX = margin + 2, descX = margin + 28, qtyX = subX - 80, unitX = subX - 48;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(brand);
+    doc.text('CÓD.', codeX, y + 6); doc.text('PRODUTO / SERVIÇO', descX, y + 6);
+    doc.text('QTD', qtyX, y + 6, { align: 'right' }); doc.text('UNIT.', unitX, y + 6, { align: 'right' }); doc.text('TOTAL', subX, y + 6, { align: 'right' });
+    y += 12;
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(30, 30, 40);
     const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null;
-    if (items) { items.forEach(it => { if (y > 272) { doc.addPage(); y = margin; } const name = it.nome || ''; const code = it.codigo || ''; const qty = it.quantidade || 0; const unit = it.preco || 0; const sub = it.subtotal || (unit * qty); doc.setFillColor(245, 245, 248); doc.setDrawColor(235, 230, 242); doc.rect(margin, y - 5.5, width, 14, 'FD'); doc.setFont('helvetica', 'normal'); doc.setTextColor(130, 130, 140); doc.text(String(code), codeX, y); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 40); let descTxt = name; if (doc.getTextWidth(descTxt) > qtyX - descX - 6) descTxt = doc.splitTextToSize(descTxt, qtyX - descX - 6)[0]; doc.text(descTxt, descX, y); doc.setFont('helvetica', 'normal'); doc.text(String(qty), qtyX, y, { align: 'right' }); doc.text(formatPrice(unit), unitX, y, { align: 'right' }); doc.setFont('helvetica', 'bold'); doc.text(formatPrice(sub), subX, y, { align: 'right' }); y += 16; }); }
-    y += 4; if (y > 275) { doc.addPage(); y = margin; }
-    doc.setDrawColor(216, 180, 254); doc.line(margin, y, pageW - margin, y); y += 8;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(brand); doc.text('TOTAL', margin, y); doc.text(formatPrice(q.total || 0), subX, y, { align: 'right' }); y += 8;
-    if (q.pagamento) { const payLines = buildPaymentLines(q.pagamento, q.created_at, q.total); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
-    for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
-    const fileName = 'orcamento-' + (q.nome_cliente ? q.nome_cliente.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '-' + q.id + '.pdf'; doc.save(fileName); toast('PDF do orçamento baixado.'); }
+    if (items) { items.forEach(it => { if (y > 272) { doc.addPage(); y = margin; } const name = it.nome || ''; const code = it.codigo || ''; const qty = it.quantidade || 0; const unit = it.preco || 0; const sub = it.subtotal || (unit * qty); doc.setFillColor(248, 248, 252); doc.setDrawColor(220, 220, 230); doc.rect(margin, y - 3, width, 14, 'FD'); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(130, 130, 140); doc.text(String(it.codigo || ''), margin + 2, y + 4); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(30, 30, 40); let descTxt = it.nome || ''; if (doc.getTextWidth(descTxt) > (qtyX - descX - 8)) descTxt = doc.splitTextToSize(descTxt, qtyX - descX - 8)[0]; doc.text(descTxt, descX, y + 4); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.text(String(it.quantidade || 0), qtyX, y + 4, { align: 'right' }); doc.text(formatPrice(it.preco || 0), unitX, y + 4, { align: 'right' }); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text(formatPrice(it.subtotal || (it.preco * it.quantidade)), subX, y + 4, { align: 'right' }); y += 15; }); }
+    y += 4;
+
+    // Close items box
+    doc.setDrawColor(brand); doc.setLineWidth(0.5); doc.line(margin, y, pageW - margin, y); y += 8;
+
+    // ===== TOTAL =====
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(brand);
+    doc.text('TOTAL', margin + 3, y); doc.text(formatPrice(q.total || 0), subX, y, { align: 'right' }); y += 10;
+
+    // ===== PAGAMENTOS SECTION =====
+    if (q.pagamento) {
+        doc.setDrawColor(brand); doc.setLineWidth(0.5); doc.rect(margin, y - 3, width, 14, 'S');
+        doc.setFillColor(240, 240, 245); doc.rect(margin, y - 3, width, 14, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(brand);
+        doc.text('FORMAS DE PAGAMENTO', margin + 3, y + 6); y += 18;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(brand);
+        doc.text('Condição:', margin + 3, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 25, y); y += 7;
+        const payLines = buildPaymentLines(q.pagamento, q.created_at, q.total);
+        payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin + 3, y); y += 6; });
+        y += 5;
+        // Close payment box
+        doc.setDrawColor(brand); doc.setLineWidth(0.5); doc.rect(margin, y - 60, width, 60, 'S');
+    }
+
+    // ===== FOOTER =====
+    for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
+
+    // Filename: razao_social + data + numero
+    const safeRazao = (q.nome_cliente || 'cliente').replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_');
+    const dataArq = formatDate(q.created_at).replace(/\//g, '-');
+    const fileName = safeRazao + '_' + dataArq + '_' + (q.codigo_cliente || q.id) + '.pdf';
+    doc.save(fileName); toast('PDF do orçamento baixado.'); }
 
 // ---------- Products ----------
 async function loadProducts() { try { let all = []; let from = 0; while (true) { const { data, error } = await db.from(SUPABASE_PRODUCTS_TABLE).select(PRODUCT_SELECT).order('id', { ascending: true }).range(from, from + 499); if (error) throw error; if (!data || !data.length) break; all = all.concat(data); if (data.length < 500) break; from += 500; } products = all; } catch (e) { console.error('Erro ao carregar produtos:', e); products = []; } }

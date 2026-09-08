@@ -179,7 +179,9 @@ input, select, textarea { font-family: inherit; }
 .quote-card-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 14px; flex-wrap: wrap; }
 .quote-card-meta i { color: var(--accent-dark); width: 12px; margin-right: 4px; }
 .quote-card-total { font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
-.status-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.quote-code-badge { font-family: 'Chakra Petch', sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--accent); background: rgba(88,28,135,.08); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.quote-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.quote-status-before-total { font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
 .status-recebido { background: rgba(88,28,135,.08); color: var(--accent-color); }
 .status-analise { background: rgba(255,165,2,.15); color: var(--warning); }
 .status-aprovado { background: rgba(46,213,115,.15); color: var(--success); }

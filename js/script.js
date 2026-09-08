@@ -358,6 +358,7 @@ function getQtyForEl(btn) {
 }
 
 function addToCart(event, productId) {
+    console.log('[addToCart] called', { event: !!event, productId, target: event?.target });
     if (!isClientLoggedIn()) { openClientLoginModal(); showToast('Faça login para ver preços e montar o orçamento.', true); return; }
     const product = _allProducts.find(p => p.id === productId);
     if (!product) return;

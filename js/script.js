@@ -359,8 +359,15 @@ function getQtyForEl(btn) {
 
 function addToCart(event, productId) {
     console.log('[addToCart] called', { event: !!event, productId, target: event?.target });
-    if (!isClientLoggedIn()) { openClientLoginModal(); showToast('Faça login para ver preços e montar o orçamento.', true); return; }
+    if (!isClientLoggedIn()) { 
+        console.log('[addToCart] NOT logged in');
+        openClientLoginModal(); 
+        showToast('Faça login para ver preços e montar o orçamento.', true); 
+        return; 
+    }
+    console.log('[addToCart] logged in ok');
     const product = _allProducts.find(p => p.id === productId);
+    console.log('[addToCart] product found', { product: !!product, productId, totalProducts: _allProducts.length });
     if (!product) return;
 
     const qty = getQtyForEl(event && event.target);

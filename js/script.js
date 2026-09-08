@@ -402,7 +402,7 @@ function addToCart(event, productId) {
 
 function cartQtyChange(id, delta) {
     const cart = getCart();
-    const item = cart.find(i => i.id === id);
+    const item = cart.find(i => String(i.id) === String(id));
     if (!item) return;
     item.qty += delta;
     if (item.qty <= 0) removeFromCart(id);
@@ -410,7 +410,7 @@ function cartQtyChange(id, delta) {
 }
 
 function removeFromCart(id) {
-    saveCart(getCart().filter(i => i.id !== id));
+    saveCart(getCart().filter(i => String(i.id) !== String(id)));
 }
 
 function renderCartSidebar() {

@@ -346,7 +346,7 @@ function updateCartBadge() {
     if (!badge) return;
     const total = getCart().reduce((s, i) => s + i.qty, 0);
     badge.textContent = total;
-    badge.style.display = total > 0 ? '' : 'none';
+    badge.style.display = total > 0 ? 'flex' : 'none';
 }
 
 function catalogQtyChange(btn, delta) {

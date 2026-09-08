@@ -366,7 +366,8 @@ function addToCart(event, productId) {
         return; 
     }
     console.log('[addToCart] logged in ok');
-    const product = _allProducts.find(p => p.id === productId);
+    console.log('[addToCart] _allProducts IDs:', _allProducts.map(p => p.id).slice(0, 20));
+    const product = _allProducts.find(p => String(p.id) === String(productId));
     console.log('[addToCart] product found', { product: !!product, productId, totalProducts: _allProducts.length });
     if (!product) return;
 

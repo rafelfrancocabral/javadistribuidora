@@ -775,6 +775,9 @@ function setupUI() {
     const clientPwdForm = document.getElementById('clientPwdForm');
     if (clientPwdForm) clientPwdForm.addEventListener('submit', submitClientPwdChange);
 
+    const clientLogoutBtn = document.getElementById('clientLogoutBtn');
+    if (clientLogoutBtn) clientLogoutBtn.addEventListener('click', clientLogout);
+
     const catsEl = document.getElementById('catalogCats');
     if (catsEl) catsEl.addEventListener('click', (e) => {
         const pill = e.target.closest('.cat-pill');

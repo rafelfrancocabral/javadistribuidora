@@ -267,20 +267,21 @@
         </div>
         <div id="clientPwdView" style="display:none;">
             <form id="clientPwdForm">
-                <div class="auth-field">
+                <div class="auth-field auth-field-pwd">
                     <label for="clPwdOld"><i class="fas fa-key"></i> Senha atual</label>
-                    <input type="password" id="clPwdOld" required autocomplete="current-password">
+                    <input type="password" id="clPwdOld" required autocomplete="current-password" placeholder="Digite a senha atual">
                 </div>
-                <div class="auth-field">
+                <div class="auth-field auth-field-pwd">
                     <label for="clPwdNew"><i class="fas fa-lock"></i> Nova senha</label>
-                    <input type="password" id="clPwdNew" required autocomplete="new-password" minlength="4">
+                    <input type="password" id="clPwdNew" required autocomplete="new-password" minlength="4" placeholder="Mínimo 4 caracteres">
                 </div>
-                <div class="auth-field">
+                <div class="auth-field auth-field-pwd">
                     <label for="clPwdConfirm"><i class="fas fa-lock"></i> Confirmar nova senha</label>
-                    <input type="password" id="clPwdConfirm" required autocomplete="new-password">
+                    <input type="password" id="clPwdConfirm" required autocomplete="new-password" placeholder="Repita a nova senha">
                 </div>
                 <div class="auth-error" id="clientPwdError" style="display:none;"></div>
                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-check"></i> Salvar nova senha</button>
+                <button type="button" class="btn btn-ghost btn-block" id="clientLogoutBtn" style="margin-top: 10px;"><i class="fas fa-sign-out-alt"></i> Sair</button>
             </form>
         </div>
     </div>

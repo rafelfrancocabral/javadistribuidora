@@ -280,10 +280,11 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 .cat-meta { font-size: 13px; color: var(--text-muted); font-family: 'Inter', sans-serif; }
 
 /* Preço: visível só com login (via .isAuth no body) */
-.cat-price { display: none; margin-top: 10px; }
-.cat-price .price-now { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700;
-    background: var(--gradient-sunset); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.cat-price .price-old { color: var(--text-muted); font-size: 13px; text-decoration: line-through; margin-left: 8px; }
+.cat-price { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.cat-price .price-now { font-family: 'Rajdhani', sans-serif; font-size: 24px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+.cat-price .price-old { color: var(--text-muted); font-size: 14px; text-decoration: line-through; margin-left: 10px; font-weight: 500; }
+.cat-price .price-unit { color: var(--text-muted); font-size: 13px; font-weight: 500; margin-left: 4px; font-family: 'Inter', sans-serif; }
+
 .price-lock {
     display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 12px;
     color: var(--text-muted); font-size: 13.5px; font-family: 'Chakra Petch', sans-serif;
@@ -408,6 +409,17 @@ body.isAuth .price-lock { display: none; }
 #clientLoginView, #clientPwdView { padding: 22px; }
 .auth-form, .auth-field { margin-bottom: 14px; }
 
+/* Password change modal improvements */
+.auth-field-pwd { display: flex; flex-direction: column; gap: 6px; }
+.auth-field-pwd label { display: flex; align-items: center; gap: 8px; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 14px; color: var(--text-primary); }
+.auth-field-pwd input { border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; font-family: 'Inter', sans-serif; font-size: 15px; outline: none; background: #fff; transition: border .18s, box-shadow .18s; width: 100%; box-sizing: border-box; }
+.auth-field-pwd input:focus { border-color: var(--neon-purple); box-shadow: 0 0 0 4px rgba(168,85,247,.12); }
+.auth-field-pwd i { color: var(--neon-purple); font-size: 16px; width: 20px; text-align: center; }
+
+#clientPwdView .btn { margin-top: 4px; }
+#clientLogoutBtn { background: transparent; border: 1.5px solid var(--border); color: var(--text-secondary); }
+#clientLogoutBtn:hover { border-color: var(--danger); color: var(--danger); background: rgba(255,71,87,.05); }
+
 /* ---------- Product Modal ---------- */
 .product-modal { border-radius: 22px; overflow: hidden; }
 .pm-body { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 26px; }
@@ -416,9 +428,8 @@ body.isAuth .price-lock { display: none; }
 .pm-info h2 { font-size: 24px; margin-bottom: 6px; }
 .pm-code { color: var(--text-muted); font-size: 12.5px; font-family: 'Chakra Petch', sans-serif; margin-bottom: 12px; }
 .pm-desc { color: var(--text-secondary); font-size: 15px; margin-bottom: 16px; font-family: 'Inter', sans-serif; line-height: 1.7; }
-.pm-price { margin: 14px 0; }
-body.isAuth .pm-price .price-now { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 700;
-    background: var(--gradient-sunset); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.pm-price { margin: 16px 0; padding-top: 14px; border-top: 1px solid var(--border); }
+body.isAuth .pm-price .price-now { font-family: 'Rajdhani', sans-serif; font-size: 30px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
 body.isAuth .pm-price-msg { display:none; }
 .pm-price-msg { color: var(--text-muted); }
 .pm-actions { display: flex; gap: 10px; align-items: center; margin-top: 16px; }

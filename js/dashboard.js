@@ -292,26 +292,6 @@ async function renderOverview() {
     renderTopClients();
     renderTopSellers();
     renderLowSellers();
-
-    const recent = quotes.slice(-6).reverse();
-    const el = document.getElementById('recentQuotes');
-    el.innerHTML = recent.length ? recent.map(q => `
-        <div class="quote-card">
-            <div class="quote-card-main">
-                <div class="quote-card-top">
-                    <span class="quote-card-name">${escapeHtml(q.nome_cliente)}</span>
-                    <span class="status-pill status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span>
-                </div>
-                <div class="quote-card-meta">
-                    <span><i class="fas fa-envelope"></i>${escapeHtml(q.email || '')}</span>
-                    ${q.telefone ? `<span><i class="fas fa-phone"></i>${escapeHtml(q.telefone)}</span>` : ''}
-                    <span><i class="fas fa-clock"></i>${timeAgo(q.created_at)}</span>
-                </div>
-            </div>
-            <div class="quote-card-total">${formatPrice(q.total)}</div>
-            <button class="icon-btn" onclick="openQuoteDetail('${q.id}')" title="Detalhes"><i class="fas fa-eye"></i></button>
-        </div>
-    `).join('') : '<div class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum orçamento ainda</p></div>';
 }
 
 // ---------- Quotes ----------
@@ -336,13 +316,13 @@ function renderQuotes() {
         <div class="quote-card">
             <div class="quote-card-row">
                 <div class="quote-main-info">
-                    <span class="quote-card-name">${escapeHtml(q.nome_cliente)}</span>
                     <span class="quote-code-badge">#${escapeHtml(q.codigo_cliente || q.id)}</span>
+                    <span class="quote-card-name">${escapeHtml(getQuoteClientName(q))}</span>
                     <span class="quote-meta-icons">
                         ${q.email ? `<span title="Email"><i class="fas fa-envelope"></i>${escapeHtml(q.email)}</span>` : ''}
                         ${q.telefone ? `<span title="Telefone"><i class="fas fa-phone"></i>${escapeHtml(q.telefone)}</span>` : ''}
-                        ${q.codigo_retirada ? `<span title="Retirada"><i class="fas fa-barcode"></i>${escapeHtml(q.codigo_retirada)}</span>` : ''}
                         <span title="Data"><i class="fas fa-clock"></i>${formatDate(q.created_at)}</span>
+                        ${q.pagamento ? `<span title="Prazo"><i class="fas fa-calendar-alt"></i>${escapeHtml(q.pagamento)}</span>` : ''}
                     </span>
                 </div>
                 <div class="quote-card-footer">
@@ -371,11 +351,11 @@ function openQuoteDetail(id) {
     else if (q.itens && typeof q.itens === 'string') { itemsHtml = '<p style="color:var(--text-secondary);font-size:0.85rem;white-space:pre-wrap">' + escapeHtml(q.itens) + '</p>'; }
 
     document.getElementById('quoteDetailBody').innerHTML = `
-        <div class="qd-row"><span>Cliente</span><span>${escapeHtml(q.nome_cliente)}</span></div>
+        <div class="qd-row"><span>Cliente</span><span>${escapeHtml(getQuoteClientName(q))}</span></div>
         <div class="qd-row"><span>Email</span><span>${escapeHtml(q.email || '')}</span></div>
         <div class="qd-row"><span>Telefone</span><span>${escapeHtml(q.telefone || '')}</span></div>
         <div class="qd-row"><span>Código Cliente</span><span>${escapeHtml(q.codigo_cliente || '')}</span></div>
-        <div class="qd-row"><span>Código Retirada</span><span>${escapeHtml(q.codigo_retirada || '')}</span></div>
+        
         <div class="qd-row"><span>Data</span><span>${formatDate(q.created_at)}</span></div>
         <div class="qd-row"><span>Status</span><span><span class="status-pill status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span></span></div>
         ${itemsHtml}
@@ -421,7 +401,7 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     if (typeof COMPANY_LOGO_DATA === 'string' && COMPANY_LOGO_DATA) { try { if (hStyle === 3) { doc.setFillColor(255, 255, 255); doc.rect(margin, 5, 34, 24, 'F'); doc.addImage(COMPANY_LOGO_DATA, 'PNG', margin + 2, 7, 30, 20); } else { doc.addImage(COMPANY_LOGO_DATA, 'PNG', margin, 8, 34, 24); } } catch (e) {} }
 
     doc.setTextColor(sc[0], sc[1], sc[2]); doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.text('EMITIDO EM ' + formatDate(q.created_at), pageW - margin, 12, { align: 'right' });
-    doc.setTextColor(tc[0], tc[1], tc[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text('ORÇAMENTO N° ' + String(q.id || '').padStart(5, '0'), pageW / 2, 20, { align: 'center' });
+    doc.setTextColor(tc[0], tc[1], tc[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text('ORÇAMENTO N° ' + String(q.codigo_cliente || q.id || ''), pageW / 2, 20, { align: 'center' });
     doc.setDrawColor(divC[0], divC[1], divC[2]); doc.setLineWidth(0.4); doc.line(pageW / 2 - 42, 24.5, pageW / 2 + 42, 24.5);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(sc[0], sc[1], sc[2]); doc.text('Java Distribuidora', pageW / 2, 30, { align: 'center' }); doc.setLineWidth(0.2);
     y = Hd + 12;
@@ -446,7 +426,7 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(brand); doc.text('TOTAL', margin, y); doc.text(formatPrice(q.total || 0), subX, y, { align: 'right' }); y += 8;
     if (q.pagamento) { const payLines = buildPaymentLines(q.pagamento, q.created_at, q.total); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
-    const fileName = 'orcamento-' + (q.nome_cliente ? q.nome_cliente.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '-' + q.id + '.pdf'; doc.save(fileName); toast('PDF do orçamento baixado.'); }
+    const fileName = 'orcamento-' + (q.codigo_cliente || q.id) + '-' + (q.nome_cliente ? q.nome_cliente.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf'; doc.save(fileName); toast('PDF do orçamento baixado.'); }
 
 // ---------- Products ----------
 async function loadProducts() { try { let all = []; let from = 0; while (true) { const { data, error } = await db.from(SUPABASE_PRODUCTS_TABLE).select(PRODUCT_SELECT).order('id', { ascending: true }).range(from, from + 499); if (error) throw error; if (!data || !data.length) break; all = all.concat(data); if (data.length < 500) break; from += 500; } products = all; } catch (e) { console.error('Erro ao carregar produtos:', e); products = []; } }

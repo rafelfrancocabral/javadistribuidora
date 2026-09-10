@@ -326,29 +326,29 @@ function renderQuotes() {
     if (!list.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum orçamento encontrado</p></div>'; return; }
     el.innerHTML = list.map(q => `
         <div class="quote-card">
-            <div class="quote-card-main">
-                <div class="quote-card-top">
+            <div class="quote-card-row">
+                <div class="quote-main-info">
                     <span class="quote-card-name">${escapeHtml(q.nome_cliente)}</span>
                     <span class="quote-code-badge">#${escapeHtml(q.codigo_cliente || q.id)}</span>
+                    <span class="quote-meta-icons">
+                        ${q.email ? `<span title="Email"><i class="fas fa-envelope"></i>${escapeHtml(q.email)}</span>` : ''}
+                        ${q.telefone ? `<span title="Telefone"><i class="fas fa-phone"></i>${escapeHtml(q.telefone)}</span>` : ''}
+                        ${q.codigo_retirada ? `<span title="Retirada"><i class="fas fa-barcode"></i>${escapeHtml(q.codigo_retirada)}</span>` : ''}
+                        <span title="Data"><i class="fas fa-clock"></i>${formatDate(q.created_at)}</span>
+                    </span>
                 </div>
-                <div class="quote-card-meta">
-                    <span><i class="fas fa-envelope"></i>${escapeHtml(q.email || '')}</span>
-                    ${q.telefone ? `<span><i class="fas fa-phone"></i>${escapeHtml(q.telefone)}</span>` : ''}
-                    ${q.codigo_retirada ? `<span><i class="fas fa-barcode"></i>Retirada: ${escapeHtml(q.codigo_retirada)}</span>` : ''}
-                    <span><i class="fas fa-clock"></i>${formatDate(q.created_at)}</span>
+                <div class="quote-card-footer">
+                    <span class="quote-status-before-total status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span>
+                    <div class="quote-card-total">${formatPrice(q.total)}</div>
                 </div>
-            </div>
-            <div class="quote-card-footer">
-                <span class="quote-status-before-total status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span>
-                <div class="quote-card-total">${formatPrice(q.total)}</div>
-            </div>
-            <div class="quote-card-actions">
-                <button class="icon-btn" onclick="openQuoteDetail('${q.id}')" title="Detalhes"><i class="fas fa-eye"></i></button>
-                <button class="icon-btn pdf" onclick="downloadQuotePDF('${q.id}')" title="Baixar PDF"><i class="fas fa-file-pdf"></i></button>
-                <button class="icon-btn" onclick="editQuote('${q.id}')" title="Editar"><i class="fas fa-pen"></i></button>
-                <button class="icon-btn" onclick="advanceQuote('${q.id}')" title="Avançar status"><i class="fas fa-arrow-right"></i></button>
-                <a class="icon-btn" href="https://wa.me/${(q.telefone||'').replace(/\D/g,'') || WHATSAPP_NUMBER}" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                <button class="icon-btn danger" onclick="deleteQuote('${q.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
+                <div class="quote-card-actions">
+                    <button class="icon-btn" onclick="openQuoteDetail('${q.id}')" title="Detalhes"><i class="fas fa-eye"></i></button>
+                    <button class="icon-btn pdf" onclick="downloadQuotePDF('${q.id}')" title="Baixar PDF"><i class="fas fa-file-pdf"></i></button>
+                    <button class="icon-btn" onclick="editQuote('${q.id}')" title="Editar"><i class="fas fa-pen"></i></button>
+                    <button class="icon-btn" onclick="advanceQuote('${q.id}')" title="Avançar status"><i class="fas fa-arrow-right"></i></button>
+                    <a class="icon-btn" href="https://wa.me/${(q.telefone||'').replace(/\D/g,'') || WHATSAPP_NUMBER}" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <button class="icon-btn danger" onclick="deleteQuote('${q.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
+                </div>
             </div>
         </div>`).join('');
 }

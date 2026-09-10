@@ -186,7 +186,7 @@ input, select, textarea { font-family: inherit; }
 .status-analise { background: rgba(255,165,2,.15); color: var(--warning); }
 .status-aprovado { background: rgba(46,213,115,.15); color: var(--success); }
 .status-entregue { background: rgba(165,94,234,.15); color: var(--purple); }
-.status-concluido { background: rgba(0,229,255,.15); color: var(--neon-cyan); }
+.status-concluido { background: rgba(46,213,115,.15); color: var(--success); }
 .status-cancelado { background: rgba(255,71,87,.15); color: var(--danger); }
 .quote-card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .icon-btn {

@@ -330,7 +330,6 @@ function renderQuotes() {
                 <div class="quote-card-top">
                     <span class="quote-card-name">${escapeHtml(q.nome_cliente)}</span>
                     <span class="quote-code-badge">#${escapeHtml(q.codigo_cliente || q.id)}</span>
-                    <span class="status-pill status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span>
                 </div>
                 <div class="quote-card-meta">
                     <span><i class="fas fa-envelope"></i>${escapeHtml(q.email || '')}</span>

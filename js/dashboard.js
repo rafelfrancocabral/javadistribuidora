@@ -143,6 +143,14 @@ function buildPaymentChart() {
     });
 }
 
+// ---------- Helpers ----------
+function getQuoteClientName(q) {
+    const email = (q.email || '').toLowerCase();
+    const nome = (q.nome_cliente || '').toLowerCase();
+    const client = clients.find(c => (c.email && c.email.toLowerCase() === email) || (c.razao_social && c.razao_social.toLowerCase() === nome));
+    return client?.razao_social || q.nome_cliente || q.email || 'Desconhecido';
+}
+
 // ---------- Top clientes ----------
 function renderTopClients() {
     const el = document.getElementById('topClients');
@@ -628,6 +636,24 @@ document.addEventListener('DOMContentLoaded', function () {
     zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
     fileInput.addEventListener('change', (e) => { handleFiles(e.target.files); fileInput.value = ''; });
     function handleFiles(files) { const imgs = Array.from(files).filter(f => f.type.startsWith('image/')); if (!imgs.length) { toast('Selecione imagens', true); return; } if ((pendingUploads.length + imgs.length) > 5) { toast('Máximo de 5 imagens', true); return; } pendingUploads.push(...imgs); imgs.forEach(f => { const url = URL.createObjectURL(f); const wrap = document.getElementById('imgPreviews'); wrap.innerHTML += `<div class="img-preview"><img src="${url}" alt=""><span class="img-pending" style="position:absolute;bottom:0;left:0;right:0;font-size:0.55rem;background:rgba(0,0,0,0.6);text-align:center">a enviar</span></div>`; }); }
+    // ===== Auto logout após 5 min inatividade =====
+    let inactivityTimer;
+    const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 min
+
+    function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+            localStorage.removeItem(AUTH_KEY);
+            window.location.href = 'login.html';
+        }, INACTIVITY_LIMIT);
+    }
+
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+        document.addEventListener(evt, resetInactivityTimer, { passive: true });
+    });
+    resetInactivityTimer(); // inicia timer
+    // ============================================
+
     init();
 });
 

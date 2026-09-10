@@ -637,4 +637,9 @@ document.addEventListener('DOMContentLoaded', function () {
     init();
 });
 
-async function init() { try { await Promise.all([loadProducts(), loadCategories(), loadQuotes(), loadClients()]); } catch (e) { console.error(e); } renderOverview(); updatePendingBadge(); switchView('dashboard'); }
+async function init() { 
+    if (!localStorage.getItem(AUTH_KEY)) { 
+        window.location.href = 'login.html'; 
+        return; 
+    }
+    try { await Promise.all([loadProducts(), loadCategories(), loadQuotes(), loadClients()]); } catch (e) { console.error(e); } renderOverview(); updatePendingBadge(); switchView('dashboard'); }

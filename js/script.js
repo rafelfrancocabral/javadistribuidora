@@ -606,27 +606,18 @@ async function submitQuote(e) {
 
     let itemsMsg = '';
     cart.forEach((item, i) => {
-        const subtotal = item.preco * item.qty;
-        const codeStr = item.codigo ? `(${item.codigo})` : '';
-        itemsMsg += `  ${i + 1}. ${item.nome} ${codeStr}\n      ${item.qty}x ${formatPrice(item.preco)} .......... ${formatPrice(subtotal)}\n`;
+        const code = item.codigo ? `${item.codigo} - ` : '';
+        itemsMsg += `${code}${item.nome} - ${item.qty}x - ${formatPrice(item.preco)}\n`;
     });
 
     const msg =
         `*Orçamento - Java Distribuidora*\n` +
         `........................................................\n\n` +
-        `  *Código de retirada: ${pickupCode}*\n` +
-        `  _Confirme este código na retirada._\n\n` +
-        `........................................................\n\n` +
-        `  *Cliente (email):* _${email}_\n` +
-        `  *Código:* _${code}_\n` +
-        `  *Data:* _${dateStr} | ${timeStr}_\n\n` +
-        `........................................................\n\n` +
-        `  *Itens*\n\n` +
+        `*Itens*\n` +
         itemsMsg + `\n` +
         `........................................................\n\n` +
-        `  *Total: ${formatPrice(total)}*\n\n` +
-        `........................................................\n\n` +
-        `  *Prazo de pagamento:* _${pagamento}_\n\n` +
+        `*Total: ${formatPrice(total)}*\n\n` +
+        `*Prazo de pagamento:* ${pagamento}\n` +
         `........................................................\n\n` +
         `_Por favor confirmar disponibilidade._`;
 

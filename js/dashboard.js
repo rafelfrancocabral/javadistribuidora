@@ -106,13 +106,115 @@ function buildQuoteChart(period) {
     }
     if (chartQuotesInstance) { chartQuotesInstance.destroy(); chartQuotesInstance = null; }
     if (!el) return;
+
+    const gradientReceived = el.getContext('2d').createLinearGradient(0, 0, 0, 300);
+    gradientReceived.addColorStop(0, 'rgba(88,28,135,0.9)');
+    gradientReceived.addColorStop(1, 'rgba(88,28,135,0.3)');
+
+    const gradientApproved = el.getContext('2d').createLinearGradient(0, 0, 0, 300);
+    gradientApproved.addColorStop(0, 'rgba(46,213,115,0.9)');
+    gradientApproved.addColorStop(1, 'rgba(46,213,115,0.3)');
+
     chartQuotesInstance = new Chart(el, {
         type: 'bar',
-        data: { labels, datasets: [
-            { label: 'Recebidos', data: dataReceived, backgroundColor: 'rgba(88,28,135,0.7)', borderRadius: 4 },
-            { label: 'Aprovados', data: dataApproved, backgroundColor: 'rgba(46,213,115,0.7)', borderRadius: 4 }
-        ]},
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { family: 'Chakra Petch', weight: '600', size: 11 } } } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Chakra Petch' } } }, x: { ticks: { font: { family: 'Chakra Petch', size: 10 } } } } }
+        data: { 
+            labels, 
+            datasets: [
+                { 
+                    label: 'Orçamentos Recebidos', 
+                    data: dataReceived, 
+                    backgroundColor: gradientReceived,
+                    borderColor: '#581c87',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 40
+                },
+                { 
+                    label: 'Orçamentos Aprovados', 
+                    data: dataApproved, 
+                    backgroundColor: gradientApproved,
+                    borderColor: '#2ed573',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 40
+                }
+            ]},
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            animation: { duration: 800, easing: 'easeOutQuart' },
+            layout: { padding: { top: 10, right: 20, bottom: 10, left: 10 } },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        font: { family: 'Inter', weight: '500', size: 12 },
+                        color: '#5b5466',
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'rounded'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(20,20,26,0.95)',
+                    titleFont: { family: 'Chakra Petch', size: 13, weight: '600' },
+                    bodyFont: { family: 'Inter', size: 12 },
+                    padding: 14,
+                    cornerRadius: 10,
+                    displayColors: true,
+                    borderColor: 'rgba(168,85,247,0.3)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y} orçamentos`
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Orçamentos por Período',
+                    font: { family: 'Chakra Petch', size: 16, weight: '700' },
+                    color: '#14121c',
+                    padding: { bottom: 20 }
+                },
+                subtitle: {
+                    display: true,
+                    text: period === 'today' ? 'Hoje (8h às 20h)' : period === 'month' ? 'Últimos 30 dias' : `Últimos ${period} dias`,
+                    font: { family: 'Inter', size: 11 },
+                    color: '#9a93a8',
+                    padding: { bottom: 10 }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false, drawBorder: false },
+                    ticks: { 
+                        font: { family: 'Inter', size: 11, weight: '500' },
+                        color: '#9a93a8',
+                        padding: 10
+                    },
+                    border: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { 
+                        color: 'rgba(168,85,247,0.1)',
+                        drawBorder: false,
+                        drawTicks: false
+                    },
+                    ticks: { 
+                        stepSize: 1,
+                        font: { family: 'Inter', size: 11 },
+                        color: '#9a93a8',
+                        padding: 10,
+                        callback: (value) => value
+                    },
+                    border: { display: false }
+                }
+            }
+        }
     });
 }
 
@@ -135,11 +237,101 @@ function buildPaymentChart() {
     if (empty) empty.style.display = labels.length ? 'none' : '';
     if (chartPaymentsInstance) { chartPaymentsInstance.destroy(); chartPaymentsInstance = null; }
     if (!el || !labels.length) return;
-    const colors = ['#581c87', '#a855f7', '#00e5ff', '#ff2fe6', '#4f6bff', '#00ffa3', '#ff8a5c', '#e2363c', '#2ed573', '#ffa502'];
+
+    const colors = [
+        '#581c87', '#a855f7', '#00e5ff', '#ff2fe6', '#4f6bff', 
+        '#00ffa3', '#ff8a5c', '#e2363c', '#2ed573', '#ffa502'
+    ];
+    const total = data.reduce((a, b) => a + b, 0);
+
     chartPaymentsInstance = new Chart(el, {
         type: 'doughnut',
-        data: { labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length), borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Chakra Petch', size: 11 }, padding: 10 } }, tooltip: { callbacks: { label: (ctx) => ' ' + (ctx.label || '') + ': ' + ctx.parsed + ' unid.' } } } }
+        data: { 
+            labels, 
+            datasets: [{ 
+                data, 
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 0,
+                hoverOffset: 8,
+                borderWidth: 3,
+                borderColor: '#fff'
+            }] 
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            animation: { 
+                animateRotate: true, 
+                animateScale: true,
+                duration: 1000,
+                easing: 'easeOutQuart'
+            },
+            layout: { padding: 20 },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    align: 'center',
+                    labels: {
+                        font: { family: 'Inter', size: 11, weight: '500' },
+                        color: '#5b5466',
+                        padding: 16,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        generateLabels: (chart) => {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    const value = data.datasets[0].data[i];
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return {
+                                        text: `${label} (${percentage}%)`,
+                                        fillStyle: chart.data.datasets[0].backgroundColor[i],
+                                        strokeStyle: '#fff',
+                                        lineWidth: 2,
+                                        pointStyle: 'circle',
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(20,20,26,0.95)',
+                    titleFont: { family: 'Chakra Petch', size: 13, weight: '600' },
+                    bodyFont: { family: 'Inter', size: 12 },
+                    padding: 14,
+                    cornerRadius: 10,
+                    displayColors: true,
+                    borderColor: 'rgba(168,85,247,0.3)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: (ctx) => {
+                            const value = ctx.parsed;
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return ` ${ctx.label}: ${value} unid. (${percentage}%)`;
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Vendas por Categoria',
+                    font: { family: 'Chakra Petch', size: 16, weight: '700' },
+                    color: '#14121c',
+                    padding: { bottom: 20 }
+                },
+                subtitle: {
+                    display: true,
+                    text: `Total de ${total} unidades vendidas (status: Concluído)`,
+                    font: { family: 'Inter', size: 11 },
+                    color: '#9a93a8',
+                    padding: { bottom: 10 }
+                }
+            }
+        }
     });
 }
 

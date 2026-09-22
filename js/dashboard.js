@@ -810,7 +810,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function handleFiles(files) { const imgs = Array.from(files).filter(f => f.type.startsWith('image/')); if (!imgs.length) { toast('Selecione imagens', true); return; } if ((pendingUploads.length + imgs.length) > 5) { toast('Máximo de 5 imagens', true); return; } pendingUploads.push(...imgs); imgs.forEach(f => { const url = URL.createObjectURL(f); const wrap = document.getElementById('imgPreviews'); wrap.innerHTML += `<div class="img-preview"><img src="${url}" alt=""><span class="img-pending" style="position:absolute;bottom:0;left:0;right:0;font-size:0.55rem;background:rgba(0,0,0,0.6);text-align:center">a enviar</span></div>`; }); }
     // ===== Auto logout após 5 min inatividade =====
     let inactivityTimer;
-    const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 min
+    const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 min
 
     function resetInactivityTimer() {
         clearTimeout(inactivityTimer);

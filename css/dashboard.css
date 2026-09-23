@@ -69,7 +69,9 @@ input, select, textarea { font-family: inherit; }
     padding: 0 28px; position: sticky; top: 0; z-index: 50;
 }
 .dash-title-group { display: flex; align-items: center; gap: 16px; }
-.group-tabs { display: flex; gap: 10px; }
+.filter-tabs { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.group-tabs { display: flex; gap: 8px; }
+.chart-period-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .group-tab {
     position: relative;
     display: inline-flex; align-items: center; gap: 10px;

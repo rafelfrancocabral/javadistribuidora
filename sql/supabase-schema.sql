@@ -78,9 +78,14 @@ CREATE TABLE IF NOT EXISTS public.orcamentos (
 -- Compat com tabelas existentes
 ALTER TABLE public.orcamentos ADD COLUMN IF NOT EXISTS pagamento TEXT DEFAULT '';
 
+-- Migracao: linha do orcamento (Java/Dymar)
+-- Todo orcamento sem linha recebe 'java' automaticamente
+ALTER TABLE public.orcamentos ADD COLUMN IF NOT EXISTS linha TEXT NOT NULL DEFAULT 'java' CHECK (linha IN ('java', 'dymar'));
+
 CREATE INDEX IF NOT EXISTS idx_orcamentos_created ON public.orcamentos (created_at);
 CREATE INDEX IF NOT EXISTS idx_orcamentos_status ON public.orcamentos (status);
 CREATE INDEX IF NOT EXISTS idx_orcamentos_telefone ON public.orcamentos (telefone);
+CREATE INDEX IF NOT EXISTS idx_orcamentos_linha ON public.orcamentos (linha);
 
 -- ------------------------------------------------------------
 -- Clientes cadastrados pelo dono da loja

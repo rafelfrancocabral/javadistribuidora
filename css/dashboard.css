@@ -338,6 +338,28 @@ input, select, textarea { font-family: inherit; }
 .form-field input, .form-field select, .form-field textarea { width: 100%; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 10px 12px; font-size: 0.85rem; transition: border-color 0.2s; }
 .form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: none; border-color: var(--accent-color); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mq-line-field { margin-bottom: 10px; }
+.mq-line-tabs { display: flex; gap: 6px; }
+.mq-line-tab {
+    padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--border);
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 0.78rem;
+    color: var(--text-muted); background: #fff; cursor: pointer; transition: all .18s; white-space: nowrap;
+}
+.mq-line-tab:hover { border-color: var(--neon-purple); color: var(--neon-purple); transform: translateY(-1px); }
+.mq-line-tab[data-mqline="java"].active {
+    background: linear-gradient(135deg, #6d28d9 0%, #581c87 50%, #3b0764 100%);
+    color: #fff; border-color: #581c87;
+    box-shadow: 0 0 0 3px rgba(88,28,135,0.25), 0 6px 18px rgba(88,28,135,0.5);
+    transform: translateY(-1px);
+}
+.mq-line-tab[data-mqline="dymar"].active {
+    background: linear-gradient(135deg, #ff2fe6 0%, #a855f7 50%, #7c3aed 100%);
+    color: #fff; border-color: #ff2fe6;
+    box-shadow: 0 0 0 3px rgba(255,47,230,0.25), 0 6px 18px rgba(255,47,230,0.5);
+    transform: translateY(-1px);
+}
+.mq-line-hint { display: block; color: var(--text-muted); font-size: 0.72rem; margin-top: 6px; }
 .quote-items-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
 .quote-items-head span { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
 .quote-items-empty { font-size: 0.8rem; color: var(--text-muted); padding: 10px; border: 1px dashed var(--border); border-radius: 8px; text-align: center; margin-bottom: 10px; }

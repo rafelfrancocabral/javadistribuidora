@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=8">
+    <link rel="stylesheet" href="css/dashboard.css?v=9">
 </head>
 <body>
     <script>
@@ -243,6 +243,14 @@
                     <div class="form-field"><label>Cliente *</label><input type="text" id="mqName" list="mqClientList" autocomplete="off" required placeholder="Nome do cliente..."><datalist id="mqClientList"></datalist></div>
                     <div class="form-field"><label>Telefone</label><input type="text" id="mqPhone" placeholder="(00) 00000-0000"></div>
                 </div>
+                <div class="form-field mq-line-field">
+                    <label>Linha (produtos deste orçamento)</label>
+                    <div class="mq-line-tabs" id="mqLineTabs">
+                        <button type="button" class="mq-line-tab active" data-mqline="java"><i class="fas fa-cube"></i> Java</button>
+                        <button type="button" class="mq-line-tab" data-mqline="dymar"><i class="fas fa-gem"></i> Dymar</button>
+                    </div>
+                    <small class="mq-line-hint">Após selecionar a linha, apenas produtos dela poderão ser adicionados.</small>
+                </div>
                 <div class="quote-items-head"><span>Itens do Orçamento</span><button type="button" class="btn btn-ghost btn-sm" id="mqAddItem"><i class="fas fa-plus"></i> Adicionar Produto</button></div>
                 <div id="mqItems" class="quote-items"></div>
                 <div class="quote-items-empty" id="mqItemsEmpty">Nenhum item. Clique em "Adicionar Produto".</div>
@@ -306,6 +314,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=1"></script>
-    <script src="js/dashboard.js?v=12"></script>
+    <script src="js/dashboard.js?v=13"></script>
 </body>
 </html>

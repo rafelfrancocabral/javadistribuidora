@@ -638,7 +638,8 @@ async function submitQuote(e) {
             total: total,
             pagamento: pagamento,
             status: 'recebido',
-            status_entrega: 'pendente'
+            status_entrega: 'pendente',
+            linha: 'java'
         });
     } catch (err) {
         console.error('Erro ao salvar orçamento:', err);

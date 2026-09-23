@@ -65,9 +65,10 @@ input, select, textarea { font-family: inherit; }
 .dash-main { flex: 1; margin-left: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
 .dash-header {
     height: 64px; background: rgba(255,255,255,.86); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px;
+    border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;
     padding: 0 28px; position: sticky; top: 0; z-index: 50;
 }
+.dash-header-actions { display: flex; align-items: center; gap: 16px; }
 .dash-title-group { display: flex; align-items: center; gap: 16px; }
 .filter-tabs { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .group-tabs { display: flex; gap: 8px; }

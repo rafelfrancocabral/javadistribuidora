@@ -64,6 +64,28 @@ function switchView(view) {
 window.setCurrentGroup = setCurrentGroup;
 
 // ---------- Charts ----------
+const centerDoughnutText = {
+    id: 'centerDoughnutText',
+    afterDraw(chart) {
+        if (chart.config.type !== 'doughnut') return;
+        const { ctx, chartArea } = chart;
+        const cx = (chartArea.left + chartArea.right) / 2;
+        const cy = (chartArea.top + chartArea.bottom) / 2;
+        const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = "700 22px 'Chakra Petch', sans-serif";
+        ctx.fillStyle = '#14121c';
+        ctx.fillText(String(total), cx, cy - 10);
+        ctx.font = "500 10px 'Inter', sans-serif";
+        ctx.fillStyle = '#9a93a8';
+        ctx.fillText('unidades vendidas', cx, cy + 12);
+        ctx.restore();
+    }
+};
+Chart.register(centerDoughnutText);
+
 function getQuotesInPeriod(period, group = currentChartGroup) {
     const now = new Date();
     let since;
@@ -120,13 +142,15 @@ function buildQuoteChart(period) {
     if (chartQuotesInstance) { chartQuotesInstance.destroy(); chartQuotesInstance = null; }
     if (!el) return;
 
-    const gradientReceived = el.getContext('2d').createLinearGradient(0, 0, 0, 300);
-    gradientReceived.addColorStop(0, 'rgba(88,28,135,0.9)');
-    gradientReceived.addColorStop(1, 'rgba(88,28,135,0.3)');
+    const gradientReceived = el.getContext('2d').createLinearGradient(0, 0, 0, 320);
+    gradientReceived.addColorStop(0, 'rgba(168,85,247,0.95)');
+    gradientReceived.addColorStop(0.5, 'rgba(139,92,246,0.75)');
+    gradientReceived.addColorStop(1, 'rgba(88,28,135,0.20)');
 
-    const gradientApproved = el.getContext('2d').createLinearGradient(0, 0, 0, 300);
-    gradientApproved.addColorStop(0, 'rgba(46,213,115,0.9)');
-    gradientApproved.addColorStop(1, 'rgba(46,213,115,0.3)');
+    const gradientApproved = el.getContext('2d').createLinearGradient(0, 0, 0, 320);
+    gradientApproved.addColorStop(0, 'rgba(0,255,163,0.95)');
+    gradientApproved.addColorStop(0.5, 'rgba(0,229,255,0.60)');
+    gradientApproved.addColorStop(1, 'rgba(46,213,115,0.15)');
 
     chartQuotesInstance = new Chart(el, {
         type: 'bar',
@@ -137,92 +161,90 @@ function buildQuoteChart(period) {
                     label: 'Orçamentos Recebidos', 
                     data: dataReceived, 
                     backgroundColor: gradientReceived,
-                    borderColor: '#581c87',
-                    borderWidth: 1,
-                    borderRadius: 6,
+                    borderColor: '#a855f7',
+                    borderWidth: 1.5,
+                    borderRadius: 8,
                     borderSkipped: false,
-                    maxBarThickness: 40
+                    maxBarThickness: 34,
+                    hoverBackgroundColor: 'rgba(168,85,247,1)',
+                    hoverBorderColor: '#00e5ff',
+                    hoverBorderWidth: 2
                 },
                 { 
                     label: 'Orçamentos Aprovados', 
                     data: dataApproved, 
                     backgroundColor: gradientApproved,
-                    borderColor: '#2ed573',
-                    borderWidth: 1,
-                    borderRadius: 6,
+                    borderColor: '#00ffa3',
+                    borderWidth: 1.5,
+                    borderRadius: 8,
                     borderSkipped: false,
-                    maxBarThickness: 40
+                    maxBarThickness: 34,
+                    hoverBackgroundColor: 'rgba(0,255,163,1)',
+                    hoverBorderColor: '#4f6bff',
+                    hoverBorderWidth: 2
                 }
             ]},
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            devicePixelRatio: 2,
             interaction: { intersect: false, mode: 'index' },
-            animation: { duration: 800, easing: 'easeOutQuart' },
-            layout: { padding: { top: 10, right: 20, bottom: 10, left: 10 } },
+            animation: { duration: 900, easing: 'easeOutQuart' },
+            layout: { padding: { top: 18, right: 16, bottom: 8, left: 8 } },
             plugins: {
                 legend: {
                     position: 'top',
                     align: 'end',
                     labels: {
-                        font: { family: 'Inter', weight: '500', size: 12 },
-                        color: '#5b5466',
+                        font: { family: 'Chakra Petch', weight: '600', size: 12 },
+                        color: '#4b4453',
                         padding: 20,
                         usePointStyle: true,
-                        pointStyle: 'rounded'
+                        pointStyle: 'rectRounded',
+                        boxWidth: 10,
+                        boxHeight: 10
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(20,20,26,0.95)',
-                    titleFont: { family: 'Chakra Petch', size: 13, weight: '600' },
-                    bodyFont: { family: 'Inter', size: 12 },
+                    backgroundColor: 'rgba(11,6,20,0.96)',
+                    titleFont: { family: 'Chakra Petch', size: 13, weight: '700' },
+                    titleColor: '#fff',
+                    bodyFont: { family: 'Chakra Petch', size: 12, weight: '500' },
+                    bodyColor: '#e9e4f5',
                     padding: 14,
-                    cornerRadius: 10,
+                    cornerRadius: 12,
                     displayColors: true,
-                    borderColor: 'rgba(168,85,247,0.3)',
-                    borderWidth: 1,
+                    boxPadding: 6,
+                    borderColor: 'rgba(0,229,255,0.4)',
+                    borderWidth: 1.5,
                     callbacks: {
                         label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y} orçamentos`
                     }
-                },
-                title: {
-                    display: true,
-                    text: 'Orçamentos por Período',
-                    font: { family: 'Chakra Petch', size: 16, weight: '700' },
-                    color: '#14121c',
-                    padding: { bottom: 20 }
-                },
-                subtitle: {
-                    display: true,
-                    text: period === 'today' ? 'Hoje (8h às 20h)' : period === 'month' ? 'Últimos 30 dias' : `Últimos ${period} dias`,
-                    font: { family: 'Inter', size: 11 },
-                    color: '#9a93a8',
-                    padding: { bottom: 10 }
                 }
             },
             scales: {
                 x: {
                     grid: { display: false, drawBorder: false },
-                    ticks: { 
-                        font: { family: 'Inter', size: 11, weight: '500' },
-                        color: '#9a93a8',
+                    ticks: {
+                        font: { family: 'Chakra Petch', size: 11, weight: '600' },
+                        color: '#6b6477',
                         padding: 10
                     },
                     border: { display: false }
                 },
                 y: {
                     beginAtZero: true,
-                    grid: { 
-                        color: 'rgba(168,85,247,0.1)',
+                    precision: 0,
+                    grid: {
+                        color: 'rgba(168,85,247,0.10)',
                         drawBorder: false,
                         drawTicks: false
                     },
-                    ticks: { 
-                        stepSize: 1,
-                        font: { family: 'Inter', size: 11 },
-                        color: '#9a93a8',
+                    ticks: {
+                        font: { family: 'Chakra Petch', size: 11 },
+                        color: '#6b6477',
                         padding: 10,
-                        callback: (value) => value
+                        callback: (value) => Number.isInteger(value) ? value : null
                     },
                     border: { display: false }
                 }
@@ -251,10 +273,7 @@ function buildPaymentChart() {
     if (chartPaymentsInstance) { chartPaymentsInstance.destroy(); chartPaymentsInstance = null; }
     if (!el || !labels.length) return;
 
-    const colors = [
-        '#581c87', '#a855f7', '#00e5ff', '#ff2fe6', '#4f6bff', 
-        '#00ffa3', '#ff8a5c', '#e2363c', '#2ed573', '#ffa502'
-    ];
+    const colors = ['#a855f7', '#00e5ff', '#ff2fe6', '#00ffa3', '#4f6bff', '#ffa502', '#ff5c8a', '#22d3ee', '#a3e635', '#f43f5e'];
     const total = data.reduce((a, b) => a + b, 0);
 
     chartPaymentsInstance = new Chart(el, {
@@ -264,16 +283,18 @@ function buildPaymentChart() {
             datasets: [{ 
                 data, 
                 backgroundColor: colors.slice(0, labels.length),
-                borderWidth: 0,
-                hoverOffset: 8,
                 borderWidth: 3,
-                borderColor: '#fff'
+                borderColor: '#fff',
+                hoverOffset: 12,
+                hoverBorderColor: '#fff',
+                hoverBorderWidth: 3
             }] 
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '65%',
+            devicePixelRatio: 2,
+            cutout: '70%',
             animation: { 
                 animateRotate: true, 
                 animateScale: true,
@@ -286,11 +307,13 @@ function buildPaymentChart() {
                     position: 'right',
                     align: 'center',
                     labels: {
-                        font: { family: 'Inter', size: 11, weight: '500' },
-                        color: '#5b5466',
+                        font: { family: 'Chakra Petch', size: 11, weight: '600' },
+                        color: '#4b4453',
                         padding: 16,
                         usePointStyle: true,
                         pointStyle: 'circle',
+                        boxWidth: 9,
+                        boxHeight: 9,
                         generateLabels: (chart) => {
                             const data = chart.data;
                             if (data.labels.length && data.datasets.length) {
@@ -298,10 +321,10 @@ function buildPaymentChart() {
                                     const value = data.datasets[0].data[i];
                                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                     return {
-                                        text: `${label} (${percentage}%)`,
+                                        text: `${label} — ${percentage}%`,
                                         fillStyle: chart.data.datasets[0].backgroundColor[i],
-                                        strokeStyle: '#fff',
-                                        lineWidth: 2,
+                                        strokeStyle: 'transparent',
+                                        lineWidth: 0,
                                         pointStyle: 'circle',
                                         hidden: false,
                                         index: i
@@ -313,14 +336,17 @@ function buildPaymentChart() {
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(20,20,26,0.95)',
-                    titleFont: { family: 'Chakra Petch', size: 13, weight: '600' },
-                    bodyFont: { family: 'Inter', size: 12 },
+                    backgroundColor: 'rgba(11,6,20,0.96)',
+                    titleFont: { family: 'Chakra Petch', size: 13, weight: '700' },
+                    titleColor: '#fff',
+                    bodyFont: { family: 'Chakra Petch', size: 12, weight: '500' },
+                    bodyColor: '#e9e4f5',
                     padding: 14,
-                    cornerRadius: 10,
+                    cornerRadius: 12,
                     displayColors: true,
-                    borderColor: 'rgba(168,85,247,0.3)',
-                    borderWidth: 1,
+                    boxPadding: 6,
+                    borderColor: 'rgba(255,47,230,0.4)',
+                    borderWidth: 1.5,
                     callbacks: {
                         label: (ctx) => {
                             const value = ctx.parsed;
@@ -328,20 +354,6 @@ function buildPaymentChart() {
                             return ` ${ctx.label}: ${value} unid. (${percentage}%)`;
                         }
                     }
-                },
-                title: {
-                    display: true,
-                    text: 'Vendas por Categoria',
-                    font: { family: 'Chakra Petch', size: 16, weight: '700' },
-                    color: '#14121c',
-                    padding: { bottom: 20 }
-                },
-                subtitle: {
-                    display: true,
-                    text: `Total de ${total} unidades vendidas (status: Concluído)`,
-                    font: { family: 'Inter', size: 11 },
-                    color: '#9a93a8',
-                    padding: { bottom: 10 }
                 }
             }
         }

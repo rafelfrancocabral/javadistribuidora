@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=7">
+    <link rel="stylesheet" href="css/dashboard.css?v=8">
 </head>
 <body>
     <script>
@@ -70,12 +70,12 @@
 
                 <div class="dash-charts-grid">
                     <div class="dash-chart-panel">
-                        <h3><i class="fas fa-chart-bar"></i> Pedidos por período</h3>
+                        <h3 id="chartQuotesTitle"><i class="fas fa-chart-bar"></i> Pedidos por período</h3>
                         <canvas id="chartQuotes" width="500" height="260"></canvas>
                         <p class="chart-empty-msg" id="chartQuotesEmpty" style="display:none;">Nenhum orçamento neste período.</p>
                     </div>
                     <div class="dash-chart-panel">
-                        <h3><i class="fas fa-chart-pie"></i> Vendas por categoria</h3>
+                        <h3 id="chartPaymentsTitle"><i class="fas fa-chart-pie"></i> Vendas por categoria</h3>
                         <canvas id="chartPayments" width="500" height="260"></canvas>
                         <p class="chart-empty-msg" id="chartPaymentsEmpty" style="display:none;">Nenhuma venda concluída.</p>
                     </div>
@@ -306,6 +306,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=1"></script>
-    <script src="js/dashboard.js?v=11"></script>
+    <script src="js/dashboard.js?v=12"></script>
 </body>
 </html>

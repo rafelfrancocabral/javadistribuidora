@@ -483,7 +483,18 @@ function lowSellerTip(p, qty) {
 }
 
 // ---------- Overview ----------
+const GROUP_LABELS = { java: 'Java', dymar: 'Dymar' };
+
+function updateChartTitles() {
+    const g = GROUP_LABELS[currentChartGroup] || 'Java';
+    const qTitle = document.getElementById('chartQuotesTitle');
+    const pTitle = document.getElementById('chartPaymentsTitle');
+    if (qTitle) qTitle.innerHTML = '<i class="fas fa-chart-bar"></i> Pedidos por período (' + g + ')';
+    if (pTitle) pTitle.innerHTML = '<i class="fas fa-chart-pie"></i> Vendas por categoria (' + g + ')';
+}
+
 async function renderOverview() {
+    updateChartTitles();
     const groupQuotes = quotes.filter(q => q.linha === currentChartGroup);
     document.getElementById('metricQuotes').textContent = groupQuotes.length;
     document.getElementById('metricSales').textContent = groupQuotes.filter(q => q.status === 'concluido').length;

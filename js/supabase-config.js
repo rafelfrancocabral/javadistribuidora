@@ -12,4 +12,5 @@ const SUPABASE_CATEGORIES_TABLE = 'categorias';
 const SUPABASE_SUBCATEGORIES_TABLE = 'subcategorias';
 const SUPABASE_QUOTES_TABLE = 'orcamentos';
 const SUPABASE_CLIENTS_TABLE = 'clientes';
+const SUPABASE_VISITS_TABLE = 'visitas';
 const SUPABASE_STORAGE_BUCKET = 'produtos';

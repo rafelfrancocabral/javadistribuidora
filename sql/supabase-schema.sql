@@ -148,3 +148,42 @@ DO $$ BEGIN
         CREATE POLICY clientes_all ON public.clientes FOR ALL USING (true) WITH CHECK (true);
     END IF;
 END $$;
+
+-- ------------------------------------------------------------
+-- Visitas (Agenda + Rotas)
+-- data no formato 'YYYY-MM-DD', hora 'HH:MM'
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.visitas (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    razao_social TEXT NOT NULL DEFAULT '',
+    email TEXT DEFAULT '',
+    telefone TEXT DEFAULT '',
+    data TEXT NOT NULL DEFAULT '',
+    hora TEXT DEFAULT '',
+    rota TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'agendada' CHECK (status IN ('agendada', 'realizada', 'cancelada')),
+    observacoes TEXT DEFAULT '',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Compat com tabelas existentes
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS razao_social TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS telefone TEXT DEFAULT '';
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS data TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS hora TEXT DEFAULT '';
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS rota TEXT DEFAULT '';
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'agendada';
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS observacoes TEXT DEFAULT '';
+
+CREATE INDEX IF NOT EXISTS idx_visitas_data ON public.visitas (data);
+CREATE INDEX IF NOT EXISTS idx_visitas_rota ON public.visitas (rota);
+CREATE INDEX IF NOT EXISTS idx_visitas_status ON public.visitas (status);
+
+ALTER TABLE public.visitas ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='visitas' AND policyname='visitas_all') THEN
+        CREATE POLICY visitas_all ON public.visitas FOR ALL USING (true) WITH CHECK (true);
+    END IF;
+END $$;

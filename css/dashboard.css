@@ -596,3 +596,51 @@ input, select, textarea { font-family: inherit; }
     .icon-btn:active { transform: scale(0.95); }
     .btn:active { transform: scale(0.98); }
 }
+
+/* ===== Agenda de Visitas (calendário + rotas) ===== */
+.visit-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 1024px) { .visit-layout { grid-template-columns: 1fr; } }
+
+.visit-filter { max-width: 220px; padding: 10px 12px; font-size: 0.85rem; }
+
+.visit-cal-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.visit-cal-nav strong { flex: 1; text-align: center; text-transform: capitalize; font-size: 0.95rem; }
+
+.visit-cal { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+.visit-cal-head { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+.visit-cal-head span { text-align: center; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+.visit-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.vc-blank { min-height: 56px; }
+.vc-day {
+    position: relative; min-height: 56px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--bg-primary); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; padding: 4px 2px;
+    transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.vc-day:hover { border-color: var(--neon-purple); box-shadow: 0 4px 14px rgba(168,85,247,.18); transform: translateY(-1px); }
+.vc-day.today { border-color: var(--neon-purple); box-shadow: 0 0 0 1px var(--neon-purple) inset; }
+.vc-day.selected { background: var(--bg-secondary); border-color: var(--neon-cyan); box-shadow: 0 0 0 2px var(--neon-cyan) inset; }
+.vc-num { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+.vc-day.today .vc-num { color: var(--neon-purple); }
+.vc-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; margin-top: 4px; min-height: 10px; max-width: 100%; }
+.vc-dot { width: 7px; height: 7px; border-radius: 50%; }
+.vc-more { font-size: 0.58rem; font-weight: 700; color: var(--text-muted); }
+
+.visit-item { cursor: default; }
+.visit-item:hover { transform: none; }
+.visit-status { font-size: 0.66rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; vertical-align: 2px; }
+.visit-status-agendada { background: rgba(46, 213, 115, .15); color: #1fb35f; }
+.visit-status-realizada { background: rgba(168, 85, 247, .14); color: var(--neon-purple); }
+.visit-status-cancelada { background: rgba(255, 71, 87, .14); color: var(--danger); }
+.visit-obs { margin-top: 6px; font-size: 0.8rem; color: var(--text-secondary); display: flex; gap: 6px; align-items: flex-start; }
+.visit-obs i { color: var(--warning); margin-top: 2px; }
+
+.route-block { border: 1px solid var(--border); border-left: 4px solid var(--neon-purple); border-radius: 10px; margin-bottom: 14px; background: var(--bg-secondary); overflow: hidden; }
+.route-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-primary); border-bottom: 1px solid var(--border); }
+.route-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.route-head strong { font-size: 0.9rem; }
+.route-count { margin-left: auto; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); background: var(--bg-hover); padding: 3px 10px; border-radius: 20px; }
+.route-block .client-list { padding: 6px; }
+.route-block .client-item { margin-bottom: 6px; }
+
+.form-field input[type="date"], .form-field input[type="time"] { padding: 12px 12px; color-scheme: light; }

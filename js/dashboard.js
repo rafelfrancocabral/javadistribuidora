@@ -55,7 +55,7 @@ function switchView(view) {
     if (view === 'produtos') renderProducts();
     if (view === 'categorias') renderCategories();
     if (view === 'clientes') renderClients();
-    if (view === 'agendar') { renderVisits(); renderVisitFrequencia(); }
+    if (view === 'agendar') { renderAgenda(); renderVisitLeads(); renderVisitFrequencia(); }
     if (view === 'dashboard') renderOverview();
     document.getElementById('dashSidebar').classList.remove('open');
 }
@@ -717,8 +717,8 @@ async function saveClient(e) { e.preventDefault(); try { const id = document.get
 
 async function deleteClient(id) { const c = clients.find(x => String(x.id) === String(id)); if (!c) return; if (!confirm('Excluir o cliente "' + c.razao_social + '"?')) return; const { error } = await db.from(SUPABASE_CLIENTS_TABLE).delete().eq('id', id); if (error) { toast('Erro: ' + error.message, true); return; } await loadClients(); renderClients(); toast('Cliente excluído'); }
 
-function renderVisits() {
-    const el = document.getElementById('visitList');
+function renderVisitLeads() {
+    const el = document.getElementById('visitLeadList');
     const info = document.getElementById('visitCountInfo');
     if (!el || !clients.length) { if (el) el.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-check"></i><p>Nenhum cliente cadastrado</p></div>'; return; }
     const cutoff = Date.now() - 45 * 86400000;
@@ -823,6 +823,194 @@ function closeQuoteModal() { document.getElementById('quoteModal').classList.rem
 
 async function saveManualQuote(e) { e.preventDefault(); const editId = document.getElementById('mqEditId').value; const isEdit = !!editId; const nome = document.getElementById('mqName').value.trim(); const tel = document.getElementById('mqPhone').value.trim().replace(/\D/g, ''); const pagamento = document.getElementById('mqPayment').value; const obs = document.getElementById('mqObs').value.trim(); const itens = collectQuoteItems(); const total = itens.reduce((s, i) => s + i.subtotal, 0); if (!nome) { toast('Preencha o nome do cliente', true); return; } if (!itens.length) { toast('Adicione ao menos um produto', true); return; } const mixed = itens.filter(i => i.codigo).map(i => products.find(p => p && p.codigo && String(p.codigo) === String(i.codigo))).filter(p => p && p.linha !== mqLine); if (mixed.length) { toast('Produtos não pertencem à linha selecionada (' + (mqLine === 'dymar' ? 'Dymar' : 'Java') + ')', true); return; } let email = ''; const foundClient = clients.find(c => c && c.razao_social && c.razao_social.toLowerCase() === nome.toLowerCase()); if (foundClient) email = foundClient.email || ''; if (obs) itens.push({ nome: 'Observações: ' + obs, quantidade: 1, subtotal: 0 }); const payload = { nome_cliente: nome, telefone: tel, email, itens, total, pagamento, linha: mqLine, updated_at: new Date().toISOString() }; if (!isEdit) { payload.codigo_cliente = 'C-' + String(Math.floor(1000 + Math.random() * 9000)); payload.codigo_retirada = String(Math.floor(1000 + Math.random() * 9000)); payload.status = 'recebido'; payload.status_entrega = 'pendente'; } let error; if (isEdit) { const r = await db.from(SUPABASE_QUOTES_TABLE).update(payload).eq('id', editId); error = r.error; } else { const r = await db.from(SUPABASE_QUOTES_TABLE).insert(payload).select(); error = r.error; } if (error) { toast('Erro: ' + error.message, true); return; } closeQuoteModal(); await loadQuotes(); renderQuotes(); toast(isEdit ? 'Orçamento atualizado' : 'Orçamento criado'); }
 
+// ---------- Agenda de Visitas (calendário + rotas) ----------
+let visits = [];
+let visitCalYear = new Date().getFullYear();
+let visitCalMonth = new Date().getMonth();
+let visitSelectedDate = null;
+const VISIT_STATUS_LABEL = { agendada: 'Agendada', realizada: 'Realizada', cancelada: 'Cancelada' };
+const ROUTE_COLORS = ['#a855f7', '#00e5ff', '#ff2fe6', '#00ffa3', '#4f6bff', '#ffa502', '#ff5c8a', '#22d3ee', '#a3e635'];
+
+function routeColor(route) {
+    if (!route) return '#9a93a8';
+    let h = 0;
+    for (let i = 0; i < route.length; i++) h = (h * 31 + route.charCodeAt(i)) >>> 0;
+    return ROUTE_COLORS[h % ROUTE_COLORS.length];
+}
+function dateKey(d) { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); return y + '-' + m + '-' + day; }
+function fromKey(k) { const p = String(k).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function fmtBr(k) { const d = fromKey(k); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+
+async function loadVisits() {
+    try {
+        const { data, error } = await db.from(SUPABASE_VISITS_TABLE).select('*').order('data', { ascending: true });
+        if (error) throw error;
+        visits = data || [];
+    } catch (e) { console.error('Erro ao carregar visitas:', e); visits = []; }
+}
+
+function agendaFiltered() {
+    const f = document.getElementById('visitRouteFilter');
+    const route = f ? f.value : '';
+    return route ? visits.filter(v => (v.rota || '') === route) : visits.slice();
+}
+
+function renderAgenda() {
+    renderCalendar();
+    renderVisitList();
+    renderRouteList();
+}
+
+function renderCalendar() {
+    const el = document.getElementById('visitCalendar');
+    if (!el) return;
+    const label = document.getElementById('visitMonthLabel');
+    if (label) label.textContent = new Date(visitCalYear, visitCalMonth, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    const byDate = {};
+    agendaFiltered().forEach(v => { const k = v.data || ''; if (k) (byDate[k] = byDate[k] || []).push(v); });
+    const first = new Date(visitCalYear, visitCalMonth, 1);
+    const offset = (first.getDay() + 6) % 7;
+    const dim = new Date(visitCalYear, visitCalMonth + 1, 0).getDate();
+    const todayKey = dateKey(new Date());
+    let html = '<div class="visit-cal-head">' + ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map(w => `<span>${w}</span>`).join('') + '</div><div class="visit-cal-grid">';
+    for (let i = 0; i < offset; i++) html += '<span class="vc-blank"></span>';
+    for (let d = 1; d <= dim; d++) {
+        const k = dateKey(new Date(visitCalYear, visitCalMonth, d));
+        const dayVisits = byDate[k] || [];
+        const isToday = k === todayKey;
+        const isSel = k === visitSelectedDate;
+        html += `<div class="vc-day ${isToday ? 'today' : ''} ${isSel ? 'selected' : ''}" data-date="${k}"><span class="vc-num">${d}</span><div class="vc-dots">`;
+        dayVisits.slice(0, 3).forEach(v => { html += `<span class="vc-dot" style="background:${routeColor(v.rota)}" title="${escapeHtml(v.razao_social)}"></span>`; });
+        if (dayVisits.length > 3) html += `<span class="vc-more">+${dayVisits.length - 3}</span>`;
+        html += '</div></div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+    el.querySelectorAll('.vc-day').forEach(cell => {
+        cell.addEventListener('click', () => { visitSelectedDate = cell.dataset.date; renderCalendar(); });
+    });
+}
+
+function visitItemHtml(v, withActions) {
+    const st = v.status || 'agendada';
+    const doneBtn = withActions && st === 'agendada' ? `<button class="icon-btn" title="Marcar realizada" onclick="setVisitStatus('${v.id}','realizada')"><i class="fas fa-check"></i></button>` : '';
+    const cancelBtn = withActions && st === 'agendada' ? `<button class="icon-btn" title="Cancelar visita" onclick="setVisitStatus('${v.id}','cancelada')"><i class="fas fa-ban"></i></button>` : '';
+    const editBtn = withActions ? `<button class="icon-btn" title="Editar" onclick="openVisitModal('${v.data}','${v.id}')"><i class="fas fa-pen"></i></button>` : '';
+    const delBtn = withActions ? `<button class="icon-btn danger" title="Excluir" onclick="deleteVisit('${v.id}')"><i class="fas fa-trash"></i></button>` : '';
+    return `<div class="client-item visit-item" data-status="${st}" style="border-left:4px solid ${routeColor(v.rota)}">
+        <div class="client-info">
+            <div class="client-name">${escapeHtml(v.razao_social || '(cliente)')} <span class="visit-status visit-status-${st}">${VISIT_STATUS_LABEL[st] || st}</span></div>
+            <div class="client-meta">
+                <span><i class="far fa-calendar"></i>${fmtBr(v.data)}</span>
+                ${v.hora ? `<span><i class="far fa-clock"></i>${escapeHtml(v.hora)}</span>` : ''}
+                ${v.rota ? `<span><i class="fas fa-route"></i>${escapeHtml(v.rota)}</span>` : ''}
+                ${v.telefone ? `<span><i class="fas fa-phone"></i>${escapeHtml(v.telefone)}</span>` : ''}
+            </div>
+            ${v.observacoes ? `<div class="visit-obs"><i class="fas fa-note-sticky"></i>${escapeHtml(v.observacoes)}</div>` : ''}
+        </div>
+        <div class="client-actions">${doneBtn}${cancelBtn}${editBtn}${delBtn}</div>
+    </div>`;
+}
+
+function renderVisitList() {
+    const el = document.getElementById('visitList');
+    if (!el) return;
+    const today = dateKey(new Date());
+    const list = agendaFiltered().filter(v => v.status === 'agendada' && v.data >= today).sort((a, b) => (a.data + ' ' + (a.hora || '')).localeCompare(b.data + ' ' + (b.hora || '')));
+    if (!list.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-check"></i><p>Nenhuma visita agendada.</p></div>'; return; }
+    el.innerHTML = list.map(v => visitItemHtml(v, true)).join('');
+}
+
+function renderRouteList() {
+    const el = document.getElementById('visitRouteList');
+    if (!el) return;
+    const byRoute = {};
+    visits.filter(v => v.status === 'agendada').forEach(v => { const r = v.rota || 'Sem rota'; (byRoute[r] = byRoute[r] || []).push(v); });
+    const routes = Object.keys(byRoute).sort();
+    if (!routes.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-route"></i><p>Nenhuma rota criada ainda.</p></div>'; return; }
+    el.innerHTML = routes.map(r => {
+        const list = byRoute[r].sort((a, b) => (a.data + ' ' + (a.hora || '')).localeCompare(b.data + ' ' + (b.hora || '')));
+        return `<div class="route-block" style="border-color:${routeColor(r)}">
+            <div class="route-head"><span class="route-dot" style="background:${routeColor(r)}"></span><strong>${escapeHtml(r)}</strong><span class="route-count">${list.length} ${list.length === 1 ? 'visita' : 'visitas'}</span></div>
+            <div class="client-list">${list.map(v => visitItemHtml(v, false)).join('')}</div>
+        </div>`;
+    }).join('');
+}
+
+function updateVisitRouteFilter() {
+    const sel = document.getElementById('visitRouteFilter');
+    if (!sel) return;
+    const current = sel.value;
+    const routes = [...new Set(visits.map(v => v.rota).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">Todas as rotas</option>' + routes.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+    if (routes.includes(current)) sel.value = current;
+}
+
+function openVisitModal(date, id) {
+    const v = id ? visits.find(x => String(x.id) === String(id)) : null;
+    document.getElementById('visitForm').reset();
+    document.getElementById('visitId').value = v ? v.id : '';
+    const dl = document.getElementById('visitClientList');
+    if (dl) dl.innerHTML = clients.map(c => `<option value="${escapeHtml(c.razao_social)}">${escapeHtml(c.email || '')}</option>`).join('');
+    const rd = document.getElementById('visitRouteListOpts');
+    if (rd) rd.innerHTML = [...new Set(visits.map(x => x.rota).filter(Boolean))].map(r => `<option value="${escapeHtml(r)}">`).join('');
+    document.getElementById('visitClient').value = v ? (v.razao_social || '') : '';
+    document.getElementById('visitEmail').value = v ? (v.email || '') : '';
+    document.getElementById('visitPhone').value = v ? (v.telefone || '') : '';
+    document.getElementById('visitDate').value = v ? (v.data || '') : (date || dateKey(new Date()));
+    document.getElementById('visitTime').value = v ? (v.hora || '') : '';
+    document.getElementById('visitRoute').value = v ? (v.rota || '') : '';
+    document.getElementById('visitObs').value = v ? (v.observacoes || '') : '';
+    document.querySelector('#visitModal h3').textContent = v ? 'Editar Visita' : 'Nova Visita';
+    document.getElementById('visitModal').classList.add('open');
+}
+function closeVisitModal() { document.getElementById('visitModal').classList.remove('open'); }
+
+async function saveVisit(e) {
+    e.preventDefault();
+    const id = document.getElementById('visitId').value;
+    const nome = document.getElementById('visitClient').value.trim();
+    const email = document.getElementById('visitEmail').value.trim();
+    const tel = document.getElementById('visitPhone').value.trim();
+    const data = document.getElementById('visitDate').value;
+    const hora = document.getElementById('visitTime').value;
+    const rota = document.getElementById('visitRoute').value.trim();
+    const obs = document.getElementById('visitObs').value.trim();
+    if (!nome || !data) { toast('Preencha cliente e data', true); return; }
+    const payload = { razao_social: nome, email, telefone: tel, data, hora: hora || '', rota, observacoes: obs, updated_at: new Date().toISOString() };
+    let error;
+    if (id) {
+        const r = await db.from(SUPABASE_VISITS_TABLE).update(payload).eq('id', id); error = r.error;
+    } else {
+        payload.status = 'agendada';
+        const r = await db.from(SUPABASE_VISITS_TABLE).insert(payload); error = r.error;
+    }
+    if (error) { toast('Erro: ' + error.message, true); return; }
+    closeVisitModal();
+    await loadVisits();
+    updateVisitRouteFilter();
+    renderAgenda();
+    toast(id ? 'Visita atualizada' : 'Visita agendada');
+}
+
+async function setVisitStatus(id, status) {
+    const { error } = await db.from(SUPABASE_VISITS_TABLE).update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { toast('Erro: ' + error.message, true); return; }
+    await loadVisits();
+    renderAgenda();
+    toast(VISIT_STATUS_LABEL[status] || status);
+}
+
+async function deleteVisit(id) {
+    if (!confirm('Excluir esta visita?')) return;
+    const { error } = await db.from(SUPABASE_VISITS_TABLE).delete().eq('id', id);
+    if (error) { toast('Erro: ' + error.message, true); return; }
+    await loadVisits();
+    updateVisitRouteFilter();
+    renderAgenda();
+    toast('Visita excluída');
+}
+
 // ---------- Init ----------
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.dash-nav-item[data-view]').forEach(item => { item.addEventListener('click', (e) => { e.preventDefault(); switchView(item.dataset.view); }); });
@@ -853,7 +1041,22 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     document.getElementById('clientCancel').addEventListener('click', closeClientModal);
     document.getElementById('clientForm').addEventListener('submit', saveClient);
     const cSearch = document.getElementById('clientSearch'); let cDeb; cSearch.addEventListener('input', () => { clearTimeout(cDeb); cDeb = setTimeout(renderClients, 250); });
-    const vSearch = document.getElementById('visitSearch'); let vDeb; if (vSearch) vSearch.addEventListener('input', () => { clearTimeout(vDeb); vDeb = setTimeout(renderVisits, 250); });
+    const vSearch = document.getElementById('visitSearch'); let vDeb; if (vSearch) vSearch.addEventListener('input', () => { clearTimeout(vDeb); vDeb = setTimeout(renderVisitLeads, 250); });
+    document.getElementById('visitPrevMonth').addEventListener('click', () => { visitCalMonth--; if (visitCalMonth < 0) { visitCalMonth = 11; visitCalYear--; } renderCalendar(); });
+    document.getElementById('visitNextMonth').addEventListener('click', () => { visitCalMonth++; if (visitCalMonth > 11) { visitCalMonth = 0; visitCalYear++; } renderCalendar(); });
+    document.getElementById('visitTodayBtn').addEventListener('click', () => { const n = new Date(); visitCalYear = n.getFullYear(); visitCalMonth = n.getMonth(); visitSelectedDate = null; renderCalendar(); });
+    const visitRouteFilter = document.getElementById('visitRouteFilter'); if (visitRouteFilter) visitRouteFilter.addEventListener('change', renderAgenda);
+    document.getElementById('btnNewVisit').addEventListener('click', () => openVisitModal(dateKey(new Date())));
+    document.getElementById('visitModalClose').addEventListener('click', closeVisitModal);
+    document.getElementById('visitCancel').addEventListener('click', closeVisitModal);
+    document.getElementById('visitForm').addEventListener('submit', saveVisit);
+    document.getElementById('visitClient').addEventListener('change', () => {
+        const nome = document.getElementById('visitClient').value.trim().toLowerCase();
+        const c = clients.find(x => x && x.razao_social && x.razao_social.toLowerCase() === nome);
+        if (!c) return;
+        document.getElementById('visitEmail').value = c.email || '';
+        document.getElementById('visitPhone').value = c.telefone || '';
+    });
     const zone = document.getElementById('imgUploadZone'); const fileInput = document.getElementById('imgFileInput');
     zone.addEventListener('click', () => fileInput.click());
     zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });

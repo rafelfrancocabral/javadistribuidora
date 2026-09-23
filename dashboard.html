@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=11">
+    <link rel="stylesheet" href="css/dashboard.css?v=12">
 </head>
 <body>
     <script>
@@ -167,18 +167,68 @@
                 <div class="dash-toolbar">
                     <div class="dash-toolbar-left">
                         <span class="dash-live" id="visitCountInfo"><i class="fas fa-calendar-check"></i> Visit</span>
+                        <select id="visitRouteFilter" class="dash-input visit-filter"><option value="">Todas as rotas</option></select>
                     </div>
-                    <input type="text" id="visitSearch" class="dash-input" placeholder="Buscar cliente inativo...">
+                    <button class="btn btn-primary" id="btnNewVisit"><i class="fas fa-plus"></i> Nova Visita</button>
                 </div>
-                <div class="dash-panel">
-                    <h3><i class="fas fa-calendar-check"></i> Clientes para Agendar Visita <small class="dash-panel-sub">(mais de 45 dias sem compra concluída)</small></h3>
-                    <div id="visitList" class="client-list"></div>
+
+                <div class="visit-layout">
+                    <div class="dash-panel">
+                        <h3><i class="fas fa-calendar-days"></i> Calendário de Visitas</h3>
+                        <div class="visit-cal-nav">
+                            <button class="btn btn-ghost btn-sm" id="visitPrevMonth" title="Mês anterior"><i class="fas fa-chevron-left"></i></button>
+                            <strong id="visitMonthLabel">Mês</strong>
+                            <button class="btn btn-ghost btn-sm" id="visitNextMonth" title="Próximo mês"><i class="fas fa-chevron-right"></i></button>
+                            <button class="btn btn-ghost btn-sm" id="visitTodayBtn">Hoje</button>
+                        </div>
+                        <div id="visitCalendar" class="visit-cal"></div>
+                    </div>
+
+                    <div>
+                        <div class="dash-panel">
+                            <h3><i class="fas fa-list-check"></i> Próximas Visitas</h3>
+                            <div id="visitList" class="client-list"></div>
+                        </div>
+                        <div class="dash-panel" style="margin-top:20px;">
+                            <h3><i class="fas fa-route"></i> Rotas de Visita</h3>
+                            <div id="visitRouteList" class="client-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dash-panel" style="margin-top:20px;">
+                    <h3><i class="fas fa-user-clock"></i> Clientes para Visita (inativos) <small class="dash-panel-sub">(mais de 45 dias sem compra concluída)</small></h3>
+                    <input type="text" id="visitSearch" class="dash-input" placeholder="Buscar cliente inativo..." style="margin-bottom:12px;">
+                    <div id="visitLeadList" class="client-list"></div>
                 </div>
                 <div class="dash-panel" style="margin-top:20px;">
                     <h3><i class="fas fa-chart-line"></i> Prioridade por Frequência de Compra <small class="dash-panel-sub">(comparado ao intervalo médio de cada cliente)</small></h3>
                     <div id="visitFreqList" class="client-list"></div>
                 </div>
                 <div id="visitFreqEmpty" class="empty-state" style="display:none;"><i class="fas fa-check-circle"></i><p>Todos os clientes estão dentro do ritmo habitual de compra.</p></div>
+
+                <!-- ===== Modal Visita ===== -->
+                <div class="modal-overlay" id="visitModal">
+                    <div class="modal">
+                        <div class="modal-header"><h3>Nova Visita</h3><button class="modal-close" id="visitModalClose"><i class="fas fa-xmark"></i></button></div>
+                        <form id="visitForm" class="modal-body">
+                            <input type="hidden" id="visitId" value="">
+                            <div class="form-field"><label>Cliente *</label><input type="text" id="visitClient" list="visitClientList" autocomplete="off" required placeholder="Razão social do cliente..."><datalist id="visitClientList"></datalist></div>
+                            <div class="form-field"><label>E-mail</label><input type="text" id="visitEmail" placeholder="E-mail do cliente"></div>
+                            <div class="form-field"><label>Telefone</label><input type="text" id="visitPhone" placeholder="(00) 00000-0000"></div>
+                            <div class="form-row">
+                                <div class="form-field"><label>Data *</label><input type="date" id="visitDate" required></div>
+                                <div class="form-field"><label>Horário</label><input type="time" id="visitTime"></div>
+                            </div>
+                            <div class="form-field"><label>Rota</label><input type="text" id="visitRoute" list="visitRouteListOpts" placeholder="Ex: Rota Centro" autocomplete="off"><datalist id="visitRouteListOpts"></datalist></div>
+                            <div class="form-field"><label>Observações</label><textarea id="visitObs" rows="2" placeholder="Anotações sobre a visita"></textarea></div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-ghost" id="visitCancel">Cancelar</button>
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Salvar Visita</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </section>
         </div>
     </div>
@@ -314,6 +364,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=1"></script>
-    <script src="js/dashboard.js?v=14"></script>
+    <script src="js/dashboard.js?v=15"></script>
 </body>
 </html>

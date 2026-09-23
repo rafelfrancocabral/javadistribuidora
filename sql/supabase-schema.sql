@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS public.produtos (
     isdestaque BOOLEAN NOT NULL DEFAULT false,
     ispromocao BOOLEAN NOT NULL DEFAULT false,
     precopromocional NUMERIC(12,2) NOT NULL DEFAULT 0,
+    linha TEXT NOT NULL DEFAULT 'java' CHECK (linha IN ('java', 'dymar')),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -50,6 +51,10 @@ CREATE TABLE IF NOT EXISTS public.produtos (
 CREATE INDEX IF NOT EXISTS idx_produtos_codigo ON public.produtos (codigo);
 CREATE INDEX IF NOT EXISTS idx_produtos_categoria ON public.produtos (categoria);
 CREATE INDEX IF NOT EXISTS idx_produtos_visivel ON public.produtos (visivel);
+CREATE INDEX IF NOT EXISTS idx_produtos_linha ON public.produtos (linha);
+
+-- Migracao para adicionar coluna linha em produtos existentes
+ALTER TABLE public.produtos ADD COLUMN IF NOT EXISTS linha TEXT NOT NULL DEFAULT 'java' CHECK (linha IN ('java', 'dymar'));
 
 -- ------------------------------------------------------------
 -- Orcamentos (enviados do checkout via WhatsApp)

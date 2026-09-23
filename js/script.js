@@ -157,7 +157,7 @@ let _categories = [];
 let _currentCategory = 'all';
 let _searchTerm = '';
 
-const PRODUCT_SELECT_FIELDS = 'id, codigo, nome, marca, categoria, subcategoria, preco, unidade, descricao, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional, somente_orcamento';
+const PRODUCT_SELECT_FIELDS = 'id, codigo, nome, marca, categoria, subcategoria, preco, unidade, descricao, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional, somente_orcamento, linha';
 
 function normalizeProduct(p) {
     return {
@@ -178,6 +178,7 @@ async function loadProducts() {
             const { data, error } = await db.from(SUPABASE_PRODUCTS_TABLE)
                 .select(PRODUCT_SELECT_FIELDS)
                 .eq('visivel', true)
+                .eq('linha', 'java')
                 .or('somente_orcamento.eq.false,somente_orcamento.is.null')
                 .order('id', { ascending: true })
                 .range(from, from + PAGE_SIZE - 1);

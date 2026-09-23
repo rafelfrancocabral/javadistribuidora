@@ -47,6 +47,10 @@
                     <button class="chart-tab" data-period="90">90 dias</button>
                     <button class="chart-tab" data-period="365">365 dias</button>
                 </div>
+                <div class="chart-group-tabs" id="quoteGroupTabs">
+                    <button class="chart-tab active" data-group="java">Java</button>
+                    <button class="chart-tab" data-group="dymar">Dymar</button>
+                </div>
                 <span class="dash-live"><i class="fas fa-circle"></i> Online</span>
             </div>
         </header>
@@ -190,6 +194,7 @@
                     <div class="form-field"><label>Marca</label><input type="text" id="prodMarca" placeholder="Marca"></div>
                     <div class="form-field"><label>Categoria</label><select id="prodCategoria"></select></div>
                     <div class="form-field"><label>Subcategoria</label><select id="prodSubcategoria"></select></div>
+                    <div class="form-field"><label>Linha *</label><select id="prodLinha"><option value="java">Java</option><option value="dymar">Dymar</option></select></div>
                     <div class="form-field"><label>Preço (R$) *</label><input type="text" id="prodPreco" required placeholder="0,00"></div>
                     <div class="form-field"><label>Estoque *</label><input type="number" id="prodEstoque" required value="0"></div>
                     <div class="form-field span-2"><label>Palavras-chave</label><input type="text" id="prodKeywords" placeholder="Separe por vírgula: furadeira, broca, parede..."></div>

@@ -36,6 +36,14 @@ function toast(msg, isError) { const t = document.getElementById('toast'); if (!
 // ---------- Navigation ----------
 const VIEW_TITLES = { 'dashboard': 'Painel do Lojista', 'orcamentos': 'Gerenciar Orçamentos', 'produtos': 'Gerenciar Produtos', 'categorias': 'Gerenciar Categorias', 'clientes': 'Gerenciar Clientes', 'agendar': 'Agendar Visita' };
 
+function setCurrentGroup(group) {
+    currentChartGroup = group;
+    document.querySelectorAll('[data-group]').forEach(btn => btn.classList.toggle('active', btn.dataset.group === group));
+    // Re-render current view with new group filter
+    const activeView = document.querySelector('.dash-view:not([style*="display: none"])')?.id?.replace('view-', '') || 'dashboard';
+    switchView(activeView);
+}
+
 function switchView(view) {
     document.querySelectorAll('.dash-view').forEach(v => v.style.display = 'none');
     const el = document.getElementById('view-' + view);
@@ -50,6 +58,9 @@ function switchView(view) {
     if (view === 'dashboard') renderOverview();
     document.getElementById('dashSidebar').classList.remove('open');
 }
+
+// Make setCurrentGroup globally accessible for group tabs
+window.setCurrentGroup = setCurrentGroup;
 
 // ---------- Charts ----------
 function getQuotesInPeriod(period, group = currentChartGroup) {
@@ -503,7 +514,7 @@ function updatePendingBadge() { const badge = document.getElementById('pendingQu
 function renderQuotes() {
     const statusFilter = document.getElementById('statusFilter').value;
     const search = document.getElementById('quoteSearch').value.trim().toLowerCase();
-    let list = quotes;
+    let list = quotes.filter(q => q.linha === currentChartGroup);
     if (statusFilter !== 'all') list = list.filter(q => q.status === statusFilter);
     if (search) list = list.filter(q => (q.nome_cliente || '').toLowerCase().includes(search) || (q.email || '').toLowerCase().includes(search) || (q.telefone || '').toLowerCase().includes(search) || (q.codigo_cliente || '').toLowerCase().includes(search));
     const el = document.getElementById('quoteList');
@@ -627,7 +638,7 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
 // ---------- Products ----------
 async function loadProducts() { try { let all = []; let from = 0; while (true) { const { data, error } = await db.from(SUPABASE_PRODUCTS_TABLE).select(PRODUCT_SELECT).order('id', { ascending: true }).range(from, from + 499); if (error) throw error; if (!data || !data.length) break; all = all.concat(data); if (data.length < 500) break; from += 500; } products = all; } catch (e) { console.error('Erro ao carregar produtos:', e); products = []; } }
 
-function renderProducts() { const search = document.getElementById('productSearch').value.trim().toLowerCase(); let list = products; if (search) list = list.filter(p => (p.nome || '').toLowerCase().includes(search) || (p.codigo || '').toLowerCase().includes(search) || (p.marca || '').toLowerCase().includes(search) || (p.categoria || '').toLowerCase().includes(search)); const tbody = document.getElementById('productTableBody'); if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted)">Nenhum produto encontrado</td></tr>'; return; } tbody.innerHTML = list.map(p => { const img = (p.imagens && p.imagens.length) ? p.imagens[0] : ''; const imgHtml = img ? `<img class="prod-img" src="${escapeHtml(img)}" alt="" onerror="this.onerror=null;this.style.display='none'">` : '<div class="prod-no-img"><i class="fas fa-image"></i></div>'; const linhaLabel = p.linha === 'java' ? '<span class="linha-badge linha-java">Java</span>' : '<span class="linha-badge linha-dymar">Dymar</span>'; return `<tr><td data-label="Imagem">${imgHtml}</td><td data-label="Código"><span class="prod-code">${escapeHtml(p.codigo || '—')}</span></td><td data-label="Produto"><div class="prod-name">${escapeHtml(p.nome)}</div><div class="prod-code">${escapeHtml(p.marca || '')}</div></td><td data-label="Categoria">${escapeHtml(p.categoria || '')}</td><td data-label="Linha">${linhaLabel}</td><td data-label="Preço" class="price-cell">${formatPrice(p.preco)}${p.ispromocao && p.precopromocional > 0 ? `<br><small style="color:var(--warning)">Promo: ${formatPrice(p.precopromocional)}</small>` : ''}</td><td data-label="Estoque">${p.estoque}</td><td data-label="Visível"><button class="toggle ${p.visivel ? 'on' : ''}" onclick="toggleVisibility('${p.id}')" title="Visível no catálogo"></button></td><td data-label="Ações"><div style="display:flex;gap:6px"><button class="icon-btn" onclick="openProductModal('${p.id}')" title="Editar"><i class="fas fa-pen"></i></button><button class="icon-btn danger" onclick="deleteProduct('${p.id}')" title="Excluir"><i class="fas fa-trash"></i></button></div></td></tr>`; }).join(''); }
+function renderProducts() { const search = document.getElementById('productSearch').value.trim().toLowerCase(); let list = products.filter(p => p.linha === currentChartGroup); if (search) list = list.filter(p => (p.nome || '').toLowerCase().includes(search) || (p.codigo || '').toLowerCase().includes(search) || (p.marca || '').toLowerCase().includes(search) || (p.categoria || '').toLowerCase().includes(search)); const tbody = document.getElementById('productTableBody'); if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted)">Nenhum produto encontrado</td></tr>'; return; } tbody.innerHTML = list.map(p => { const img = (p.imagens && p.imagens.length) ? p.imagens[0] : ''; const imgHtml = img ? `<img class="prod-img" src="${escapeHtml(img)}" alt="" onerror="this.onerror=null;this.style.display='none'">` : '<div class="prod-no-img"><i class="fas fa-image"></i></div>'; const linhaLabel = p.linha === 'java' ? '<span class="linha-badge linha-java">Java</span>' : '<span class="linha-badge linha-dymar">Dymar</span>'; return `<tr><td data-label="Imagem">${imgHtml}</td><td data-label="Código"><span class="prod-code">${escapeHtml(p.codigo || '—')}</span></td><td data-label="Produto"><div class="prod-name">${escapeHtml(p.nome)}</div><div class="prod-code">${escapeHtml(p.marca || '')}</div></td><td data-label="Categoria">${escapeHtml(p.categoria || '')}</td><td data-label="Linha">${linhaLabel}</td><td data-label="Preço" class="price-cell">${formatPrice(p.preco)}${p.ispromocao && p.precopromocional > 0 ? `<br><small style="color:var(--warning)">Promo: ${formatPrice(p.precopromocional)}</small>` : ''}</td><td data-label="Estoque">${p.estoque}</td><td data-label="Visível"><button class="toggle ${p.visivel ? 'on' : ''}" onclick="toggleVisibility('${p.id}')" title="Visível no catálogo"></button></td><td data-label="Ações"><div style="display:flex;gap:6px"><button class="icon-btn" onclick="openProductModal('${p.id}')" title="Editar"><i class="fas fa-pen"></i></button><button class="icon-btn danger" onclick="deleteProduct('${p.id}')" title="Excluir"><i class="fas fa-trash"></i></button></div></td></tr>`; }).join(''); }
 
 async function toggleVisibility(id) { const p = products.find(x => String(x.id) === String(id)); if (!p) return; const newVal = !p.visivel; const { error } = await db.from(SUPABASE_PRODUCTS_TABLE).update({ visivel: newVal, updated_at: new Date().toISOString() }).eq('id', id); if (error) { toast('Erro: ' + error.message, true); return; } p.visivel = newVal; renderProducts(); toast(newVal ? 'Produto visível no catálogo' : 'Produto oculto do catálogo'); }
 async function deleteProduct(id) { if (!confirm('Excluir este produto?')) return; const { error } = await db.from(SUPABASE_PRODUCTS_TABLE).delete().eq('id', id); if (error) { toast('Erro: ' + error.message, true); return; } products = products.filter(x => String(x.id) !== String(id)); renderProducts(); toast('Produto excluído'); }
@@ -782,7 +793,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('dashMenuToggle').addEventListener('click', () => { document.getElementById('dashSidebar').classList.toggle('open'); });
     document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); if (confirm('Deseja realmente sair?')) { localStorage.removeItem(AUTH_KEY); window.location.href = 'login.html'; } });
     document.querySelectorAll('.chart-tab[data-period]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('.chart-tab[data-period]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); currentChartPeriod = tab.dataset.period; buildQuoteChart(currentChartPeriod); renderTopClients(); }); });
-document.querySelectorAll('.group-tab[data-group]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('.group-tab[data-group]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); currentChartGroup = tab.dataset.group; buildQuoteChart(currentChartPeriod); buildPaymentChart(); renderTopClients(); renderTopSellers(); renderLowSellers(); }); });
+document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('[data-group]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); setCurrentGroup(tab.dataset.group); }); });
     document.getElementById('statusFilter').addEventListener('change', renderQuotes);
     const qSearch = document.getElementById('quoteSearch'); let qDeb; qSearch.addEventListener('input', () => { clearTimeout(qDeb); qDeb = setTimeout(renderQuotes, 250); });
     document.getElementById('btnNewQuote').addEventListener('click', openQuoteModal);

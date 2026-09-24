@@ -143,45 +143,57 @@ function buildQuoteChart(period) {
     if (!el) return;
 
     const gradientReceived = el.getContext('2d').createLinearGradient(0, 0, 0, 320);
-    gradientReceived.addColorStop(0, 'rgba(168,85,247,0.95)');
-    gradientReceived.addColorStop(0.5, 'rgba(139,92,246,0.75)');
-    gradientReceived.addColorStop(1, 'rgba(88,28,135,0.20)');
+    gradientReceived.addColorStop(0, 'rgba(168,85,247,0.30)');
+    gradientReceived.addColorStop(0.6, 'rgba(139,92,246,0.10)');
+    gradientReceived.addColorStop(1, 'rgba(88,28,135,0)');
 
     const gradientApproved = el.getContext('2d').createLinearGradient(0, 0, 0, 320);
-    gradientApproved.addColorStop(0, 'rgba(0,255,163,0.95)');
-    gradientApproved.addColorStop(0.5, 'rgba(0,229,255,0.60)');
-    gradientApproved.addColorStop(1, 'rgba(46,213,115,0.15)');
+    gradientApproved.addColorStop(0, 'rgba(0,255,163,0.25)');
+    gradientApproved.addColorStop(0.6, 'rgba(0,229,255,0.08)');
+    gradientApproved.addColorStop(1, 'rgba(46,213,115,0)');
 
     chartQuotesInstance = new Chart(el, {
-        type: 'bar',
+        type: 'line',
         data: { 
             labels, 
             datasets: [
                 { 
                     label: 'Orçamentos Recebidos', 
                     data: dataReceived, 
-                    backgroundColor: gradientReceived,
+                    fill: true,
+                    tension: 0.45,
                     borderColor: '#a855f7',
-                    borderWidth: 1.5,
-                    borderRadius: 8,
-                    borderSkipped: false,
-                    maxBarThickness: 34,
-                    hoverBackgroundColor: 'rgba(168,85,247,1)',
+                    backgroundColor: gradientReceived,
+                    borderWidth: 2.5,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#a855f7',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: '#00e5ff',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2,
                     hoverBorderColor: '#00e5ff',
-                    hoverBorderWidth: 2
+                    hoverBorderWidth: 3
                 },
                 { 
                     label: 'Orçamentos Aprovados', 
                     data: dataApproved, 
-                    backgroundColor: gradientApproved,
+                    fill: true,
+                    tension: 0.45,
                     borderColor: '#00ffa3',
-                    borderWidth: 1.5,
-                    borderRadius: 8,
-                    borderSkipped: false,
-                    maxBarThickness: 34,
-                    hoverBackgroundColor: 'rgba(0,255,163,1)',
+                    backgroundColor: gradientApproved,
+                    borderWidth: 2.5,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#00ffa3',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: '#4f6bff',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2,
                     hoverBorderColor: '#4f6bff',
-                    hoverBorderWidth: 2
+                    hoverBorderWidth: 3
                 }
             ]},
         options: {

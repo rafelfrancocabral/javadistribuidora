@@ -103,14 +103,14 @@ function buildQuoteChart(period) {
 
     let labels = [];
     let dataReceived = [];
-    let dataEntregue = [];
+    let dataConcluido = [];
     if (period === 'today') {
         for (let h = 8; h <= 20; h += 2) {
             labels.push(h + 'h');
             const lo = new Date(); lo.setHours(h, 0, 0, 0);
             const hi = new Date(lo.getTime() + 7200000);
             dataReceived.push(periodQ.filter(q => { const d = new Date(q.created_at); return d >= lo && d < hi; }).length);
-            dataEntregue.push(periodQ.filter(q => { const d = new Date(q.created_at); return d >= lo && d < hi && q.status === 'entregue'; }).length);
+            dataConcluido.push(periodQ.filter(q => { const d = new Date(q.created_at); return d >= lo && d < hi && q.status === 'concluido'; }).length);
         }
     } else if (period === 'month') {
         const now = new Date();
@@ -123,7 +123,7 @@ function buildQuoteChart(period) {
             const lo = new Date(d.getFullYear(), d.getMonth(), d.getDate());
             const hi = new Date(lo.getTime() + 86400000);
             dataReceived.push(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi; }).length);
-            dataEntregue.push(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi && q.status === 'entregue'; }).length);
+            dataConcluido.push(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi && q.status === 'concluido'; }).length);
         }
     } else {
         const days = parseInt(period) || 7;
@@ -136,7 +136,7 @@ function buildQuoteChart(period) {
             const lo = new Date(d.getFullYear(), d.getMonth(), d.getDate());
             const hi = new Date(lo.getTime() + 86400000);
             dataReceived.unshift(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi; }).length);
-            dataEntregue.unshift(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi && q.status === 'entregue'; }).length);
+            dataConcluido.unshift(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi && q.status === 'concluido'; }).length);
         }
     }
     if (chartQuotesInstance) { chartQuotesInstance.destroy(); chartQuotesInstance = null; }
@@ -177,8 +177,8 @@ function buildQuoteChart(period) {
                     hoverBorderWidth: 3
                 },
                 { 
-                    label: 'Orçamentos Entregues', 
-                    data: dataEntregue, 
+                    label: 'Orçamentos Concluídos', 
+                    data: dataConcluido, 
                     fill: true,
                     tension: 0.45,
                     borderColor: '#00ffa3',

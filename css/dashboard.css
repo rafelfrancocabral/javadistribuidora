@@ -660,23 +660,17 @@ input, select, textarea { font-family: inherit; }
     .dash-header-actions .dash-select { width: auto; }
 }
 
-/* ===== Tabela de produtos compacta ===== */
+/* ===== Tabela de produtos: mantém formato de tabela no mobile (rolagem horizontal) ===== */
 @media (max-width: 768px) {
-    .dash-table tr { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 2px 12px; padding: 12px; margin-bottom: 10px; }
-    .dash-table td { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border: none; font-size: 0.78rem; }
-    .dash-table td::before { content: attr(data-label); font-weight: 600; color: var(--text-secondary); font-size: 0.7rem; flex-shrink: 0; }
-    .dash-table td[data-label="Imagem"] { grid-column: 1; grid-row: 1 / span 2; }
-    .dash-table .prod-img { width: 44px; height: 44px; }
-    .dash-table .prod-no-img { width: 44px; height: 44px; font-size: 1rem; }
-    .dash-table td[data-label="Produto"] { grid-column: 2; grid-row: 1; align-items: flex-start; }
-    .dash-table td[data-label="Categoria"] { grid-column: 2; grid-row: 2; justify-content: flex-start; }
-    .dash-table td[data-label="Código"] { grid-column: 1 / -1; grid-row: 3; }
-    .dash-table td[data-label="Linha"] { grid-column: 1 / -1; grid-row: 4; }
-    .dash-table td[data-label="Preço"] { grid-column: 1 / -1; grid-row: 5; }
-    .dash-table td[data-label="Estoque"] { grid-column: 1 / -1; grid-row: 6; }
-    .dash-table td[data-label="Visível"] { grid-column: 1 / -1; grid-row: 7; }
-    .dash-table td[data-label="Ações"] { grid-column: 1 / -1; grid-row: 8; justify-content: flex-end; }
-    .dash-table td[data-label="Ações"]::before { display: none; }
-    .dash-table .prod-name { flex: 1 1 auto; min-width: 0; font-size: 0.85rem; }
-    .dash-table .prod-code { text-align: left; }
+    .product-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); }
+    #productTable { display: table; min-width: 800px; border-collapse: collapse; }
+    #productTable thead { display: table-header-group; }
+    #productTable tbody { display: table-row-group; }
+    #productTable tr { display: table-row; border: none; border-radius: 0; padding: 0; margin: 0; background: none; }
+    #productTable th, #productTable td { display: table-cell; vertical-align: middle; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+    #productTable thead th { font-size: 0.7rem; }
+    #productTable td::before { content: none; }
+    #productTable .prod-img, #productTable .prod-no-img { width: 40px; height: 40px; }
+    #productTable .prod-name { font-size: 0.85rem; }
+    #productTable .price-cell { font-size: 0.85rem; }
 }

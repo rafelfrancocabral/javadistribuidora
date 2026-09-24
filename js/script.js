@@ -165,7 +165,8 @@ function normalizeProduct(p) {
         palavrasChave: Array.isArray(p.palavraschave) ? p.palavraschave : [],
         isDestaque: !!p.isdestaque,
         isPromocao: !!p.ispromocao,
-        precoPromocional: parseFloat(p.precopromocional) || 0
+        precoPromocional: parseFloat(p.precopromocional) || 0,
+        _rnd: Math.random()
     };
 }
 
@@ -212,7 +213,7 @@ async function loadCategories() {
             if (data.length < PAGE_SIZE) break;
             from += PAGE_SIZE;
         }
-        _categories = all;
+        _categories = all.sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
     } catch (e) {
         console.error('Erro ao carregar categorias:', e);
         _categories = [];
@@ -234,11 +235,12 @@ function getFilteredProducts() {
             return haystack.includes(t) || kw.includes(t);
         });
     }
-    // Destaque primeiro, depois promoção. Ordem relativa preservada (sort estável).
+    // Destaque e promoção no início; dentro de cada grupo ordem aleatória (estável por página).
     return list.sort((a, b) => {
         const wa = (a.isDestaque ? 2 : 0) + (a.isPromocao ? 1 : 0);
         const wb = (b.isDestaque ? 2 : 0) + (b.isPromocao ? 1 : 0);
-        return wb - wa;
+        if (wb !== wa) return wb - wa;
+        return (a._rnd == null ? 0 : a._rnd) - (b._rnd == null ? 0 : b._rnd);
     });
 }
 

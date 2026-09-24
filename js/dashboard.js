@@ -687,6 +687,15 @@ let importRows = [];
 
 function importNormalizeHeader(h) { return String(h || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); }
 
+function decodeImportText(bytes) {
+    const U8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    if (U8.length >= 3 && U8[0] === 0xEF && U8[1] === 0xBB && U8[2] === 0xBF) return new TextDecoder('utf-8').decode(U8.subarray(3));
+    if (U8.length >= 2 && U8[0] === 0xFF && U8[1] === 0xFE) return new TextDecoder('utf-16le').decode(U8.subarray(2));
+    if (U8.length >= 2 && U8[0] === 0xFE && U8[1] === 0xFF) return new TextDecoder('utf-16be').decode(U8.subarray(2));
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(U8); }
+    catch (e) { return new TextDecoder('windows-1252').decode(U8); }
+}
+
 function parseCSVText(text) {
     const rows = [];
     let field = '', record = [], inQuotes = false;
@@ -859,9 +868,8 @@ function findZipEOCD(view) {
     return -1;
 }
 
-async function readXlsxRows(file) {
+async function readXlsxRows(buf) {
     if (typeof DecompressionStream === 'undefined') throw new Error('navegador não suporta leitura de .xlsx (atualize o navegador)');
-    const buf = await file.arrayBuffer();
     const view = new DataView(buf);
     const eocd = findZipEOCD(view);
     if (eocd < 0) throw new Error('arquivo .xlsx inválido');
@@ -928,8 +936,9 @@ async function handleProductImport(e) {
     if (!file) return;
     let rows;
     try {
-        if (/\.xlsx$/i.test(file.name)) rows = await readXlsxRows(file);
-        else rows = parseCSVText(await file.text());
+        const fileBuf = await file.arrayBuffer();
+        if (/\.xlsx$/i.test(file.name)) rows = await readXlsxRows(fileBuf);
+        else rows = parseCSVText(decodeImportText(fileBuf));
     } catch (err) { console.error('import error:', err); toast('Erro ao ler arquivo: ' + err.message, true); return; }
     if (rows.length < 2) { toast('Arquivo sem dados', true); return; }
     const headers = rows[0].map(importNormalizeHeader);

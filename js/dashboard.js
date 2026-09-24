@@ -721,6 +721,18 @@ function importPrice(str) {
     return isNaN(n) ? 0 : n;
 }
 
+function downloadImportTemplate() {
+    const csv = '\uFEFFCódigo,Unidade,Nome do Produto,Marca,Linha,Preço\n001,UN,Exemplo de Produto,Exemplo,Java,"12,50"\n002,UN,Exemplo de Produto 2,Exemplo,Dymar,"12,50"';
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'template-produtos.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+}
+
 async function handleProductImport(e) {
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
@@ -1149,6 +1161,7 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     document.getElementById('quoteDetailClose').addEventListener('click', () => { document.getElementById('quoteDetailModal').classList.remove('open'); });
     document.getElementById('btnNewProduct').addEventListener('click', () => openProductModal(null));
     document.getElementById('btnImportProducts').addEventListener('click', () => document.getElementById('productImportFile').click());
+    document.getElementById('btnImportTemplate').addEventListener('click', downloadImportTemplate);
     document.getElementById('productImportFile').addEventListener('change', handleProductImport);
     document.getElementById('importModalClose').addEventListener('click', () => document.getElementById('importModal').classList.remove('open'));
     document.getElementById('importCancel').addEventListener('click', () => document.getElementById('importModal').classList.remove('open'));

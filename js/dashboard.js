@@ -961,7 +961,7 @@ async function handleProductImport(e) {
         return r.slice(0, idx.preco).concat([merged]);
     };
     const dataRows = rows.slice(1).map(fixPriceSplit);
-    if (dataRows.length > 500) { toast('Máximo de 500 produtos por importação', true); return; }
+    if (dataRows.length > 1000) { toast('Máximo de 1000 produtos por importação', true); return; }
     const UNIDADES = ['UN', 'KG', 'MT', 'M2', 'M3', 'LT', 'PAR', 'KIT', 'CX', 'PC'];
     importRows = dataRows.map((r, originalIndex) => {
         const cell = (i) => (i >= 0 && r[i] != null ? String(r[i]).trim() : '');

@@ -682,6 +682,139 @@ function showUploading(btn, on) { btn.disabled = on; if (on) { btn.dataset.orig 
 
 async function saveProduct(e) { e.preventDefault(); const btn = document.getElementById('productSubmit'); showUploading(btn, true); try { const id = document.getElementById('productId').value; const uploadedNew = []; if (pendingUploads && pendingUploads.length) { console.log('[saveProduct] Processing', pendingUploads.length, 'pending uploads'); for (const f of pendingUploads) { try { console.log('[saveProduct] Processing file:', f.name, f.type, f.size); const buffer = await f.arrayBuffer(); console.log('[saveProduct] Buffer size:', buffer.byteLength); const hash = await hashFileBuffer(buffer); console.log('[saveProduct] Hash:', hash); const [main, thumb] = await Promise.all([fileToWebP(f, 1200), fileToWebP(f, 400)]); console.log('[saveProduct] WebP conversion done, main:', main.size, 'thumb:', thumb.size); const uploaded = await uploadToR2(main, thumb, hash); console.log('[saveProduct] Upload success:', uploaded); uploadedNew.push(uploaded.main); } catch (uploadErr) { console.error('Erro upload R2:', uploadErr); toast('Falha ao enviar imagem para R2: ' + uploadErr.message, true); showUploading(btn, false); return; } } pendingUploads = []; } const urlImgs = []; for (let i = 0; i < 5; i++) { const v = document.getElementById('prodImg' + (i + 1)).value.trim(); if (v) urlImgs.push(v); } editingImages = urlImgs.length ? urlImgs : []; if (uploadedNew.length) editingImages = editingImages.concat(uploadedNew).slice(0, 5); const palavraschave = document.getElementById('prodKeywords').value.split(',').map(s => s.trim()).filter(Boolean); const isp = document.getElementById('prodPromocao').checked; const somenteOrcamento = document.getElementById('prodSomenteOrcamento').checked; const payload = { codigo: document.getElementById('prodCodigo').value.trim() || null, nome: document.getElementById('prodNome').value.trim(), marca: document.getElementById('prodMarca').value.trim(), categoria: document.getElementById('prodCategoria').value, subcategoria: document.getElementById('prodSubcategoria').value || null, preco: parsePrice(document.getElementById('prodPreco').value), unidade: document.getElementById('prodUnidade').value, descricao: document.getElementById('prodDescricao').value, palavraschave, imagens: editingImages, estoque: parseInt(document.getElementById('prodEstoque').value) || 0, isdestaque: document.getElementById('prodDestaque').checked, ispromocao: isp, precopromocional: isp ? parsePrice(document.getElementById('prodPrecoPromo').value) : 0, somente_orcamento: somenteOrcamento, linha: document.getElementById('prodLinha').value, visivel: true, updated_at: new Date().toISOString() }; let error; if (id) { const r = await db.from(SUPABASE_PRODUCTS_TABLE).update(payload).eq('id', id); error = r.error; } else { const r = await db.from(SUPABASE_PRODUCTS_TABLE).insert(payload); error = r.error; } if (error) throw new Error(error.message); closeProductModal(); await loadProducts(); renderProducts(); toast(r2NotConfigured ? 'Produto salvo, mas imagens não enviadas (R2 ainda não configurado)' : 'Produto salvo com sucesso'); } catch (err) { console.error(err); toast('Erro: ' + err.message, true); } finally { showUploading(btn, false); } }
 
+// ---------- Importação de Produtos (CSV) ----------
+let importRows = [];
+
+function importNormalizeHeader(h) { return String(h || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); }
+
+function parseCSVText(text) {
+    const rows = [];
+    let field = '', record = [], inQuotes = false;
+    const pushRow = () => { if (record.some(f => String(f).trim() !== '')) rows.push(record); record = []; };
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (inQuotes) {
+            if (ch === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+            else field += ch;
+        } else if (ch === '"') { inQuotes = true; }
+        else if (ch === ',') { record.push(field); field = ''; }
+        else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; record.push(field); field = ''; pushRow(); }
+        else field += ch;
+    }
+    record.push(field);
+    pushRow();
+    return rows;
+}
+
+function importPrice(str) {
+    if (str == null) return 0;
+    let s = String(str).replace(/[R$\s]/g, '');
+    if (!s) return 0;
+    if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
+    else if (s.includes(',')) s = s.replace(',', '.');
+    else if (s.includes('.')) {
+        const parts = s.split('.');
+        const last = parts[parts.length - 1];
+        if (last.length === 3 && s.replace(/\./g, '').length > 3) s = s.replace(/\./g, '');
+    }
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+}
+
+async function handleProductImport(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const text = await file.text();
+    const rows = parseCSVText(text);
+    if (rows.length < 2) { toast('Arquivo sem dados', true); return; }
+    const headers = rows[0].map(importNormalizeHeader);
+    const idx = { codigo: headers.indexOf('codigo'), unidade: headers.indexOf('unidade'), nome: Math.max(headers.indexOf('nomedoproduto'), headers.indexOf('nome')), marca: headers.indexOf('marca'), linha: headers.indexOf('linha'), preco: headers.indexOf('preco') };
+    if (idx.codigo < 0 || idx.nome < 0 || idx.preco < 0) { toast('Headers esperados: Código, Unidade, Nome do Produto, Marca, Linha, Preço', true); return; }
+    const dataRows = rows.slice(1);
+    if (dataRows.length > 500) { toast('Máximo de 500 produtos por importação', true); return; }
+    const UNIDADES = ['UN', 'KG', 'MT', 'M2', 'M3', 'LT', 'PAR', 'KIT', 'CX', 'PC'];
+    importRows = dataRows.map((r, originalIndex) => {
+        const cell = (i) => (i >= 0 && r[i] != null ? String(r[i]).trim() : '');
+        const codigo = cell(idx.codigo);
+        const nome = cell(idx.nome);
+        const marca = cell(idx.marca);
+        const linhaRaw = cell(idx.linha).toLowerCase();
+        const preco = importPrice(cell(idx.preco));
+        let unidade = cell(idx.unidade).toUpperCase();
+        if (!UNIDADES.includes(unidade)) unidade = 'UN';
+        const linha = linhaRaw === 'java' || linhaRaw === 'dymar' ? linhaRaw : '';
+        let error = '';
+        if (!codigo) error = 'Código obrigatório';
+        else if (products.some(p => p.codigo && String(p.codigo).toLowerCase() === codigo.toLowerCase())) error = 'Código já cadastrado';
+        else if (!nome) error = 'Nome do produto obrigatório';
+        else if (!linha) error = 'Linha deve ser Java ou Dymar';
+        else if (!(preco > 0)) error = 'Preço inválido';
+        return { codigo, unidade, nome, marca, linha, preco, originalIndex, ok: !error, error };
+    });
+    const seen = {};
+    importRows.forEach(r => {
+        const k = String(r.codigo).toLowerCase();
+        if (r.ok && seen[k]) { r.ok = false; r.error = 'Código duplicado no arquivo'; }
+        else if (r.ok) seen[k] = r.originalIndex;
+    });
+    renderImportModal();
+    document.getElementById('importModal').classList.add('open');
+}
+
+function renderImportModal() {
+    const ok = importRows.filter(r => r.ok).length;
+    const bad = importRows.length - ok;
+    document.getElementById('importSummary').innerHTML = '<span class="imp-summary-ok"><i class="fas fa-check-circle"></i> ' + ok + ' pronto(s) para importar</span><span class="imp-summary-err' + (bad ? '' : ' imp-summary-hide') + '"><i class="fas fa-exclamation-triangle"></i> ' + bad + ' com erro</span>';
+    document.getElementById('importTableBody').innerHTML = importRows.map(r => `
+        <tr class="${r.ok ? 'imp-row-ok' : 'imp-row-err'}">
+            <td>${r.ok ? '<span class="imp-badge imp-badge-ok">OK</span>' : '<span class="imp-badge imp-badge-err">Erro</span>'}</td>
+            <td>${escapeHtml(r.codigo)}</td>
+            <td>${escapeHtml(r.nome)}</td>
+            <td>${escapeHtml(r.marca)}</td>
+            <td>${r.linha ? (r.linha === 'dymar' ? 'Dymar' : 'Java') : '-'}</td>
+            <td>${formatPrice(r.preco)}</td>
+            <td>${r.error ? escapeHtml(r.error) : ''}</td>
+            <td>${r.ok ? `<button class="icon-btn" onclick="prefillImportRow(${r.originalIndex})" title="Abrir no formulário de produto"><i class="fas fa-pen"></i></button>` : ''}</td>
+        </tr>`).join('');
+}
+
+function prefillImportRow(i) {
+    const r = importRows.find(x => x.originalIndex === i);
+    if (!r) return;
+    openProductModal(null);
+    document.getElementById('prodCodigo').value = r.codigo;
+    document.getElementById('prodUnidade').value = r.unidade;
+    document.getElementById('prodNome').value = r.nome;
+    document.getElementById('prodMarca').value = r.marca;
+    document.getElementById('prodLinha').value = r.linha;
+    document.getElementById('prodPreco').value = priceInput(r.preco);
+}
+
+async function confirmImport() {
+    const valid = importRows.filter(r => r.ok);
+    if (!valid.length) { toast('Nenhum produto válido para importar', true); return; }
+    const btn = document.getElementById('importConfirm');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importando...';
+    let imported = 0, failed = 0;
+    const padraoCategoria = document.getElementById('prodCategoria') ? document.getElementById('prodCategoria').value : '';
+    for (let i = 0; i < valid.length; i += 50) {
+        const batch = valid.slice(i, i + 50);
+        const results = await Promise.all(batch.map(async (row) => {
+            const payload = { codigo: row.codigo || null, nome: row.nome, marca: row.marca || '', categoria: padraoCategoria, subcategoria: null, preco: row.preco, unidade: row.unidade, descricao: '', palavraschave: [], imagens: [], estoque: 0, isdestaque: false, ispromocao: false, precopromocional: 0, somente_orcamento: false, linha: row.linha, visivel: true, updated_at: new Date().toISOString() };
+            const { error } = await db.from(SUPABASE_PRODUCTS_TABLE).insert(payload);
+            if (error) failed++; else imported++;
+        }));
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-file-import"></i> Confirmar Importação';
+    await loadProducts();
+    renderProducts();
+    document.getElementById('importModal').classList.remove('open');
+    toast('Importação concluída: ' + imported + ' produto(s) importado(s)' + (failed ? ', ' + failed + ' com erro' : ''));
+}
+
 // ---------- Categories ----------
 async function renderCategories() { const el = document.getElementById('categoryList'); if (!categories.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>Nenhuma categoria</p></div>'; return; } el.innerHTML = categories.map(c => `<div class="cat-row"><span><i class="fas fa-folder" style="color:var(--accent);margin-right:8px"></i>${escapeHtml(c.nome)}</span><div class="cat-row-actions"><input type="text" class="dash-input" id="subcatInput_${c.id}" placeholder="Adicionar subcategoria" style="min-width:180px;margin-right:6px"><button class="icon-btn" onclick="addSubcategory('${c.id}')" title="Adicionar subcategoria"><i class="fas fa-plus"></i></button><button class="icon-btn danger" onclick="deleteCategory('${c.id}')" title="Excluir"><i class="fas fa-trash"></i></button></div></div>`).join(''); }
 
@@ -1015,6 +1148,11 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     document.getElementById('quoteForm').addEventListener('submit', saveManualQuote);
     document.getElementById('quoteDetailClose').addEventListener('click', () => { document.getElementById('quoteDetailModal').classList.remove('open'); });
     document.getElementById('btnNewProduct').addEventListener('click', () => openProductModal(null));
+    document.getElementById('btnImportProducts').addEventListener('click', () => document.getElementById('productImportFile').click());
+    document.getElementById('productImportFile').addEventListener('change', handleProductImport);
+    document.getElementById('importModalClose').addEventListener('click', () => document.getElementById('importModal').classList.remove('open'));
+    document.getElementById('importCancel').addEventListener('click', () => document.getElementById('importModal').classList.remove('open'));
+    document.getElementById('importConfirm').addEventListener('click', confirmImport);
     document.getElementById('productModalClose').addEventListener('click', closeProductModal);
     document.getElementById('productCancel').addEventListener('click', closeProductModal);
     document.getElementById('productForm').addEventListener('submit', saveProduct);

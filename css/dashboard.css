@@ -644,3 +644,15 @@ input, select, textarea { font-family: inherit; }
 .route-block .client-item { margin-bottom: 6px; }
 
 .form-field input[type="date"], .form-field input[type="time"] { padding: 12px 12px; color-scheme: light; }
+
+/* ===== Importação de Produtos ===== */
+.import-summary { display: flex; gap: 16px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; font-size: 0.85rem; font-weight: 700; }
+.imp-summary-ok { color: #1fb35f; }
+.imp-summary-err { color: var(--danger); }
+.imp-summary-hide { display: none; }
+.imp-badge { font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.imp-badge-ok { background: rgba(46, 213, 115, .15); color: #1fb35f; }
+.imp-badge-err { background: rgba(255, 71, 87, .15); color: var(--danger); }
+#importTable { min-width: 720px; }
+#importTable td { font-size: 0.8rem; }
+.imp-row-err td { background: rgba(255, 71, 87, .04); }

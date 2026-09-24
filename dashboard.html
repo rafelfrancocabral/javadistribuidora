@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=12">
+    <link rel="stylesheet" href="css/dashboard.css?v=13">
 </head>
 <body>
     <script>
@@ -121,6 +121,8 @@
                 <div class="dash-toolbar">
                     <div class="dash-toolbar-left">
                         <button class="btn btn-primary" id="btnNewProduct"><i class="fas fa-plus"></i> Novo Produto</button>
+                        <button class="btn btn-ghost" id="btnImportProducts" title="Importar até 500 produtos de um arquivo CSV"><i class="fas fa-file-import"></i> Importar Produtos</button>
+                        <input type="file" id="productImportFile" accept=".csv,text/csv" hidden>
                     </div>
                     <input type="text" id="productSearch" class="dash-input" placeholder="Buscar produto...">
                 </div>
@@ -283,6 +285,28 @@
         </div>
     </div>
 
+    <!-- ===== Modal Importação de Produtos ===== -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal modal-lg">
+            <div class="modal-header"><h3>Revisar Importação</h3><button class="modal-close" id="importModalClose"><i class="fas fa-xmark"></i></button></div>
+            <div class="modal-body">
+                <div class="import-summary" id="importSummary"></div>
+                <div class="import-table-wrap" style="max-height:60vh;overflow:auto;">
+                    <table class="dash-table" id="importTable">
+                        <thead>
+                            <tr><th>Resultado</th><th>Código</th><th>Nome do Produto</th><th>Marca</th><th>Linha</th><th>Preço</th><th>Motivo</th><th>Abrir</th></tr>
+                        </thead>
+                        <tbody id="importTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" id="importCancel">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="importConfirm"><i class="fas fa-file-import"></i> Confirmar Importação</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== Modal Novo Orçamento ===== -->
     <div class="modal-overlay" id="quoteModal">
         <div class="modal modal-lg">
@@ -364,6 +388,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=1"></script>
-    <script src="js/dashboard.js?v=21"></script>
+    <script src="js/dashboard.js?v=22"></script>
 </body>
 </html>

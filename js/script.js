@@ -221,8 +221,9 @@ async function loadCategories() {
 }
 
 function getFilteredProducts() {
-    let list = _allProducts;
-    if (_currentCategory && _currentCategory !== 'all') {
+    let list = _allProducts.slice();
+    const categorySelected = _currentCategory && _currentCategory !== 'all';
+    if (categorySelected) {
         list = list.filter(p => p.categoria === _currentCategory);
     }
     if (_searchTerm) {
@@ -235,7 +236,11 @@ function getFilteredProducts() {
             return haystack.includes(t) || kw.includes(t);
         });
     }
-    // Destaque e promoção no início; dentro de cada grupo ordem aleatória (estável por página).
+    // Dentro de uma categoria: ordem alfabética.
+    if (categorySelected) {
+        return list.sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+    }
+    // No "Todos": destaque e promoção no início; dentro de cada grupo ordem aleatória (estável por página).
     return list.sort((a, b) => {
         const wa = (a.isDestaque ? 2 : 0) + (a.isPromocao ? 1 : 0);
         const wb = (b.isDestaque ? 2 : 0) + (b.isPromocao ? 1 : 0);

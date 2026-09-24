@@ -119,18 +119,18 @@ const labels = [];
         }
     } else {
         const days = parseInt(period) || 7;
-        const n = days > 14 ? 12 : days;
-        const step = days / n;
-        for (let b = 0; b < n; b++) {
-            const endOffset = Math.round(days - b * step);
-            const startOffset = Math.max(0, Math.round(days - (b + 1) * step));
-            const dFirst = new Date(); dFirst.setDate(dFirst.getDate() - startOffset);
-            const dLast = new Date(); dLast.setDate(dLast.getDate() - endOffset);
-            const lo = new Date(dFirst.getFullYear(), dFirst.getMonth(), dFirst.getDate());
-            const hi = new Date(dLast.getFullYear(), dLast.getMonth(), dLast.getDate() + 1);
+        const step = days > 14 ? days / 12 : 1;
+        let cur = days;
+        while (cur > 0) {
+            const next = Math.max(0, Math.round(cur - step));
+            const loBase = new Date(); loBase.setDate(loBase.getDate() - (cur - 1));
+            const lo = new Date(loBase.getFullYear(), loBase.getMonth(), loBase.getDate());
+            const hiBase = new Date(); hiBase.setDate(hiBase.getDate() - next);
+            const hi = new Date(hiBase.getFullYear(), hiBase.getMonth(), hiBase.getDate() + 1);
             const fLabel = lo.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
             const lLabel = new Date(hi.getTime() - 86400000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
             buckets.push({ label: fLabel === lLabel ? fLabel : fLabel + ' → ' + lLabel, start: lo, end: hi });
+            cur = next;
         }
     }
     buckets.forEach(bkt => {

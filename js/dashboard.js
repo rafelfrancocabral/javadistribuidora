@@ -101,40 +101,42 @@ function buildQuoteChart(period) {
     const periodQ = getQuotesInPeriod(period);
     if (empty) empty.style.display = periodQ.length ? 'none' : '';
 
-let labels = [];
-    let dataConcluido = [];
+const labels = [];
+    const dataConcluido = [];
+    const buckets = [];
     if (period === 'today') {
         for (let h = 8; h <= 20; h += 2) {
-            labels.push(h + 'h');
             const lo = new Date(); lo.setHours(h, 0, 0, 0);
             const hi = new Date(lo.getTime() + 7200000);
-            dataConcluido.push(periodQ.filter(q => { const d = new Date(q.created_at); return d >= lo && d < hi && q.status === 'concluido'; }).length);
+            buckets.push({ label: h + 'h', start: lo, end: hi });
         }
     } else if (period === 'month') {
         const now = new Date();
         const dayCount = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const step = Math.max(1, Math.floor(dayCount / 12));
-        for (let i = 0; i < dayCount; i += step) {
+        for (let i = 0; i < dayCount; i++) {
             const d = new Date(now.getFullYear(), now.getMonth(), i + 1);
-            const label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-            labels.push(label);
-            const lo = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-            const hi = new Date(lo.getTime() + 86400000);
-            dataConcluido.push(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi && q.status === 'concluido'; }).length);
+            buckets.push({ label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), start: new Date(d.getFullYear(), d.getMonth(), d.getDate()), end: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1) });
         }
     } else {
         const days = parseInt(period) || 7;
-        const buckets = Math.min(days, 12);
-        const step = Math.max(1, Math.floor(days / buckets));
-        for (let i = 0; i < days; i += step) {
-            const d = new Date(); d.setDate(d.getDate() - i);
-            const label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-            labels.unshift(label);
-            const lo = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-            const hi = new Date(lo.getTime() + 86400000);
-            dataConcluido.unshift(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi && q.status === 'concluido'; }).length);
+        const n = days > 14 ? 12 : days;
+        const step = days / n;
+        for (let b = 0; b < n; b++) {
+            const endOffset = Math.round(days - b * step);
+            const startOffset = Math.max(0, Math.round(days - (b + 1) * step));
+            const dFirst = new Date(); dFirst.setDate(dFirst.getDate() - startOffset);
+            const dLast = new Date(); dLast.setDate(dLast.getDate() - endOffset);
+            const lo = new Date(dFirst.getFullYear(), dFirst.getMonth(), dFirst.getDate());
+            const hi = new Date(dLast.getFullYear(), dLast.getMonth(), dLast.getDate() + 1);
+            const fLabel = lo.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            const lLabel = new Date(hi.getTime() - 86400000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            buckets.push({ label: fLabel === lLabel ? fLabel : fLabel + ' → ' + lLabel, start: lo, end: hi });
         }
     }
+    buckets.forEach(bkt => {
+        labels.push(bkt.label);
+        dataConcluido.push(periodQ.filter(q => { const d = new Date(q.created_at); return d >= bkt.start && d < bkt.end && q.status === 'concluido'; }).length);
+    });
     if (chartQuotesInstance) { chartQuotesInstance.destroy(); chartQuotesInstance = null; }
     if (!el) return;
 
@@ -241,7 +243,7 @@ function buildPaymentChart() {
     const el = document.getElementById('chartPayments');
     const empty = document.getElementById('chartPaymentsEmpty');
     const map = {};
-    quotes.filter(q => q.status === 'concluido' && q.linha === currentChartGroup).forEach(q => {
+    getQuotesInPeriod(currentChartPeriod).filter(q => q.status === 'concluido' && q.linha === currentChartGroup).forEach(q => {
         (Array.isArray(q.itens) ? q.itens : []).forEach(i => {
             let cat = i.categoria;
             if (!cat) {
@@ -392,7 +394,7 @@ function renderTopSellers() {
     if (!products.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>Nenhum produto no catálogo.</p></div>'; return; }
     const groupProducts = products.filter(p => p.linha === currentChartGroup);
     const sold = {};
-    quotes.filter(q => q.status === 'concluido' && q.linha === currentChartGroup).forEach(q => {
+    getQuotesInPeriod(currentChartPeriod).filter(q => q.status === 'concluido' && q.linha === currentChartGroup).forEach(q => {
         (Array.isArray(q.itens) ? q.itens : []).forEach(i => {
             const k = String((i.codigo || i.nome || '')).trim().toLowerCase();
             if (!k) return;
@@ -428,7 +430,7 @@ function renderLowSellers() {
     const groupProducts = products.filter(p => p.linha === currentChartGroup);
     if (!groupProducts.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>Nenhum produto no catálogo.</p></div>'; return; }
     const sold = {};
-    quotes.filter(q => q.status === 'concluido' && q.linha === currentChartGroup).forEach(q => {
+    getQuotesInPeriod(currentChartPeriod).filter(q => q.status === 'concluido' && q.linha === currentChartGroup).forEach(q => {
         (Array.isArray(q.itens) ? q.itens : []).forEach(i => {
             const k = String((i.codigo || i.nome || '')).trim().toLowerCase();
             if (!k) return;
@@ -492,7 +494,7 @@ function updateChartTitles() {
 
 async function renderOverview() {
     updateChartTitles();
-    const groupQuotes = quotes.filter(q => q.linha === currentChartGroup);
+    const groupQuotes = getQuotesInPeriod(currentChartPeriod);
     document.getElementById('metricQuotes').textContent = groupQuotes.length;
     document.getElementById('metricSales').textContent = groupQuotes.filter(q => q.status === 'concluido').length;
     const totalSold = groupQuotes.filter(q => q.status === 'concluido').reduce((s, q) => s + (Number(q.total) || 0), 0);
@@ -1000,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.dash-nav-item[data-view]').forEach(item => { item.addEventListener('click', (e) => { e.preventDefault(); switchView(item.dataset.view); }); });
     document.getElementById('dashMenuToggle').addEventListener('click', () => { document.getElementById('dashSidebar').classList.toggle('open'); });
     document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); if (confirm('Deseja realmente sair?')) { localStorage.removeItem(AUTH_KEY); window.location.href = 'login.html'; } });
-    document.querySelectorAll('.chart-tab[data-period]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('.chart-tab[data-period]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); currentChartPeriod = tab.dataset.period; buildQuoteChart(currentChartPeriod); renderTopClients(); }); });
+    document.querySelectorAll('.chart-tab[data-period]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('.chart-tab[data-period]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); currentChartPeriod = tab.dataset.period; renderOverview(); }); });
 document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('[data-group]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); setCurrentGroup(tab.dataset.group); }); });
     document.getElementById('statusFilter').addEventListener('change', renderQuotes);
     const qSearch = document.getElementById('quoteSearch'); let qDeb; qSearch.addEventListener('input', () => { clearTimeout(qDeb); qDeb = setTimeout(renderQuotes, 250); });

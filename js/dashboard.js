@@ -721,24 +721,216 @@ function importPrice(str) {
     return isNaN(n) ? 0 : n;
 }
 
+function crc32(buf) {
+    let table = crc32.table;
+    if (!table) {
+        table = crc32.table = new Int32Array(256);
+        for (let n = 0; n < 256; n++) {
+            let c = n;
+            for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+            table[n] = c;
+        }
+    }
+    let c = 0 ^ -1;
+    for (let i = 0; i < buf.length; i++) c = (c >>> 8) ^ table[(c ^ buf[i]) & 0xFF];
+    return (c ^ -1) >>> 0;
+}
+function xlsxUtf8(s) { return new TextEncoder().encode(s); }
+function buildXlsxZip(entries) {
+    const parts = [], central = [];
+    let offset = 0;
+    const now = new Date();
+    const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+    const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+    for (const e of entries) {
+        const nameBytes = xlsxUtf8(e.name);
+        const data = e.data;
+        const crc = crc32(data);
+        const local = new Uint8Array(30 + nameBytes.length + data.length);
+        const dv = new DataView(local.buffer);
+        dv.setUint32(0, 0x04034b50, true);
+        dv.setUint16(4, 20, true);
+        dv.setUint16(6, 0x0800, true);
+        dv.setUint16(8, 0, true);
+        dv.setUint16(10, dosTime, true);
+        dv.setUint16(12, dosDate, true);
+        dv.setUint32(14, crc, true);
+        dv.setUint32(18, data.length, true);
+        dv.setUint32(22, data.length, true);
+        dv.setUint16(26, nameBytes.length, true);
+        dv.setUint16(28, 0, true);
+        local.set(nameBytes, 30);
+        local.set(data, 30 + nameBytes.length);
+        parts.push(local);
+        const cen = new Uint8Array(46 + nameBytes.length);
+        const cdv = new DataView(cen.buffer);
+        cdv.setUint32(0, 0x02014b50, true);
+        cdv.setUint16(4, 20, true);
+        cdv.setUint16(6, 20, true);
+        cdv.setUint16(8, 0x0800, true);
+        cdv.setUint16(10, 0, true);
+        cdv.setUint16(12, dosTime, true);
+        cdv.setUint16(14, dosDate, true);
+        cdv.setUint32(16, crc, true);
+        cdv.setUint32(20, data.length, true);
+        cdv.setUint32(24, data.length, true);
+        cdv.setUint16(28, nameBytes.length, true);
+        cdv.setUint32(42, offset, true);
+        cen.set(nameBytes, 46);
+        central.push({ bytes: cen, offset });
+        offset += local.length;
+    }
+    let centralSize = 0;
+    central.forEach(c => centralSize += c.bytes.length);
+    const eocd = new Uint8Array(22);
+    const ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, central.length, true);
+    ev.setUint16(10, central.length, true);
+    ev.setUint32(12, centralSize, true);
+    ev.setUint32(16, offset, true);
+    const out = new Uint8Array(offset + centralSize + 22);
+    let p = 0;
+    parts.forEach(b => { out.set(b, p); p += b.length; });
+    central.forEach(c => { out.set(c.bytes, p); p += c.bytes.length; });
+    out.set(eocd, p);
+    return out;
+}
 function downloadImportTemplate() {
-    const csv = '\uFEFFCódigo,Unidade,Nome do Produto,Marca,Linha,Preço\n001,UN,Exemplo de Produto,Exemplo,Java,"12,50"\n002,UN,Exemplo de Produto 2,Exemplo,Dymar,"12,50"';
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const col = (ref, txt) => `<c r="${ref}" t="inlineStr"><is><t>${txt}</t></is></c>`;
+    const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<cols><col min="1" max="1" width="10"/><col min="2" max="2" width="10"/><col min="3" max="3" width="32"/><col min="4" max="4" width="16"/><col min="5" max="5" width="10"/><col min="6" max="6" width="12"/></cols>
+<sheetData>
+<row r="1">${col('A1', 'Código')}${col('B1', 'Unidade')}${col('C1', 'Nome do Produto')}${col('D1', 'Marca')}${col('E1', 'Linha')}${col('F1', 'Preço')}</row>
+<row r="2">${col('A2', '001')}${col('B2', 'UN')}${col('C2', 'Exemplo de Produto')}${col('D2', 'Exemplo')}${col('E2', 'Java')}<c r="F2"><v>12.5</v></c></row>
+<row r="3">${col('A3', '002')}${col('B3', 'UN')}${col('C3', 'Exemplo de Produto 2')}${col('D3', 'Exemplo')}${col('E3', 'Dymar')}<c r="F3"><v>12.5</v></c></row>
+</sheetData>
+</worksheet>`;
+    const entries = [
+        { name: '[Content_Types].xml', data: xlsxUtf8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>`) },
+        { name: '_rels/.rels', data: xlsxUtf8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`) },
+        { name: 'xl/workbook.xml', data: xlsxUtf8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets><sheet name="Produtos" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`) },
+        { name: 'xl/_rels/workbook.xml.rels', data: xlsxUtf8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`) },
+        { name: 'xl/styles.xml', data: xlsxUtf8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="1"><font><sz val="11"/><color rgb="FF000000"/><name val="Calibri"/></font></fonts>
+<fills count="1"><fill><patternFill patternType="none"/></fill></fills>
+<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`) },
+        { name: 'xl/worksheets/sheet1.xml', data: xlsxUtf8(sheet) }
+    ];
+    const zip = buildXlsxZip(entries);
+    const blob = new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'template-produtos.csv';
+    a.download = 'template-produtos.xlsx';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
 }
 
+function findZipEOCD(view) {
+    const len = view.byteLength;
+    for (let i = len - 22; i >= Math.max(0, len - 22 - 65535); i--) {
+        if (view.getUint32(i, true) === 0x06054b50) return i;
+    }
+    return -1;
+}
+
+async function readXlsxRows(file) {
+    if (typeof DecompressionStream === 'undefined') throw new Error('navegador não suporta leitura de .xlsx (atualize o navegador)');
+    const buf = await file.arrayBuffer();
+    const view = new DataView(buf);
+    const eocd = findZipEOCD(view);
+    if (eocd < 0) throw new Error('arquivo .xlsx inválido');
+    const count = view.getUint16(eocd + 10, true);
+    let p = view.getUint32(eocd + 16, true);
+    const dec = new TextDecoder();
+    const entries = {};
+    for (let i = 0; i < count; i++) {
+        const method = view.getUint16(p + 10, true);
+        const compSize = view.getUint32(p + 20, true);
+        const nameLen = view.getUint16(p + 28, true);
+        const extraLen = view.getUint16(p + 30, true);
+        const commentLen = view.getUint16(p + 32, true);
+        const localOffset = view.getUint32(p + 42, true);
+        entries[dec.decode(new Uint8Array(buf, p + 46, nameLen))] = { method, compSize, localOffset };
+        p += 46 + nameLen + extraLen + commentLen;
+    }
+    const readEntry = async (name) => {
+        const en = entries[name];
+        if (!en) return null;
+        const nameLen = view.getUint16(en.localOffset + 26, true);
+        const extraLen = view.getUint16(en.localOffset + 28, true);
+        const start = en.localOffset + 30 + nameLen + extraLen;
+        const bytes = new Uint8Array(buf, start, en.compSize);
+        if (en.method === 0) return dec.decode(bytes);
+        if (en.method === 8) {
+            const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+            return dec.decode(await new Response(stream).arrayBuffer());
+        }
+        throw new Error('compressão não suportada');
+    };
+    const sheetName = Object.keys(entries).find(n => /^xl\/worksheets\/sheet\d+\.xml$/.test(n));
+    if (!sheetName) throw new Error('planilha não encontrada no arquivo');
+    const sheetXml = await readEntry(sheetName);
+    const ssXml = await readEntry('xl/sharedStrings.xml');
+    let shared = [];
+    if (ssXml) {
+        const sdoc = new DOMParser().parseFromString(ssXml, 'application/xml');
+        shared = Array.from(sdoc.getElementsByTagName('si')).map(si => Array.from(si.getElementsByTagName('t')).map(t => t.textContent).join(''));
+    }
+    const doc = new DOMParser().parseFromString(sheetXml, 'application/xml');
+    const rows = [];
+    Array.from(doc.getElementsByTagName('row')).forEach(rowEl => {
+        const rIdx = Math.max(0, parseInt(rowEl.getAttribute('r') || (rows.length + 1), 10) - 1);
+        const arr = [];
+        Array.from(rowEl.getElementsByTagName('c')).forEach(c => {
+            const ref = c.getAttribute('r') || '';
+            const letters = ref.replace(/[0-9]/g, '');
+            const colIdx = letters ? (letters.split('').reduce((a, ch) => a * 26 + (ch.charCodeAt(0) - 64), 0) - 1) : arr.length;
+            const t = c.getAttribute('t');
+            let val = '';
+            if (t === 'inlineStr') val = Array.from(c.getElementsByTagName('t')).map(x => x.textContent).join('');
+            else { const v = c.getElementsByTagName('v')[0]; val = v ? (t === 's' ? (shared[parseInt(v.textContent, 10)] || '') : v.textContent) : ''; }
+            arr[colIdx] = val;
+        });
+        rows[rIdx] = arr;
+    });
+    return rows.filter(r => Array.isArray(r) && r.some(x => String(x == null ? '' : x).trim() !== ''));
+}
+
 async function handleProductImport(e) {
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
     if (!file) return;
-    const text = await file.text();
-    const rows = parseCSVText(text);
+    let rows;
+    try {
+        if (/\.xlsx$/i.test(file.name)) rows = await readXlsxRows(file);
+        else rows = parseCSVText(await file.text());
+    } catch (err) { console.error('import error:', err); toast('Erro ao ler arquivo: ' + err.message, true); return; }
     if (rows.length < 2) { toast('Arquivo sem dados', true); return; }
     const headers = rows[0].map(importNormalizeHeader);
     const idx = { codigo: headers.indexOf('codigo'), unidade: headers.indexOf('unidade'), nome: Math.max(headers.indexOf('nomedoproduto'), headers.indexOf('nome')), marca: headers.indexOf('marca'), linha: headers.indexOf('linha'), preco: headers.indexOf('preco') };

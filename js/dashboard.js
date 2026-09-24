@@ -697,6 +697,9 @@ function decodeImportText(bytes) {
 }
 
 function parseCSVText(text) {
+    const nl = text.indexOf('\n');
+    const firstLine = nl >= 0 ? text.slice(0, nl) : text;
+    const delim = (firstLine.split(';').length - 1) > (firstLine.split(',').length - 1) ? ';' : ',';
     const rows = [];
     let field = '', record = [], inQuotes = false;
     const pushRow = () => { if (record.some(f => String(f).trim() !== '')) rows.push(record); record = []; };
@@ -706,7 +709,7 @@ function parseCSVText(text) {
             if (ch === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
             else field += ch;
         } else if (ch === '"') { inQuotes = true; }
-        else if (ch === ',') { record.push(field); field = ''; }
+        else if (ch === delim) { record.push(field); field = ''; }
         else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; record.push(field); field = ''; pushRow(); }
         else field += ch;
     }
@@ -717,11 +720,12 @@ function parseCSVText(text) {
 
 function importPrice(str) {
     if (str == null) return 0;
-    let s = String(str).replace(/[R$\s]/g, '');
+    let s = String(str).replace(/[R$\u00A0\s]/g, '');
     if (!s) return 0;
-    if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
-    else if (s.includes(',')) s = s.replace(',', '.');
-    else if (s.includes('.')) {
+    if (s.includes(',')) {
+        const lastComma = s.lastIndexOf(',');
+        s = s.slice(0, lastComma).replace(/\./g, '') + '.' + s.slice(lastComma + 1);
+    } else if (s.includes('.')) {
         const parts = s.split('.');
         const last = parts[parts.length - 1];
         if (last.length === 3 && s.replace(/\./g, '').length > 3) s = s.replace(/\./g, '');
@@ -812,8 +816,8 @@ function downloadImportTemplate() {
 <cols><col min="1" max="1" width="10"/><col min="2" max="2" width="10"/><col min="3" max="3" width="32"/><col min="4" max="4" width="16"/><col min="5" max="5" width="10"/><col min="6" max="6" width="12"/></cols>
 <sheetData>
 <row r="1">${col('A1', 'Código')}${col('B1', 'Unidade')}${col('C1', 'Nome do Produto')}${col('D1', 'Marca')}${col('E1', 'Linha')}${col('F1', 'Preço')}</row>
-<row r="2">${col('A2', '001')}${col('B2', 'UN')}${col('C2', 'Exemplo de Produto')}${col('D2', 'Exemplo')}${col('E2', 'Java')}<c r="F2"><v>12.5</v></c></row>
-<row r="3">${col('A3', '002')}${col('B3', 'UN')}${col('C3', 'Exemplo de Produto 2')}${col('D3', 'Exemplo')}${col('E3', 'Dymar')}<c r="F3"><v>12.5</v></c></row>
+<row r="2">${col('A2', '001')}${col('B2', 'UN')}${col('C2', 'Exemplo de Produto')}${col('D2', 'Exemplo')}${col('E2', 'Java')}<c r="F2" s="1"><v>12.5</v></c></row>
+<row r="3">${col('A3', '002')}${col('B3', 'UN')}${col('C3', 'Exemplo de Produto 2')}${col('D3', 'Exemplo')}${col('E3', 'Dymar')}<c r="F3" s="1"><v>12.5</v></c></row>
 </sheetData>
 </worksheet>`;
     const entries = [
@@ -840,11 +844,12 @@ function downloadImportTemplate() {
 </Relationships>`) },
         { name: 'xl/styles.xml', data: xlsxUtf8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00"/></numFmts>
 <fonts count="1"><font><sz val="11"/><color rgb="FF000000"/><name val="Calibri"/></font></fonts>
 <fills count="1"><fill><patternFill patternType="none"/></fill></fills>
 <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>
+<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`) },
         { name: 'xl/worksheets/sheet1.xml', data: xlsxUtf8(sheet) }
@@ -944,7 +949,18 @@ async function handleProductImport(e) {
     const headers = rows[0].map(importNormalizeHeader);
     const idx = { codigo: headers.indexOf('codigo'), unidade: headers.indexOf('unidade'), nome: Math.max(headers.indexOf('nomedoproduto'), headers.indexOf('nome')), marca: headers.indexOf('marca'), linha: headers.indexOf('linha'), preco: headers.indexOf('preco') };
     if (idx.codigo < 0 || idx.nome < 0 || idx.preco < 0) { toast('Headers esperados: Código, Unidade, Nome do Produto, Marca, Linha, Preço', true); return; }
-    const dataRows = rows.slice(1);
+    const expectedCols = headers.length;
+    const fixPriceSplit = (r) => {
+        if (!Array.isArray(r)) return r;
+        let last = r.length - 1;
+        while (last >= 0 && String(r[last] == null ? '' : r[last]).trim() === '') last--;
+        if (last < r.length - 1) r = r.slice(0, last + 1);
+        if (r.length <= expectedCols || idx.preco < 0) return r;
+        const merged = r.slice(idx.preco).join(',');
+        if (!merged.includes(',') || importPrice(merged) <= 0) return r;
+        return r.slice(0, idx.preco).concat([merged]);
+    };
+    const dataRows = rows.slice(1).map(fixPriceSplit);
     if (dataRows.length > 500) { toast('Máximo de 500 produtos por importação', true); return; }
     const UNIDADES = ['UN', 'KG', 'MT', 'M2', 'M3', 'LT', 'PAR', 'KIT', 'CX', 'PC'];
     importRows = dataRows.map((r, originalIndex) => {

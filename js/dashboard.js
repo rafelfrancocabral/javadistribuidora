@@ -101,15 +101,13 @@ function buildQuoteChart(period) {
     const periodQ = getQuotesInPeriod(period);
     if (empty) empty.style.display = periodQ.length ? 'none' : '';
 
-    let labels = [];
-    let dataReceived = [];
+let labels = [];
     let dataConcluido = [];
     if (period === 'today') {
         for (let h = 8; h <= 20; h += 2) {
             labels.push(h + 'h');
             const lo = new Date(); lo.setHours(h, 0, 0, 0);
             const hi = new Date(lo.getTime() + 7200000);
-            dataReceived.push(periodQ.filter(q => { const d = new Date(q.created_at); return d >= lo && d < hi; }).length);
             dataConcluido.push(periodQ.filter(q => { const d = new Date(q.created_at); return d >= lo && d < hi && q.status === 'concluido'; }).length);
         }
     } else if (period === 'month') {
@@ -122,7 +120,6 @@ function buildQuoteChart(period) {
             labels.push(label);
             const lo = new Date(d.getFullYear(), d.getMonth(), d.getDate());
             const hi = new Date(lo.getTime() + 86400000);
-            dataReceived.push(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi; }).length);
             dataConcluido.push(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi && q.status === 'concluido'; }).length);
         }
     } else {
@@ -135,17 +132,11 @@ function buildQuoteChart(period) {
             labels.unshift(label);
             const lo = new Date(d.getFullYear(), d.getMonth(), d.getDate());
             const hi = new Date(lo.getTime() + 86400000);
-            dataReceived.unshift(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi; }).length);
             dataConcluido.unshift(periodQ.filter(q => { const dd = new Date(q.created_at); return dd >= lo && dd < hi && q.status === 'concluido'; }).length);
         }
     }
     if (chartQuotesInstance) { chartQuotesInstance.destroy(); chartQuotesInstance = null; }
     if (!el) return;
-
-    const gradientReceived = el.getContext('2d').createLinearGradient(0, 0, 0, 320);
-    gradientReceived.addColorStop(0, 'rgba(168,85,247,0.30)');
-    gradientReceived.addColorStop(0.6, 'rgba(139,92,246,0.10)');
-    gradientReceived.addColorStop(1, 'rgba(88,28,135,0)');
 
     const gradientApproved = el.getContext('2d').createLinearGradient(0, 0, 0, 320);
     gradientApproved.addColorStop(0, 'rgba(0,255,163,0.25)');
@@ -158,32 +149,13 @@ function buildQuoteChart(period) {
             labels, 
             datasets: [
                 { 
-                    label: 'Orçamentos Recebidos', 
-                    data: dataReceived, 
-                    fill: true,
-                    tension: 0.45,
-                    borderColor: '#a855f7',
-                    backgroundColor: gradientReceived,
-                    borderWidth: 2.5,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#a855f7',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 7,
-                    pointHoverBackgroundColor: '#00e5ff',
-                    pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 2,
-                    hoverBorderColor: '#00e5ff',
-                    hoverBorderWidth: 3
-                },
-                { 
                     label: 'Orçamentos Concluídos', 
                     data: dataConcluido, 
                     fill: true,
                     tension: 0.45,
                     borderColor: '#00ffa3',
                     backgroundColor: gradientApproved,
-                    borderWidth: 2.5,
+                    borderWidth: 3,
                     pointBackgroundColor: '#fff',
                     pointBorderColor: '#00ffa3',
                     pointBorderWidth: 2,

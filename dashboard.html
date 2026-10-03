@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=14">
+    <link rel="stylesheet" href="css/dashboard.css?v=15">
 </head>
 <body>
     <script>
@@ -18,19 +18,21 @@
 
     <aside class="dash-sidebar" id="dashSidebar">
         <div class="dash-logo">
+            <span class="dash-logo-mark"><i class="fas fa-box-archive"></i></span>
             <span class="dash-logo-txt">JAVA<span class="dash-logo-acc">DISTRIBUIDORA</span></span>
         </div>
+        <span class="dash-section-label">Menu</span>
         <nav class="dash-nav">
-            <a href="#" class="dash-nav-item active" data-view="dashboard"><i class="fas fa-gauge-high"></i> Visão Geral</a>
-            <a href="#" class="dash-nav-item" data-view="orcamentos"><i class="fas fa-file-invoice-dollar"></i> Orçamentos <span class="dash-badge" id="pendingQuotesBadge">0</span></a>
-            <a href="#" class="dash-nav-item" data-view="produtos"><i class="fas fa-boxes-stacked"></i> Produtos</a>
-            <a href="#" class="dash-nav-item" data-view="categorias"><i class="fas fa-folder-tree"></i> Categorias</a>
-            <a href="#" class="dash-nav-item" data-view="clientes"><i class="fas fa-users"></i> Clientes</a>
-            <a href="#" class="dash-nav-item" data-view="agendar"><i class="fas fa-calendar-check"></i> Agendar Visita</a>
+            <a href="#" class="dash-nav-item active" data-view="dashboard"><span class="dash-nav-ico"><i class="fas fa-gauge-high"></i></span> Visão Geral</a>
+            <a href="#" class="dash-nav-item" data-view="orcamentos"><span class="dash-nav-ico"><i class="fas fa-file-invoice-dollar"></i></span> Orçamentos <span class="dash-badge" id="pendingQuotesBadge">0</span></a>
+            <a href="#" class="dash-nav-item" data-view="produtos"><span class="dash-nav-ico"><i class="fas fa-boxes-stacked"></i></span> Produtos</a>
+            <a href="#" class="dash-nav-item" data-view="categorias"><span class="dash-nav-ico"><i class="fas fa-folder-tree"></i></span> Categorias</a>
+            <a href="#" class="dash-nav-item" data-view="clientes"><span class="dash-nav-ico"><i class="fas fa-users"></i></span> Clientes</a>
+            <a href="#" class="dash-nav-item" data-view="agendar"><span class="dash-nav-ico"><i class="fas fa-calendar-check"></i></span> Agendar Visita</a>
         </nav>
         <div class="dash-sidebar-footer">
-            <a href="index.html" class="dash-nav-item"><i class="fas fa-store"></i> Ver Catálogo</a>
-            <a href="#" class="dash-nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</a>
+            <a href="index.html" class="dash-nav-item"><span class="dash-nav-ico"><i class="fas fa-store"></i></span> Ver Catálogo</a>
+            <a href="#" class="dash-nav-item" id="logoutBtn"><span class="dash-nav-ico"><i class="fas fa-sign-out-alt"></i></span> Sair</a>
         </div>
     </aside>
 

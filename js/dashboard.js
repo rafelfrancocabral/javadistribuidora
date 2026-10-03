@@ -637,14 +637,14 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     doc.text('CÓDIGO', codeX, y + 6); doc.text('PRODUTO', descX, y + 6); doc.text('QTDE', qtyX, y + 6, { align: 'right' }); doc.text('UNIT', unitX, y + 6, { align: 'right' }); doc.text('SUBTOTAL', subX, y + 6, { align: 'right' }); y += 15;
     doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(9.5);
     const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null;
-    if (items) { items.forEach(it => { if (y > 272) { doc.addPage(); y = margin; } const name = it.nome || ''; const code = it.codigo || ''; const qty = it.quantidade || 0; const unit = it.preco || 0; const sub = it.subtotal || (unit * qty); doc.setFillColor(245, 245, 248); doc.setDrawColor(235, 230, 242); doc.rect(margin, y - 5.5, width, 14, 'FD'); doc.setFont('helvetica', 'bold'); doc.setTextColor(130, 130, 140); doc.text(String(code), codeX, y); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 40); let descTxt = name; if (doc.getTextWidth(descTxt) > qtyX - descX - 6) descTxt = doc.splitTextToSize(descTxt, qtyX - descX - 6)[0]; doc.text(descTxt, descX, y); doc.setFont('helvetica', 'normal'); doc.text(String(qty), qtyX, y, { align: 'right' }); doc.text(formatPrice(unit), unitX, y, { align: 'right' }); doc.setFont('helvetica', 'bold'); doc.text(formatPrice(sub), subX, y, { align: 'right' }); y += 16; }); }
+    const byCode = {};
+    if (products.length) products.forEach(p => { if (p.codigo) byCode[String(p.codigo).toLowerCase()] = p; });
+    if (items) { items.forEach(it => { if (y > 272) { doc.addPage(); y = margin; } const name = it.nome || ''; const code = it.codigo || ''; const qty = it.quantidade || 0; const unit = it.preco || 0; const sub = it.subtotal || (unit * qty); const __p = it.codigo ? byCode[String(it.codigo).toLowerCase()] : null; const hasIcms = !!(__p && String(__p.linha).toLowerCase() === 'dymar' && Number(__p.icmsst) > 0); const rowH = hasIcms ? 22 : 14; doc.setFillColor(245, 245, 248); doc.setDrawColor(235, 230, 242); doc.rect(margin, y - 5.5, width, rowH, 'FD'); doc.setFont('helvetica', 'bold'); doc.setTextColor(130, 130, 140); doc.text(String(code), codeX, y); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 40); let descTxt = name; if (doc.getTextWidth(descTxt) > qtyX - descX - 6) descTxt = doc.splitTextToSize(descTxt, qtyX - descX - 6)[0]; doc.text(descTxt, descX, y); doc.setFont('helvetica', 'normal'); doc.text(String(qty), qtyX, y, { align: 'right' }); doc.text(formatPrice(unit), unitX, y, { align: 'right' }); doc.setFont('helvetica', 'bold'); doc.text(formatPrice(sub), subX, y, { align: 'right' }); if (hasIcms) { doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.text('ICMS-ST ' + Number(__p.icmsst).toLocaleString('pt-BR') + '% — ' + formatPrice(sub * Number(__p.icmsst) / 100), descX, y + 10); doc.setFontSize(9.5); } y += (hasIcms ? 24 : 16); }); }
     y += 4; if (y > 275) { doc.addPage(); y = margin; }
     doc.setDrawColor(216, 180, 254); doc.line(margin, y, pageW - margin, y); y += 8;
     const totalTabela = Number(q.total) || 0;
     let icmsTotal = 0;
-    if (items && products.length) {
-        const byCode = {};
-        products.forEach(p => { if (p.codigo) byCode[String(p.codigo).toLowerCase()] = p; });
+    if (items) {
         items.forEach(it => { const __p = it.codigo ? byCode[String(it.codigo).toLowerCase()] : null; if (__p && String(__p.linha).toLowerCase() === 'dymar' && Number(__p.icmsst) > 0) { const sub = Number(it.subtotal || (it.preco * it.quantidade)) || 0; icmsTotal += sub * Number(__p.icmsst) / 100; } });
     }
     if (icmsTotal > 0) {

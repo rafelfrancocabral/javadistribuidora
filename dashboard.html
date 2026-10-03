@@ -259,6 +259,7 @@
                     <div class="form-field"><label>Subcategoria</label><select id="prodSubcategoria"></select></div>
                     <div class="form-field"><label>Linha *</label><select id="prodLinha"><option value="java">Java</option><option value="dymar">Dymar</option></select></div>
                     <div class="form-field span-2" id="icmsField" style="display:none;"><label>ICMS-ST (%) — aplicado no PDF dos orçamentos Dymar</label><input type="text" id="prodIcmsSt" placeholder="0,00"></div>
+                    <div class="form-field span-2"><label>Embalagem</label><input type="number" id="prodEmbalagem" min="1" step="1" value="1" style="max-width:140px"> <small style="color:var(--muted);vertical-align:middle;">Se maior que 1, o produto só é comercializado em múltiplos desse valor (ex.: 12 = caixas de 12).</small></div>
                     <div class="form-field"><label>Preço (R$) *</label><input type="text" id="prodPreco" required placeholder="0,00"></div>
                     <div class="form-field"><label>Estoque *</label><input type="number" id="prodEstoque" required value="0"></div>
                     <div class="form-field span-2"><label>Palavras-chave</label><input type="text" id="prodKeywords" placeholder="Separe por vírgula: furadeira, broca, parede..."></div>
@@ -304,7 +305,7 @@
                 <div class="import-table-wrap" style="max-height:60vh;overflow:auto;">
                     <table class="dash-table" id="importTable">
                         <thead>
-                            <tr><th>Resultado</th><th>Código</th><th>Nome do Produto</th><th>Marca</th><th>Linha</th><th>ICMS-ST</th><th>Preço</th><th>Motivo</th><th>Abrir</th></tr>
+                            <tr><th>Resultado</th><th>Código</th><th>Nome do Produto</th><th>Marca</th><th>Linha</th><th>ICMS-ST</th><th>Embalagem</th><th>Preço</th><th>Motivo</th><th>Abrir</th></tr>
                         </thead>
                         <tbody id="importTableBody"></tbody>
                     </table>
@@ -398,6 +399,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=1"></script>
-    <script src="js/dashboard.js?v=33"></script>
+    <script src="js/dashboard.js?v=34"></script>
 </body>
 </html>

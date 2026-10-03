@@ -157,7 +157,7 @@ let _categories = [];
 let _currentCategory = 'all';
 let _searchTerm = '';
 
-const PRODUCT_SELECT_FIELDS = 'id, codigo, nome, marca, categoria, subcategoria, preco, unidade, descricao, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional, somente_orcamento, linha';
+const PRODUCT_SELECT_FIELDS = 'id, codigo, nome, marca, categoria, subcategoria, preco, unidade, descricao, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional, somente_orcamento, linha, embalagem';
 
 function normalizeProduct(p) {
     return {
@@ -166,6 +166,7 @@ function normalizeProduct(p) {
         isDestaque: !!p.isdestaque,
         isPromocao: !!p.ispromocao,
         precoPromocional: parseFloat(p.precopromocional) || 0,
+        embalagem: parseInt(p.embalagem) || 1,
         _rnd: Math.random()
     };
 }
@@ -269,6 +270,7 @@ function renderCatalog() {
     grid.innerHTML = filtered.map(p => {
         const hasPromo = p.isPromocao && p.precoPromocional > 0;
         const price = hasPromo ? p.precoPromocional : p.preco;
+        const emb = p.embalagem > 1 ? p.embalagem : 1;
         const img = (p.imagens && p.imagens.length > 0) ? p.imagens[0] : '';
         const thumb = img ? getThumbUrl(img) : '';
 
@@ -296,11 +298,12 @@ function renderCatalog() {
                 <span class="cat-code">${p.codigo ? 'CÓD ' + escapeHtml(p.codigo) : ''}</span>
                 <h4 class="cat-name">${escapeHtml(p.nome)}</h4>
                 <span class="cat-meta">${escapeHtml(p.marca || '')} ${p.categoria ? '• ' + escapeHtml(p.categoria) : ''}</span>
+                ${emb > 1 ? `<span class="cat-meta cat-emb"><i class="fas fa-box" style="margin-right:4px"></i>Vendido em caixas de ${emb}</span>` : ''}
                 ${priceBlock}
                 <div class="cat-actions">
                     <div class="catalog-qty">
                         <button onclick="catalogQtyChange(this, -1)"><i class="fas fa-minus"></i></button>
-                        <input type="number" value="1" min="1" max="999" data-pid="${escapeHtml(p.id)}">
+                        <input type="number" value="${emb}" min="${emb}" step="${emb}" max="999" data-pid="${escapeHtml(p.id)}">
                         <button onclick="catalogQtyChange(this, 1)"><i class="fas fa-plus"></i></button>
                     </div>
                     <button class="btn-add-cart" onclick="addToCart(event, '${escapeHtml(p.id)}')">
@@ -359,10 +362,13 @@ function updateCartBadge() {
 
 function catalogQtyChange(btn, delta) {
     const input = btn.closest('.catalog-qty').querySelector('input');
-    let v = parseInt(input.value) || 1;
-    v += delta;
-    if (v < 1) v = 1;
-    if (v > 999) v = 999;
+    const pid = input.getAttribute('data-pid');
+    const p = pid ? _allProducts.find(x => String(x.id) === String(pid)) : null;
+    const emb = (p && p.embalagem > 1) ? p.embalagem : 1;
+    let v = parseInt(input.value) || emb;
+    if (v < emb || v % emb) v = emb;
+    const v2 = v + delta * emb;
+    if (v2 < emb) v = emb; else v = Math.min(v2, 999);
     input.value = v;
 }
 
@@ -386,7 +392,9 @@ function addToCart(event, productId) {
     console.log('[addToCart] product found', { product: !!product, productId, totalProducts: _allProducts.length });
     if (!product) return;
 
-    const qty = getQtyForEl(event && event.target);
+    let qty = getQtyForEl(event && event.target);
+    const emb = product.embalagem > 1 ? product.embalagem : 1;
+    if (qty % emb) { qty = Math.ceil(qty / emb) * emb; }
     const hasPromo = product.isPromocao && product.precoPromocional > 0;
     const img = (product.imagens && product.imagens.length > 0) ? product.imagens[0] : '';
     const thumb = img ? getThumbUrl(img) : '';
@@ -403,6 +411,7 @@ function addToCart(event, productId) {
             categoria: product.categoria || '',
             preco: hasPromo ? product.precoPromocional : product.preco,
             imagem: thumb,
+            embalagem: product.embalagem || 1,
             qty: qty
         });
     }
@@ -419,7 +428,8 @@ function cartQtyChange(id, delta) {
     const cart = getCart();
     const item = cart.find(i => String(i.id) === String(id));
     if (!item) return;
-    item.qty += delta;
+    const emb = Number(item.embalagem) > 1 ? Number(item.embalagem) : 1;
+    item.qty += delta * emb;
     if (item.qty <= 0) removeFromCart(id);
     else saveCart(cart);
 }
@@ -484,6 +494,7 @@ function openProductModal(productId) {
 
     const hasPromo = product.isPromocao && product.precoPromocional > 0;
     const price = hasPromo ? product.precoPromocional : product.preco;
+    const emb = product.embalagem > 1 ? product.embalagem : 1;
     const img = (product.imagens && product.imagens.length > 0) ? product.imagens[0] : '';
     const thumb = img ? getThumbUrl(img) : '';
 
@@ -511,10 +522,11 @@ function openProductModal(productId) {
                         ? `${hasPromo ? `<span class="price-old">${formatPrice(product.preco)}</span> ` : ''}<span class="price-now">${formatPrice(price)}</span> ${product.unidade ? '<small class="price-unit">/' + escapeHtml(product.unidade) + '</small>' : ''}`
                         : `<span class="pm-price-msg">${priceLocked()}</span>`}
                 </div>
+                ${emb > 1 ? `<span class="cat-meta cat-emb" style="margin-top:6px"><i class="fas fa-box" style="margin-right:4px"></i>Vendido em caixas de ${emb}</span>` : ''}
                 <div class="pm-actions">
                     <div class="catalog-qty pm-qty">
                         <button onclick="catalogQtyChange(this, -1)"><i class="fas fa-minus"></i></button>
-                        <input type="number" value="1" min="1" max="999">
+                        <input type="number" value="${emb}" min="${emb}" step="${emb}" max="999" data-pid="${product.id}">
                         <button onclick="catalogQtyChange(this, 1)"><i class="fas fa-plus"></i></button>
                     </div>
                     <button class="btn-add-cart" style="flex:1;" onclick="addToCart(event, '${product.id}')">
@@ -581,6 +593,12 @@ async function submitQuote(e) {
 
     const cart = getCart();
     if (cart.length === 0) return;
+
+    const badEmb = cart.filter(it => Number(it.embalagem || 1) > 1 && (it.qty % Number(it.embalagem)) !== 0);
+    if (badEmb.length) {
+        if (errBox) { errText.textContent = badEmb[0].nome + ' é vendido em caixas de ' + badEmb[0].embalagem + ' — ajuste a quantidade.'; errBox.style.display = ''; }
+        return;
+    }
 
     const pagamento = document.getElementById('checkoutPayment')?.value || '';
     if (!pagamento) {

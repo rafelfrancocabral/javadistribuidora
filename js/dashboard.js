@@ -641,19 +641,30 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     if (products.length) products.forEach(p => { if (p.codigo) byCode[String(p.codigo).toLowerCase()] = p; });
     if (items) { items.forEach(it => { if (y > 272) { doc.addPage(); y = margin; } const name = it.nome || ''; const code = it.codigo || ''; const qty = it.quantidade || 0; const unit = it.preco || 0; const sub = it.subtotal || (unit * qty); const __p = it.codigo ? byCode[String(it.codigo).toLowerCase()] : null; const hasIcms = !!(__p && String(__p.linha).toLowerCase() === 'dymar' && Number(__p.icmsst) > 0); const rowH = hasIcms ? 22 : 14; doc.setFillColor(245, 245, 248); doc.setDrawColor(235, 230, 242); doc.rect(margin, y - 5.5, width, rowH, 'FD'); doc.setFont('helvetica', 'bold'); doc.setTextColor(130, 130, 140); doc.text(String(code), codeX, y); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 40); let descTxt = name; if (doc.getTextWidth(descTxt) > qtyX - descX - 6) descTxt = doc.splitTextToSize(descTxt, qtyX - descX - 6)[0]; doc.text(descTxt, descX, y); doc.setFont('helvetica', 'normal'); doc.text(String(qty), qtyX, y, { align: 'right' }); doc.text(formatPrice(unit), unitX, y, { align: 'right' }); doc.text(hasIcms ? Number(__p.icmsst).toLocaleString('pt-BR') + '%' : '', icmsX, y, { align: 'right' }); doc.setFont('helvetica', 'bold'); doc.text(formatPrice(sub), subX, y, { align: 'right' }); if (hasIcms) { doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.text('ICMS-ST ' + Number(__p.icmsst).toLocaleString('pt-BR') + '% — ' + formatPrice(sub * Number(__p.icmsst) / 100), descX, y + 10); doc.setFontSize(9.5); } y += (hasIcms ? 24 : 16); }); }
     y += 4; if (y > 275) { doc.addPage(); y = margin; }
-    doc.setDrawColor(216, 180, 254); doc.line(margin, y, pageW - margin, y); y += 8;
+    doc.setDrawColor(216, 180, 254); doc.line(margin, y, pageW - margin, y); y += 7;
     const totalTabela = Number(q.total) || 0;
     let icmsTotal = 0;
     if (items) {
         items.forEach(it => { const __p = it.codigo ? byCode[String(it.codigo).toLowerCase()] : null; if (__p && String(__p.linha).toLowerCase() === 'dymar' && Number(__p.icmsst) > 0) { const sub = Number(it.subtotal || (it.preco * it.quantidade)) || 0; icmsTotal += sub * Number(__p.icmsst) / 100; } });
     }
-    if (icmsTotal > 0) {
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(brand); doc.text('TOTAL (preço de tabela)', margin, y); doc.text(formatPrice(totalTabela), subX, y, { align: 'right' }); y += 8;
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(light); doc.text('ICMS-ST (percentuais dos itens Dymar)', margin, y); doc.text(formatPrice(icmsTotal), subX, y, { align: 'right' }); y += 8;
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(brand); doc.text('TOTAL COM ICMS-ST', margin, y); doc.text(formatPrice(totalTabela + icmsTotal), subX, y, { align: 'right' }); y += 8;
-    } else {
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(brand); doc.text('TOTAL', margin, y); doc.text(formatPrice(totalTabela), subX, y, { align: 'right' }); y += 8;
-    }
+    const trows = icmsTotal > 0 ? [
+        { label: 'TOTAL (preço de tabela)', val: formatPrice(totalTabela), bold: true, size: 10, color: brand, fill: false },
+        { label: 'ICMS-ST (percentuais dos itens Dymar)', val: formatPrice(icmsTotal), bold: false, size: 10, color: light, fill: false },
+        { label: 'TOTAL COM ICMS-ST', val: formatPrice(totalTabela + icmsTotal), bold: true, size: 12, color: brand, fill: true }
+    ] : [
+        { label: 'TOTAL', val: formatPrice(totalTabela), bold: true, size: 12, color: brand, fill: false }
+    ];
+    const tRowH = 9, tBoxH = tRowH * trows.length;
+    if (y + tBoxH > 278) { doc.addPage(); y = margin; }
+    doc.setDrawColor(216, 180, 254); doc.setLineWidth(0.4); doc.rect(margin, y, width, tBoxH, 'D');
+    trows.forEach((r, i) => {
+        if (i > 0) { doc.setDrawColor(216, 180, 254); doc.setLineWidth(0.2); doc.line(margin, y + i * tRowH, pageW - margin, y + i * tRowH); }
+        if (r.fill) { doc.setFillColor(247, 243, 255); doc.rect(margin, y + i * tRowH, width, tRowH, 'F'); }
+        doc.setFont('helvetica', r.bold ? 'bold' : 'normal'); doc.setFontSize(r.size); doc.setTextColor(r.color);
+        doc.text(r.label, margin + 4, y + i * tRowH + 6.2);
+        doc.text(r.val, subX - 4, y + i * tRowH + 6.2, { align: 'right' });
+    });
+    y += tBoxH + 6;
     if (q.pagamento) { const payLines = buildPaymentLines(q.pagamento, q.created_at, q.total); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
     const fileName = 'orcamento-' + (q.codigo_cliente || q.id) + '-' + (q.nome_cliente ? q.nome_cliente.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf'; doc.save(fileName); toast('PDF do orçamento baixado.'); }

@@ -294,21 +294,21 @@ body.isAuth .cat-price { display: flex; flex-wrap: wrap; align-items: baseline; 
 .cat-price .price-unit { color: var(--text-muted); font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif; }
 
 .price-lock {
-    display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 12px;
+    display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 12px;
     color: var(--text-muted); font-size: 13.5px; font-family: 'Chakra Petch', sans-serif;
 }
 .price-lock i { color: var(--neon-purple); }
 body.isAuth .cat-price { display: block; }
 body.isAuth .price-lock { display: none; }
 
-.cat-actions { margin-top: 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cat-actions { margin-top: auto; padding-top: 14px; display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
 .catalog-qty { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .catalog-qty button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background:#fff; cursor:pointer; font-weight:700; color: var(--accent); }
 .catalog-qty button:hover { border-color: var(--neon-purple); color: var(--neon-purple); }
 .catalog-qty input { width: 40px; text-align: center; border: 1px solid var(--border); border-radius: 8px; height: 30px; font-family:'Chakra Petch',sans-serif; font-weight:600; }
-.btn-add-cart { flex: 1; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer;
+.btn-add-cart { flex: 1; min-width: 0; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer;
     background: var(--gradient-accent); color: #fff; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 14px;
-    transition: transform .15s, box-shadow .15s; }
+    transition: transform .15s, box-shadow .15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .btn-add-cart:hover { box-shadow: 0 10px 24px rgba(88,28,135,.4); transform: translateY(-2px); }
 
 .catalog-empty { text-align: center; padding: 50px 0; color: var(--text-muted); }

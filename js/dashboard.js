@@ -1017,29 +1017,54 @@ async function handleProductImport(e) {
     const UNIDADES = ['UN', 'KG', 'MT', 'M2', 'M3', 'LT', 'PAR', 'KIT', 'CX', 'PC'];
     importRows = dataRows.map((r, originalIndex) => {
         const cell = (i) => (i >= 0 && r[i] != null ? String(r[i]).trim() : '');
+        const has = (k) => idx[k] >= 0;
         const codigo = cell(idx.codigo);
-        const nome = cell(idx.nome);
-        const marca = cell(idx.marca);
-        const linhaRaw = cell(idx.linha).toLowerCase();
-        const preco = importPrice(cell(idx.preco));
-        const icmsst = idx.icmsst >= 0 ? importPrice(cell(idx.icmsst)) : 0;
-        let embalagem = idx.embalagem >= 0 ? parseInt(cell(idx.embalagem), 10) || 1 : 1;
-        if (!(embalagem >= 1) || embalagem > 999) embalagem = 1;
-        const catRaw = idx.categoria >= 0 ? cell(idx.categoria) : '';
+        const existing = products.find(p => p.codigo && String(p.codigo).toLowerCase() === codigo.toLowerCase()) || null;
+        const isNew = !existing;
+        const catRaw = has('categoria') ? cell(idx.categoria) : '';
         const catMatch = catRaw ? categories.find(c => ((c.nome || '')).toLowerCase() === catRaw.toLowerCase()) : null;
-        const estoque = idx.estoque >= 0 ? parseInt(cell(idx.estoque), 10) || 0 : 0;
-        const precoCusto = idx.precocusto >= 0 ? importPrice(cell(idx.precocusto)) : 0;
-        let unidade = cell(idx.unidade).toUpperCase();
-        if (!UNIDADES.includes(unidade)) unidade = 'UN';
-        const linha = linhaRaw === 'java' || linhaRaw === 'dymar' ? linhaRaw : '';
         let error = '';
         if (!codigo) error = 'Código obrigatório';
-        else if (products.some(p => p.codigo && String(p.codigo).toLowerCase() === codigo.toLowerCase())) error = 'Código já cadastrado';
-        else if (!nome) error = 'Nome do produto obrigatório';
-        else if (!linha) error = 'Linha deve ser Java ou Dymar';
-        else if (!(preco > 0)) error = 'Preço inválido';
         else if (catRaw && categories.length && !catMatch) error = 'Categoria inexistente: ' + catRaw;
-        return { codigo, unidade, nome, marca, linha, categoria: catMatch ? catMatch.nome : catRaw, estoque, preco, precoCusto, icmsst, embalagem, originalIndex, ok: !error, error };
+        else if (isNew) {
+            if (!cell(idx.nome)) error = 'Nome do produto obrigatório';
+            else if (!/^(java|dymar)$/.test(cell(idx.linha).toLowerCase())) error = 'Linha deve ser Java ou Dymar';
+            else if (!(importPrice(cell(idx.preco)) > 0)) error = 'Preço inválido';
+        }
+        const update = {};
+        const diff = [];
+        const fmtP = (n) => 'R$ ' + Number(n || 0).toFixed(2).replace('.', ',');
+        const upd = (k, a, b, label, fmt) => {
+            const av = fmt ? fmt(a) : String(a == null ? '' : a);
+            const bv = fmt ? fmt(b) : String(b == null ? '' : b);
+            if (av === bv) return;
+            diff.push(label + ': ' + av + ' → ' + bv);
+            update[k] = b;
+        };
+        if (!error && !isNew) {
+            if (has('nome') && cell(idx.nome) !== '') upd('nome', existing.nome || '', cell(idx.nome), 'nome');
+            if (has('marca') && cell(idx.marca) !== '') upd('marca', existing.marca || '', cell(idx.marca), 'marca');
+            if (has('unidade') && cell(idx.unidade) !== '') { let u = cell(idx.unidade).toUpperCase(); if (!UNIDADES.includes(u)) u = existing.unidade || 'UN'; upd('unidade', (existing.unidade || 'UN').toUpperCase(), u, 'unidade'); }
+            if (has('linha') && /^(java|dymar)$/.test(cell(idx.linha).toLowerCase())) upd('linha', existing.linha || '', cell(idx.linha).toLowerCase(), 'linha');
+            if (has('preco') && cell(idx.preco) !== '' && importPrice(cell(idx.preco)) > 0) upd('preco', Number(existing.preco) || 0, importPrice(cell(idx.preco)), 'preço', fmtP);
+            if (has('icmsst') && cell(idx.icmsst) !== '') upd('icmsst', Number(existing.icmsst) || 0, importPrice(cell(idx.icmsst)), 'ICMS-ST', (n) => Number(n || 0).toLocaleString('pt-BR') + '%');
+            if (has('embalagem') && cell(idx.embalagem) !== '') { let v = parseInt(cell(idx.embalagem), 10); if (!(v >= 1) || v > 999) v = Number(existing.embalagem) > 1 ? Number(existing.embalagem) : 1; upd('embalagem', Number(existing.embalagem) || 1, v, 'embalagem'); }
+            if (has('estoque') && cell(idx.estoque) !== '') upd('estoque', Number(existing.estoque) || 0, parseInt(cell(idx.estoque), 10) || 0, 'estoque');
+            if (has('precocusto') && cell(idx.precocusto) !== '') upd('preco_custo', Number(existing.preco_custo) || 0, importPrice(cell(idx.precocusto)), 'preço de custo', fmtP);
+            if (catMatch && (existing.categoria || '') !== catMatch.nome) upd('categoria', existing.categoria || '(vazia)', catMatch.nome, 'categoria');
+        }
+        const skip = !error && !isNew && !diff.length;
+        const nome = isNew ? cell(idx.nome) : (update.nome !== undefined ? update.nome : existing.nome);
+        const marca = isNew ? cell(idx.marca) : (update.marca !== undefined ? update.marca : existing.marca);
+        const unidade = isNew ? (UNIDADES.includes(cell(idx.unidade).toUpperCase()) ? cell(idx.unidade).toUpperCase() : 'UN') : (update.unidade !== undefined ? update.unidade : (existing.unidade || 'UN'));
+        const linha = isNew ? (cell(idx.linha).toLowerCase() === 'java' ? 'java' : 'dymar') : (update.linha !== undefined ? update.linha : existing.linha);
+        const icmsst = isNew ? (idx.icmsst >= 0 ? importPrice(cell(idx.icmsst)) : 0) : (update.icmsst !== undefined ? update.icmsst : (Number(existing.icmsst) || 0));
+        const embalagem = isNew ? (idx.embalagem >= 0 ? (parseInt(cell(idx.embalagem), 10) || 1) : 1) : (update.embalagem !== undefined ? update.embalagem : (Number(existing.embalagem) > 1 ? Number(existing.embalagem) : 1));
+        const preco = isNew ? importPrice(cell(idx.preco)) : (update.preco !== undefined ? update.preco : (Number(existing.preco) || 0));
+        const precoCusto = isNew ? (idx.precocusto >= 0 ? importPrice(cell(idx.precocusto)) : 0) : (update.preco_custo !== undefined ? update.preco_custo : (Number(existing.preco_custo) || 0));
+        const estoque = isNew ? (idx.estoque >= 0 ? parseInt(cell(idx.estoque), 10) || 0 : 0) : (update.estoque !== undefined ? update.estoque : (Number(existing.estoque) || 0));
+        const categoria = isNew ? (catMatch ? catMatch.nome : catRaw) : (update.categoria !== undefined ? update.categoria : existing.categoria);
+        return { codigo, existing, isNew, nome, marca, unidade, linha, categoria, icmsst, embalagem, preco: Number(preco) || 0, precoCusto: Number(precoCusto) || 0, estoque: Number(estoque) || 0, update, diff, skip, originalIndex, ok: !error, error };
     });
     const seen = {};
     importRows.forEach(r => {
@@ -1052,12 +1077,26 @@ async function handleProductImport(e) {
 }
 
 function renderImportModal() {
-    const ok = importRows.filter(r => r.ok).length;
-    const bad = importRows.length - ok;
-    document.getElementById('importSummary').innerHTML = '<span class="imp-summary-ok"><i class="fas fa-check-circle"></i> ' + ok + ' pronto(s) para importar</span><span class="imp-summary-err' + (bad ? '' : ' imp-summary-hide') + '"><i class="fas fa-exclamation-triangle"></i> ' + bad + ' com erro</span>';
-    document.getElementById('importTableBody').innerHTML = importRows.map(r => `
-        <tr class="${r.ok ? 'imp-row-ok' : 'imp-row-err'}">
-            <td>${r.ok ? '<span class="imp-badge imp-badge-ok">OK</span>' : '<span class="imp-badge imp-badge-err">Erro</span>'}</td>
+    const novos = importRows.filter(r => r.ok && r.isNew).length;
+    const atualiza = importRows.filter(r => r.ok && !r.isNew && !r.skip).length;
+    const iguais = importRows.filter(r => r.ok && r.skip).length;
+    const bad = importRows.filter(r => !r.ok).length;
+    document.getElementById('importSummary').innerHTML =
+        '<span class="imp-summary-ok"><i class="fas fa-plus-circle"></i> ' + novos + ' novo(s)</span>' +
+        '<span class="imp-summary-upd' + (atualiza ? '' : ' imp-summary-hide') + '"><i class="fas fa-sync-alt"></i> ' + atualiza + ' atualização(ões)</span>' +
+        '<span class="imp-summary-skip' + (iguais ? '' : ' imp-summary-hide') + '"><i class="fas fa-minus-circle"></i> ' + iguais + ' sem alteração</span>' +
+        '<span class="imp-summary-err' + (bad ? '' : ' imp-summary-hide') + '"><i class="fas fa-exclamation-triangle"></i> ' + bad + ' com erro</span>';
+    document.getElementById('importTableBody').innerHTML = importRows.map(r => {
+        const badge = !r.ok ? '<span class="imp-badge imp-badge-err">Erro</span>'
+            : r.skip ? '<span class="imp-badge imp-badge-skip">Sem alteração</span>'
+            : r.isNew ? '<span class="imp-badge imp-badge-ok">Novo</span>'
+            : '<span class="imp-badge imp-badge-upd">Atualizar</span>';
+        const motivo = r.error ? escapeHtml(r.error)
+            : r.skip ? 'Cadastro idêntico — será ignorado'
+            : r.diff.length ? r.diff.map(d => escapeHtml(d)).join('<br>')
+            : '';
+        return `<tr class="${r.ok ? 'imp-row-ok' : 'imp-row-err'}">
+            <td>${badge}</td>
             <td>${escapeHtml(r.codigo)}</td>
             <td>${escapeHtml(r.nome)}</td>
             <td>${escapeHtml(r.marca)}</td>
@@ -1066,15 +1105,16 @@ function renderImportModal() {
             <td>${r.embalagem || 1}</td>
             <td>${formatPrice(r.preco)}</td>
             <td>${r.precoCusto > 0 ? formatPrice(r.precoCusto) : '—'}</td>
-            <td>${r.error ? escapeHtml(r.error) : ''}</td>
-            <td>${r.ok ? `<button class="icon-btn" onclick="prefillImportRow(${r.originalIndex})" title="Abrir no formulário de produto"><i class="fas fa-pen"></i></button>` : ''}</td>
-        </tr>`).join('');
+            <td>${motivo}</td>
+            <td>${r.ok && !r.skip ? `<button class="icon-btn" onclick="prefillImportRow(${r.originalIndex})" title="Abrir no formulário de produto"><i class="fas fa-pen"></i></button>` : ''}</td>
+        </tr>`;
+    }).join('');
 }
 
 function prefillImportRow(i) {
     const r = importRows.find(x => x.originalIndex === i);
     if (!r) return;
-    openProductModal(null);
+    openProductModal(r.existing ? r.existing.id : null);
     document.getElementById('prodCodigo').value = r.codigo;
     document.getElementById('prodUnidade').value = r.unidade;
     document.getElementById('prodNome').value = r.nome;
@@ -1085,22 +1125,35 @@ function prefillImportRow(i) {
     toggleIcmsField();
     document.getElementById('prodPreco').value = priceInput(r.preco);
     document.getElementById('prodPrecoCusto').value = priceInput(r.precoCusto);
+    if (r.categoria) {
+        const sel = document.getElementById('prodCategoria');
+        const opt = Array.prototype.find.call(sel.options, o => o.value === r.categoria);
+        if (opt) sel.value = r.categoria; else sel.value = '';
+    }
 }
 
 async function confirmImport() {
-    const valid = importRows.filter(r => r.ok);
-    if (!valid.length) { toast('Nenhum produto válido para importar', true); return; }
+    const valid = importRows.filter(r => r.ok && !r.skip);
+    if (!valid.length) { toast('Nenhuma alteração para importar', true); return; }
     const btn = document.getElementById('importConfirm');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importando...';
-    let imported = 0, failed = 0;
+    let imported = 0, updated = 0, failed = 0;
     const padraoCategoria = document.getElementById('prodCategoria') ? document.getElementById('prodCategoria').value : '';
+    const nowIso = new Date().toISOString();
     for (let i = 0; i < valid.length; i += 50) {
         const batch = valid.slice(i, i + 50);
         const results = await Promise.all(batch.map(async (row) => {
-            const payload = { codigo: row.codigo || null, nome: row.nome, marca: row.marca || '', categoria: row.categoria || padraoCategoria, subcategoria: null, preco: row.preco, preco_custo: row.precoCusto || 0, unidade: row.unidade, estoque: row.estoque || 0, descricao: '', palavraschave: [], imagens: [], isdestaque: false, ispromocao: false, precopromocional: 0, somente_orcamento: false, linha: row.linha, icmsst: row.icmsst || 0, embalagem: Math.max(1, parseInt(row.embalagem, 10) || 1), visivel: true, updated_at: new Date().toISOString() };
-            const { error } = await db.from(SUPABASE_PRODUCTS_TABLE).insert(payload);
-            if (error) failed++; else imported++;
+            try {
+                if (row.existing) {
+                    const { error } = await db.from(SUPABASE_PRODUCTS_TABLE).update({ ...row.update, updated_at: nowIso }).eq('id', row.existing.id);
+                    if (error) failed++; else updated++;
+                } else {
+                    const payload = { codigo: row.codigo || null, nome: row.nome, marca: row.marca || '', categoria: row.categoria || padraoCategoria, subcategoria: null, preco: row.preco, preco_custo: row.precoCusto || 0, unidade: row.unidade, estoque: row.estoque || 0, descricao: '', palavraschave: [], imagens: [], isdestaque: false, ispromocao: false, precopromocional: 0, somente_orcamento: false, linha: row.linha, icmsst: row.icmsst || 0, embalagem: Math.max(1, parseInt(row.embalagem, 10) || 1), visivel: true, updated_at: nowIso };
+                    const { error } = await db.from(SUPABASE_PRODUCTS_TABLE).insert(payload);
+                    if (error) failed++; else imported++;
+                }
+            } catch (err) { failed++; console.error('import row error:', err); }
         }));
     }
     btn.disabled = false;
@@ -1108,7 +1161,7 @@ async function confirmImport() {
     await loadProducts();
     renderProducts();
     document.getElementById('importModal').classList.remove('open');
-    toast('Importação concluída: ' + imported + ' produto(s) importado(s)' + (failed ? ', ' + failed + ' com erro' : ''));
+    toast('Importação concluída: ' + imported + ' criado(s), ' + updated + ' atualizado(s)' + (failed ? ', ' + failed + ' com erro' : ''));
 }
 
 // ---------- Categories ----------

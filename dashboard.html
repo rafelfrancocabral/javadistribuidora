@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=16">
+    <link rel="stylesheet" href="css/dashboard.css?v=17">
 </head>
 <body>
     <script>
@@ -142,7 +142,7 @@
                     <table class="dash-table" id="productTable">
                         <thead>
                             <tr>
-                                <th>Imagem</th><th>Código</th><th>Produto</th><th>Categoria</th><th>Pasta</th><th>Preço</th><th>Estoque</th><th>Visível</th><th>Ações</th>
+                                <th>Imagem</th><th class="sort-th" data-sort="codigo" onclick="sortProducts('codigo')">Código <span class="sort-arrow" id="arr_codigo"></span></th><th class="sort-th" data-sort="nome" onclick="sortProducts('nome')">Produto <span class="sort-arrow" id="arr_nome"></span></th><th class="sort-th" data-sort="categoria" onclick="sortProducts('categoria')">Categoria <span class="sort-arrow" id="arr_categoria"></span></th><th>Pasta</th><th class="sort-th" data-sort="preco" onclick="sortProducts('preco')">Preço <span class="sort-arrow" id="arr_preco"></span></th><th class="sort-th" data-sort="estoque" onclick="sortProducts('estoque')">Estoque <span class="sort-arrow" id="arr_estoque"></span></th><th>Visível</th><th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="productTableBody"></tbody>
@@ -403,6 +403,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=1"></script>
-    <script src="js/dashboard.js?v=39"></script>
+    <script src="js/dashboard.js?v=40"></script>
 </body>
 </html>

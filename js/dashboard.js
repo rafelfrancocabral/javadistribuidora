@@ -838,14 +838,18 @@ function downloadImportTemplate() {
     const col = (ref, txt) => `<c r="${ref}" t="inlineStr"><is><t>${txt}</t></is></c>`;
     const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<cols><col min="1" max="1" width="10"/><col min="2" max="2" width="10"/><col min="3" max="3" width="32"/><col min="4" max="4" width="16"/><col min="5" max="5" width="10"/><col min="6" max="6" width="12"/><col min="7" max="7" width="12"/><col min="8" max="8" width="12"/></cols>
+<cols><col min="1" max="1" width="10"/><col min="2" max="2" width="10"/><col min="3" max="3" width="32"/><col min="4" max="4" width="16"/><col min="5" max="5" width="10"/><col min="6" max="6" width="12"/><col min="7" max="7" width="12"/><col min="8" max="8" width="12"/><col min="9" max="9" width="22"/><col min="10" max="10" width="10"/></cols>
 <sheetData>
-<row r="1">${col('A1', 'Código')}${col('B1', 'Unidade')}${col('C1', 'Nome do Produto')}${col('D1', 'Marca')}${col('E1', 'Linha')}${col('F1', 'Preço')}${col('G1', 'ICMS-ST')}${col('H1', 'Embalagem')}</row>
-<row r="2">${col('A2', '001')}${col('B2', 'UN')}${col('C2', 'Exemplo de Produto')}${col('D2', 'Exemplo')}${col('E2', 'Java')}<c r="F2" s="1"><v>12.5</v></c><c r="H2" s="1"><v>1</v></c></row>
-<row r="3">${col('A3', '002')}${col('B3', 'UN')}${col('C3', 'Exemplo de Produto 2')}${col('D3', 'Exemplo')}${col('E3', 'Dymar')}<c r="F3" s="1"><v>12.5</v></c><c r="G3" s="1"><v>18</v></c><c r="H3" s="1"><v>12</v></c></row>
+<row r="1">${col('A1', 'Código')}${col('B1', 'Unidade')}${col('C1', 'Nome do Produto')}${col('D1', 'Marca')}${col('E1', 'Linha')}${col('F1', 'Preço')}${col('G1', 'ICMS-ST')}${col('H1', 'Embalagem')}${col('I1', 'Categoria')}${col('J1', 'Estoque')}</row>
+<row r="2">${col('A2', '001')}${col('B2', 'UN')}${col('C2', 'Exemplo de Produto')}${col('D2', 'Exemplo')}${col('E2', 'Java')}<c r="F2" s="1"><v>12.5</v></c><c r="H2" s="1"><v>1</v></c>${col('I2', 'Solda')}${col('J2', '10')}</row>
+<row r="3">${col('A3', '002')}${col('B3', 'UN')}${col('C3', 'Exemplo de Produto 2')}${col('D3', 'Exemplo')}${col('E3', 'Dymar')}<c r="F3" s="1"><v>12.5</v></c><c r="G3" s="1"><v>18</v></c><c r="H3" s="1"><v>12</v></c>${col('I3', 'Solda')}${col('J3', '5')}</row>
 </sheetData>
 </worksheet>`;
-    const entries = [
+downloadXlsxFile(xlsxEntries(sheet), 'template-produtos.xlsx');
+}
+
+function xlsxEntries(sheet) {
+    return [
         { name: '[Content_Types].xml', data: xlsxUtf8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -879,15 +883,38 @@ function downloadImportTemplate() {
 </styleSheet>`) },
         { name: 'xl/worksheets/sheet1.xml', data: xlsxUtf8(sheet) }
     ];
+}
+
+function downloadXlsxFile(entries, filename) {
     const zip = buildXlsxZip(entries);
     const blob = new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'template-produtos.xlsx';
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
+}
+
+function exportProductsXlsx() {
+    if (!products || !products.length) { toast('Nenhum produto para exportar', true); return; }
+    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const tc = (c, n, v) => `<c r="${c}${n}" t="inlineStr"><is><t>${esc(v)}</t></is></c>`;
+    const nc = (c, n, v) => `<c r="${c}${n}" s="1"><v>${Number(v) || 0}</v></c>`;
+    const head = ['Código', 'Unidade', 'Nome do Produto', 'Marca', 'Linha', 'Preço', 'ICMS-ST', 'Embalagem', 'Categoria', 'Estoque'];
+    const rows = ['<row r="1">' + head.map((h, i) => tc(String.fromCharCode(65 + i), 1, h)).join('') + '</row>'];
+    products.forEach((p, i) => {
+        const n = i + 2;
+        rows.push(`<row r="${n}">${tc('A', n, p.codigo || '')}${tc('B', n, p.unidade || 'UN')}${tc('C', n, p.nome || '')}${tc('D', n, p.marca || '')}${tc('E', n, p.linha || 'java')}${nc('F', n, p.preco)}${nc('G', n, p.icmsst)}${nc('H', n, p.embalagem || 1)}${tc('I', n, p.categoria || '')}${nc('J', n, p.estoque)}</row>`);
+    });
+    const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<cols><col min="1" max="1" width="10"/><col min="2" max="2" width="10"/><col min="3" max="3" width="34"/><col min="4" max="4" width="16"/><col min="5" max="5" width="10"/><col min="6" max="6" width="12"/><col min="7" max="7" width="10"/><col min="8" max="8" width="12"/><col min="9" max="9" width="22"/><col min="10" max="10" width="10"/></cols>
+<sheetData>${rows.join('')}</sheetData>
+</worksheet>`;
+    downloadXlsxFile(xlsxEntries(sheet), 'produtos-java.xlsx');
+    toast('Exportação concluída: ' + products.length + ' produto(s).');
 }
 
 function findZipEOCD(view) {
@@ -972,8 +999,8 @@ async function handleProductImport(e) {
     } catch (err) { console.error('import error:', err); toast('Erro ao ler arquivo: ' + err.message, true); return; }
     if (rows.length < 2) { toast('Arquivo sem dados', true); return; }
     const headers = rows[0].map(importNormalizeHeader);
-    const idx = { codigo: headers.indexOf('codigo'), unidade: headers.indexOf('unidade'), nome: Math.max(headers.indexOf('nomedoproduto'), headers.indexOf('nome')), marca: headers.indexOf('marca'), linha: headers.indexOf('linha'), preco: headers.indexOf('preco'), icmsst: headers.indexOf('icmsst'), embalagem: headers.indexOf('embalagem') };
-    if (idx.codigo < 0 || idx.nome < 0 || idx.preco < 0) { toast('Headers esperados: Código, Unidade, Nome do Produto, Marca, Linha, Preço, ICMS-ST', true); return; }
+    const idx = { codigo: headers.indexOf('codigo'), unidade: headers.indexOf('unidade'), nome: Math.max(headers.indexOf('nomedoproduto'), headers.indexOf('nome')), marca: headers.indexOf('marca'), linha: headers.indexOf('linha'), preco: headers.indexOf('preco'), icmsst: headers.indexOf('icmsst'), embalagem: headers.indexOf('embalagem'), categoria: headers.indexOf('categoria'), estoque: headers.indexOf('estoque') };
+    if (idx.codigo < 0 || idx.nome < 0 || idx.preco < 0) { toast('Headers esperados: Código, Unidade, Nome do Produto, Marca, Linha, Preço, ICMS-ST, Embalagem, Categoria, Estoque', true); return; }
     const expectedCols = headers.length;
     const fixPriceSplit = (r) => {
         if (!Array.isArray(r)) return r;
@@ -998,6 +1025,9 @@ async function handleProductImport(e) {
         const icmsst = idx.icmsst >= 0 ? importPrice(cell(idx.icmsst)) : 0;
         let embalagem = idx.embalagem >= 0 ? parseInt(cell(idx.embalagem), 10) || 1 : 1;
         if (!(embalagem >= 1) || embalagem > 999) embalagem = 1;
+        const catRaw = idx.categoria >= 0 ? cell(idx.categoria) : '';
+        const catMatch = catRaw ? categories.find(c => ((c.nome || '')).toLowerCase() === catRaw.toLowerCase()) : null;
+        const estoque = idx.estoque >= 0 ? parseInt(cell(idx.estoque), 10) || 0 : 0;
         let unidade = cell(idx.unidade).toUpperCase();
         if (!UNIDADES.includes(unidade)) unidade = 'UN';
         const linha = linhaRaw === 'java' || linhaRaw === 'dymar' ? linhaRaw : '';
@@ -1007,7 +1037,8 @@ async function handleProductImport(e) {
         else if (!nome) error = 'Nome do produto obrigatório';
         else if (!linha) error = 'Linha deve ser Java ou Dymar';
         else if (!(preco > 0)) error = 'Preço inválido';
-        return { codigo, unidade, nome, marca, linha, preco, icmsst, embalagem, originalIndex, ok: !error, error };
+        else if (catRaw && categories.length && !catMatch) error = 'Categoria inexistente: ' + catRaw;
+        return { codigo, unidade, nome, marca, linha, categoria: catMatch ? catMatch.nome : catRaw, estoque, preco, icmsst, embalagem, originalIndex, ok: !error, error };
     });
     const seen = {};
     importRows.forEach(r => {
@@ -1064,7 +1095,7 @@ async function confirmImport() {
     for (let i = 0; i < valid.length; i += 50) {
         const batch = valid.slice(i, i + 50);
         const results = await Promise.all(batch.map(async (row) => {
-            const payload = { codigo: row.codigo || null, nome: row.nome, marca: row.marca || '', categoria: padraoCategoria, subcategoria: null, preco: row.preco, unidade: row.unidade, descricao: '', palavraschave: [], imagens: [], estoque: 0, isdestaque: false, ispromocao: false, precopromocional: 0, somente_orcamento: false, linha: row.linha, icmsst: row.icmsst || 0, embalagem: Math.max(1, parseInt(row.embalagem, 10) || 1), visivel: true, updated_at: new Date().toISOString() };
+            const payload = { codigo: row.codigo || null, nome: row.nome, marca: row.marca || '', categoria: row.categoria || padraoCategoria, subcategoria: null, preco: row.preco, unidade: row.unidade, estoque: row.estoque || 0, descricao: '', palavraschave: [], imagens: [], isdestaque: false, ispromocao: false, precopromocional: 0, somente_orcamento: false, linha: row.linha, icmsst: row.icmsst || 0, embalagem: Math.max(1, parseInt(row.embalagem, 10) || 1), visivel: true, updated_at: new Date().toISOString() };
             const { error } = await db.from(SUPABASE_PRODUCTS_TABLE).insert(payload);
             if (error) failed++; else imported++;
         }));
@@ -1414,6 +1445,7 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     document.getElementById('btnNewProduct').addEventListener('click', () => openProductModal(null));
     document.getElementById('btnImportProducts').addEventListener('click', () => document.getElementById('productImportFile').click());
     document.getElementById('btnImportTemplate').addEventListener('click', downloadImportTemplate);
+    document.getElementById('btnExportProducts').addEventListener('click', exportProductsXlsx);
     document.getElementById('productImportFile').addEventListener('change', handleProductImport);
     document.getElementById('importModalClose').addEventListener('click', () => document.getElementById('importModal').classList.remove('open'));
     document.getElementById('importCancel').addEventListener('click', () => document.getElementById('importModal').classList.remove('open'));

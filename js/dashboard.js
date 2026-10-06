@@ -548,7 +548,7 @@ function renderQuotes() {
                 </div>
                 <div class="quote-card-actions">
                     <button class="icon-btn" onclick="openQuoteDetail('${q.id}')" title="Detalhes"><i class="fas fa-eye"></i></button>
-                    <button class="icon-btn pdf" onclick="downloadQuotePDF('${q.id}')" title="Baixar PDF"><i class="fas fa-file-pdf"></i></button>
+                    <button class="icon-btn pdf" onclick="downloadQuotePDF('${q.id}')" title="Abrir PDF do orçamento no navegador"><i class="fas fa-file-pdf"></i></button>
                     <button class="icon-btn" onclick="editQuote('${q.id}')" title="Editar"><i class="fas fa-pen"></i></button>
                     <button class="icon-btn" onclick="advanceQuote('${q.id}')" title="Avançar status"><i class="fas fa-arrow-right"></i></button>
                     <a class="icon-btn" href="https://wa.me/${(q.telefone||'').replace(/\D/g,'') || WHATSAPP_NUMBER}" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
@@ -579,7 +579,7 @@ function openQuoteDetail(id) {
         ${q.pagamento ? `<div class="qd-row"><span>Prazo</span><span>${escapeHtml(q.pagamento)}</span></div>` : ''}
         <div class="qd-row"><span>Total</span><span style="font-weight:700;color:var(--accent)">${formatPrice(q.total)}</span></div>
         <div class="qd-actions">
-            <button class="btn btn-whatsapp-outline" onclick="downloadQuotePDF('${q.id}')"><i class="fas fa-file-pdf"></i> Baixar PDF</button>
+            <button class="btn btn-whatsapp-outline" onclick="downloadQuotePDF('${q.id}')"><i class="fas fa-file-pdf"></i> Ver PDF</button>
             <a class="btn btn-whatsapp-outline" href="https://wa.me/${(q.telefone||'').replace(/\D/g,'') || WHATSAPP_NUMBER}?text=${encodeURIComponent(buildQuoteMessage(q))}" target="_blank"><i class="fab fa-whatsapp"></i> Enviar WhatsApp</a>
             <button class="btn btn-primary" onclick="editQuote('${q.id}')"><i class="fas fa-pen"></i> Editar</button>
         </div>
@@ -667,7 +667,12 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     y += tBoxH + 6;
     if (q.pagamento) { const payLines = buildPaymentLines(q.pagamento, q.created_at, q.total); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
-    const fileName = 'orcamento-' + (q.codigo_cliente || q.id) + '-' + (q.nome_cliente ? q.nome_cliente.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf'; doc.save(fileName); toast('PDF do orçamento baixado.'); }
+    const fileName = 'orcamento-' + (q.codigo_cliente || q.id) + '-' + (q.nome_cliente ? q.nome_cliente.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
+    const url = URL.createObjectURL(doc.output('blob'));
+    const win = window.open(url, '_blank');
+    if (win) { setTimeout(() => URL.revokeObjectURL(url), 60000); }
+    else { doc.save(fileName); }
+    toast('PDF do orçamento aberto no navegador.'); }
 
 // ---------- Products ----------
 async function loadProducts() { try { let all = []; let from = 0; while (true) { const { data, error } = await db.from(SUPABASE_PRODUCTS_TABLE).select(PRODUCT_SELECT).order('id', { ascending: true }).range(from, from + 499); if (error) throw error; if (!data || !data.length) break; all = all.concat(data); if (data.length < 500) break; from += 500; } products = all; } catch (e) { console.error('Erro ao carregar produtos:', e); products = []; } }

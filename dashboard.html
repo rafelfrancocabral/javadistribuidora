@@ -11,7 +11,9 @@
 </head>
 <body>
     <script>
-        if (localStorage.getItem('jv2_admin_auth') !== 'true') {
+        const lt = localStorage.getItem('jv2_admin_auth');
+        if (!lt || !/^[0-9a-f]{48}$/.test(lt)) {
+            localStorage.removeItem('jv2_admin_auth');
             window.location.href = 'login.html';
         }
     </script>

@@ -8,4 +8,4 @@
 
 const R2_WORKER_URL        = 'https://javadistribuidora-uploader.rafaelfrancocabral.workers.dev';
 const R2_PUBLIC_BASE_URL   = 'https://pub-3898e6d68e494c019d1a509264328a33.r2.dev';
-const R2_WORKER_SECRET     = 'kobesabauna66';
+const R2_WORKER_SECRET     = 'ocUfw7ciBJAzjLezxBABGTv5R9zJUe-I';

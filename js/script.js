@@ -65,38 +65,20 @@ async function clientLogin(identifier, senha) {
     identifier = String(identifier || '').trim();
     if (!identifier || !senha) return { ok: false, error: 'Informe email e senha.' };
     try {
-        const { data, error } = await db.from(SUPABASE_CLIENTS_TABLE)
-            .select('id, razao_social, email, cnpj, senha, senha_trocada')
-            .limit(500);
-        if (error) throw error;
-        const identifierLower = identifier.toLowerCase();
-        const digits = identifier.replace(/\D/g, '');
-        const rec = (data || []).find(r =>
-            String(r.email || '').toLowerCase() === identifierLower ||
-            (digits && String(r.cnpj || '').replace(/\D/g, '') === digits)
-        );
-        if (!rec) return { ok: false, error: 'Cliente não cadastrado. Contate a loja.' };
-        
-        // Detecta se o login foi por CNPJ (digits matched)
-        const matchedByCnpj = digits && String(rec.cnpj || '').replace(/\D/g, '') === digits;
-        
-        // Se login por CNPJ, a senha também deve ser só números (remove formatação)
-        const passwordToHash = matchedByCnpj ? senha.replace(/\D/g, '') : senha;
-        
-        console.log('[LOGIN DEBUG]', {
-            identifier,
-            matchedByCnpj,
-            cnpjDigits: digits,
-            passwordProvided: senha,
-            passwordToHash,
-            storedHash: rec.senha?.substring(0, 16) + '...'
+        const emailHash = await sha256Hex(senha);
+        const cnpjOnly = senha.replace(/\D/g, '');
+        const cnpjHash = cnpjOnly === senha ? emailHash : await sha256Hex(cnpjOnly);
+        const { data, error } = await db.rpc('verificar_login', {
+            _identificador: identifier,
+            _senha_email: emailHash,
+            _senha_cnpj: cnpjHash
         });
-        
-        const hash = await sha256Hex(passwordToHash);
-        if (hash !== rec.senha) {
-            console.log('[LOGIN DEBUG] Hash mismatch', { computed: hash.substring(0, 16) + '...', stored: rec.senha?.substring(0, 16) + '...' });
+        if (error || !data || !data.length) {
+            const msg = String((error && error.message) || '').toLowerCase();
+            if (msg.includes('nao cadastrado')) return { ok: false, error: 'Cliente não cadastrado. Contate a loja.' };
             return { ok: false, error: 'Senha incorreta.' };
         }
+        const rec = data[0];
         const mustChange = !rec.senha_trocada;
         saveClientSession({ id: rec.id, email: rec.email, razao: rec.razao_social, mustChange });
         return { ok: true, mustChange };
@@ -117,17 +99,18 @@ function clientLogout() {
 
 async function clientChangePassword(oldPass, newPass) {
     if (!isClientLoggedIn()) return { ok: false, error: 'Você precisa estar logado.' };
+    if (!newPass || String(newPass).length < 4) return { ok: false, error: 'A nova senha deve ter pelo menos 4 caracteres.' };
     try {
-        const { data, error } = await db.from(SUPABASE_CLIENTS_TABLE)
-            .select('senha').eq('id', _client.id).limit(1);
-        if (error) throw error;
-        const rec = data && data[0];
-        if (!rec || (await sha256Hex(oldPass)) !== rec.senha) return { ok: false, error: 'Senha atual incorreta.' };
-        if (!newPass || String(newPass).length < 4) return { ok: false, error: 'A nova senha deve ter pelo menos 4 caracteres.' };
-        const { error: up } = await db.from(SUPABASE_CLIENTS_TABLE)
-            .update({ senha: await sha256Hex(newPass), senha_trocada: true, updated_at: new Date().toISOString() })
-            .eq('id', _client.id);
-        if (up) throw up;
+        const antiga = await sha256Hex(String(oldPass));
+        const nova = await sha256Hex(String(newPass));
+        const { data: ok, error } = await db.rpc('alterar_senha', {
+            _id: _client.id, _antiga_hash: antiga, _nova_hash: nova
+        });
+        if (error) {
+            const msg = String((error && error.message) || '').toLowerCase();
+            if (msg.includes('atual incorreta')) return { ok: false, error: 'Senha atual incorreta.' };
+            return { ok: false, error: 'Erro ao trocar a senha.' };
+        }
         _client.mustChange = false;
         saveClientSession(_client);
         return { ok: true };
@@ -653,7 +636,7 @@ async function submitQuote(e) {
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
 
     try {
-        await db.from(SUPABASE_QUOTES_TABLE).insert({
+        await db.rpc('criar_orcamento', { _payload: {
             nome_cliente: email,
             email: email,
             telefone: '',
@@ -665,7 +648,7 @@ async function submitQuote(e) {
             status: 'recebido',
             status_entrega: 'pendente',
             linha: 'java'
-        });
+        } });
     } catch (err) {
         console.error('Erro ao salvar orçamento:', err);
     }

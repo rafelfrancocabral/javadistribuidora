@@ -1,19 +1,26 @@
 // ============================================================
 // Cloudflare Worker - Uploader de imagens para R2 (Java Distribuidora)
 // ============================================================
-// Como instalar no painel da Cloudflare:
-//  1. Dashboard Cloudflare -> Workers & Pages -> Create Worker.
-//  2. Substitua o codigo pelo conteudo deste arquivo e clique em Deploy.
-//  3. Em Settings > Variables and Secrets, crie um Binding R2:
-//       - Variable name: IMAGES
-//       - R2 Bucket:      produtos   (crie o bucket R2 "produtos" antes)
-//  4. (Opcional, recomendado) Em Variables, crie UPLOAD_SECRET com uma
-//     senha qualquer. Se criar, cole a mesma senha em js/r2-config.js.
-//  5. No bucket R2 "produtos": Settings > Public Access > enable
-//     "r2.dev subdomain" (copia o endereco pub-xxxx.r2.dev) OU aponte um
-//     dominio proprio.
-//  6. Cole a URL do Worker e a URL publica em js/r2-config.js.
+// INSTALACAO:
+//  1. Dashboard Cloudflare -> Workers & Pages -> worker "javadistribuidora-uploader"
+//  2. Substitua o codigo por este arquivo e clique em Deploy.
+//  3. Settings > Variables and Secrets:
+//       - R2 binding "IMAGES" apontando para o bucket "produtos"
+//       - Variavel secreta UPLOAD_SECRET = valor atual de js/r2-config.js (R2_WORKER_SECRET)
+//  4. IMPORTANTE: edite ALLOWED_ORIGINS abaixo com o dominio real do site
+//     (ex.: https://javadistribuidora.vercel.app e seu dominio proprio, se houver).
+//     Sem isso, o worker rejeita os uploads (ou aceita de qualquer origem se a lista
+//     estiver vazia - nao recomendado).
 // ============================================================
+
+// Dominios que podem fazer upload. Adicione aqui TODOS os dominios do site
+// (com https://, sem barra final). Se a lista estiver vazia, uploads de
+// qualquer origem sao aceitos (apenas como fallback de configuracao).
+const ALLOWED_ORIGINS = [
+    'https://javadistribuidora.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+];
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -21,10 +28,19 @@ const CORS_HEADERS = {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 };
 
-function json(data, status = 200) {
+// Rejeita chamadas vindas de sites estranhos (nao confiavel sozinho,
+// mas bloqueia abuso via scripts de terceiros).
+function originAllowed(request) {
+    if (!ALLOWED_ORIGINS.length) return true;
+    const origin = request.headers.get('Origin') || '';
+    if (!origin) return true; // requisicoes sem Origin (ex.: curl) passam pelo Bearer
+    return ALLOWED_ORIGINS.includes(origin);
+}
+
+function json(data, status = 200, extraHeaders = {}) {
     return new Response(JSON.stringify(data), {
         status,
-        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS, ...extraHeaders }
     });
 }
 
@@ -32,6 +48,10 @@ export default {
     async fetch(request, env) {
         if (request.method === 'OPTIONS') {
             return new Response(null, { status: 204, headers: CORS_HEADERS });
+        }
+
+        if (!originAllowed(request)) {
+            return json({ error: 'origem nao permitida' }, 403);
         }
 
         if (env.UPLOAD_SECRET) {
@@ -67,6 +87,7 @@ async function handleUpload(request, env) {
     const hash = (form.get('hash') || '').trim();
 
     if (!main || !thumb) return json({ error: 'main e thumb sao obrigatorios' }, 400);
+    // hash forte (SHA-256) evita escrever em caminhos arbitrarios do bucket
     if (!/^[a-f0-9]{64}$/.test(hash)) return json({ error: 'hash invalido' }, 400);
     if (main.type !== 'image/webp' || thumb.type !== 'image/webp') {
         return json({ error: 'apenas imagens webp sao aceitas' }, 415);

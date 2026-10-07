@@ -1615,8 +1615,6 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
 });
 
 async function init() { 
-    if (!localStorage.getItem(AUTH_KEY)) { 
-        window.location.href = 'login.html'; 
-        return; 
-    }
+    const t0 = localStorage.getItem(AUTH_KEY);
+    if (!t0 || !/^[0-9a-f]{48}$/.test(t0)) { redirectLogin(); return; }
     try { await Promise.all([loadProducts(), loadCategories(), loadQuotes(), loadClients()]); } catch (e) { console.error(e); } renderOverview(); updatePendingBadge(); switchView('dashboard'); }

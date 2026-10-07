@@ -119,7 +119,10 @@
     <script>
         const ADMIN_USER = 'cabralsavfer@admin';
         const AUTH_KEY = 'jv2_admin_auth';
-        if (localStorage.getItem(AUTH_KEY)) { window.location.href = 'dashboard.html'; }
+        function isValidToken(t) { return typeof t === 'string' && /^[0-9a-f]{48}$/.test(t); }
+        const stored = localStorage.getItem(AUTH_KEY);
+        if (stored && !isValidToken(stored)) { localStorage.removeItem(AUTH_KEY); }
+        if (isValidToken(localStorage.getItem(AUTH_KEY))) { window.location.href = 'dashboard.html'; }
 
         async function sha256Hex(text) {
             const data = new TextEncoder().encode(text);

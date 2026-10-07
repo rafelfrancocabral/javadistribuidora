@@ -1,5 +1,6 @@
--- Addendum isolado (seguro rodar 2x): protege preco_custo e cria a leitura admin
-REVOKE SELECT (preco_custo) ON public.produtos FROM anon;
+-- Addendum 4: corrige o tipo de embalagem na assinatura de admin_listar_produtos
+-- (coluna real e numeric, nao integer). DROP antes porque o tipo de retorno muda.
+DROP FUNCTION IF EXISTS public.admin_listar_produtos(text);
 
 CREATE OR REPLACE FUNCTION public.admin_listar_produtos(_token text)
 RETURNS TABLE (id bigint, codigo text, nome text, marca text, categoria text,

@@ -106,7 +106,7 @@ SET search_path = public
 AS $$
 DECLARE _token text;
 BEGIN
-    _token := encode(gen_random_bytes(24), 'hex');
+    _token := encode(extensions.gen_random_bytes(24), 'hex');
     INSERT INTO public.admin_sessions (token, admin_id, expires_at)
     VALUES (_token, _admin_id, now() + interval '12 hours');
     RETURN _token;
@@ -544,7 +544,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.admin_listar_produtos(_token text)
 RETURNS TABLE (id bigint, codigo text, nome text, marca text, categoria text,
                subcategoria text, unidade text, preco numeric, preco_custo numeric,
-               estoque integer, icmsst numeric, embalagem integer, descricao text,
+               estoque integer, icmsst numeric, embalagem numeric, descricao text,
                palavraschave jsonb, imagens jsonb, isdestaque boolean, ispromocao boolean,
                precopromocional numeric, somente_orcamento boolean, visivel boolean,
                linha text, created_at timestamptz, updated_at timestamptz)

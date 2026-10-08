@@ -73,12 +73,16 @@ async function clientLogin(identifier, senha) {
             _senha_email: emailHash,
             _senha_cnpj: cnpjHash
         });
-        if (error || !data || !data.length) {
-            const msg = String((error && error.message) || '').toLowerCase();
-            if (msg.includes('nao cadastrado')) return { ok: false, error: 'Cliente não cadastrado. Contate a loja.' };
+        if (error || !data || !data.length) return { ok: false, error: 'Erro ao autenticar. Tente novamente.' };
+        const rec = data[0];
+        if (rec.erro) {
+            if (String(rec.erro).startsWith('LOCK:')) {
+                const m = String(rec.erro).split(':')[1];
+                return { ok: false, error: 'Muitas tentativas. Tente novamente em ' + m + ' minuto(s).' };
+            }
+            if (rec.erro === 'NAOCAD') return { ok: false, error: 'Cliente não cadastrado. Contate a loja.' };
             return { ok: false, error: 'Senha incorreta.' };
         }
-        const rec = data[0];
         const mustChange = !rec.senha_trocada;
         saveClientSession({ id: rec.id, email: rec.email, razao: rec.razao_social, mustChange });
         return { ok: true, mustChange };

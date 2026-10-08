@@ -141,13 +141,26 @@
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...'; }
             try {
                 const hash = await sha256Hex(pass);
-                const { data: token, error } = await db.rpc('admin_autenticar', { _usuario: user, _senha_hash: hash });
-                if (error || !token) {
+                const { data, error } = await db.rpc('admin_autenticar', { _usuario: user, _senha_hash: hash });
+                if (error || typeof data !== 'string' || !data) {
+                    const raw = String((error && error.message) || '').toLowerCase();
+                    const msg = (error && error.message && (raw.includes('tentativas') || raw.includes('minuto') || raw.includes('insu'))) ? String(error.message) : 'Usuário ou senha incorretos.';
+                    errText.textContent = msg;
+                    errBox.style.display = '';
+                    return;
+                }
+                if (data.startsWith('LOCK:')) {
+                    const m = data.slice(5);
+                    errText.textContent = 'Muitas tentativas. Tente novamente em ' + m + ' minuto(s).';
+                    errBox.style.display = '';
+                    return;
+                }
+                if (data.startsWith('ERR:')) {
                     errText.textContent = 'Usuário ou senha incorretos.';
                     errBox.style.display = '';
                     return;
                 }
-                localStorage.setItem(AUTH_KEY, token);
+                localStorage.setItem(AUTH_KEY, data);
                 window.location.href = 'dashboard.html';
             } catch (e2) {
                 console.error('Erro no login:', e2);

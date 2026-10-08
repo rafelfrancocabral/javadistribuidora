@@ -113,7 +113,9 @@ BEGIN
 END;
 $$;
 
--- Login do painel: valida usuario e hash da senha.
+-- Login do painel com limite de tentativas (5 falhas -> 5 min, dobra ate 60 min).
+-- Falhas retornam codigos (sem RAISE) para o contador COMMITAR e o bloqueio
+-- persistir entre requests. Retorna: token (48 hex), 'LOCK:<min>' ou 'ERR:invalid'.
 CREATE OR REPLACE FUNCTION public.admin_autenticar(_usuario text, _senha_hash text)
 RETURNS text
 LANGUAGE plpgsql
@@ -121,11 +123,21 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE _row public.admins%ROWTYPE;
+DECLARE _key text;
+DECLARE _secs integer;
 BEGIN
-    SELECT * INTO _row FROM public.admins WHERE usuario = _usuario;
-    IF NOT FOUND OR _row.senha_hash IS DISTINCT FROM _senha_hash THEN
-        RAISE EXCEPTION 'Usuario ou senha invalidos' USING ERRCODE = '28P01';
+    _key := 'adm:' || encode(extensions.digest(public.real_client_ip() || '|' || lower(coalesce(_usuario, '')), 'sha256'), 'hex');
+    _secs := public.tempo_bloqueio(_key);
+    IF _secs > 0 THEN
+        RETURN 'LOCK:' || ceil(_secs / 60.0)::text;
     END IF;
+    SELECT * INTO _row FROM public.admins WHERE admins.usuario = _usuario;
+    IF NOT FOUND OR _row.senha_hash IS DISTINCT FROM _senha_hash THEN
+        PERFORM public.registrar_falha(_key);
+        PERFORM pg_sleep(1);
+        RETURN 'ERR:invalid';
+    END IF;
+    DELETE FROM public.login_attempts WHERE key = _key;
     RETURN public.criar_sessao_admin(_row.id);
 END;
 $$;
@@ -146,41 +158,61 @@ $$;
 
 -- Login do cliente: identifica por email OU cnpj. Nunca devolve o hash.
 -- O navegador envia dois hashes: sha256(senha) e sha256(senha-somente-numeros).
+-- Com limite de tentativas igual ao admin. Retorna 1 linha: sucesso -> id/razao/
+-- email/senha_trocada (erro NULL); falha -> id=0 e codigo em "erro":
+-- 'LOCK:<min>', 'SENHA' ou 'NAOCAD'. Colunas qualificadas (nao usar "email"/
+-- "id" sem prefixo: RETURNS TABLE cria essas como variaveis -> erro 42702).
 CREATE OR REPLACE FUNCTION public.verificar_login(_identificador text, _senha_email text, _senha_cnpj text)
-RETURNS TABLE (id bigint, razao_social text, email text, senha_trocada boolean)
+RETURNS TABLE (id bigint, razao_social text, email text, senha_trocada boolean, erro text)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE _row public.clientes%ROWTYPE;
 DECLARE _digits text;
+DECLARE _key text;
+DECLARE _secs integer;
 BEGIN
     _digits := regexp_replace(coalesce(_identificador, ''), '\D', '', 'g');
+    _key := 'cli:' || encode(extensions.digest(public.real_client_ip() || '|' || lower(coalesce(_identificador, '')), 'sha256'), 'hex');
+    _secs := public.tempo_bloqueio(_key);
+    IF _secs > 0 THEN
+        RETURN QUERY SELECT 0::bigint, ''::text, ''::text, false, 'LOCK:' || ceil(_secs / 60.0)::text;
+        RETURN;
+    END IF;
 
     SELECT * INTO _row FROM public.clientes
-     WHERE lower(email) = lower(coalesce(_identificador, ''))
-     ORDER BY id LIMIT 1;
+     WHERE lower(clientes.email) = lower(coalesce(_identificador, ''))
+     ORDER BY clientes.id LIMIT 1;
 
     IF NOT FOUND AND _digits <> '' THEN
         SELECT * INTO _row FROM public.clientes
-         WHERE regexp_replace(coalesce(cnpj, ''), '\D', '', 'g') = _digits
-         ORDER BY id LIMIT 1;
+         WHERE regexp_replace(coalesce(clientes.cnpj, ''), '\D', '', 'g') = _digits
+         ORDER BY clientes.id LIMIT 1;
         IF FOUND THEN
             IF _row.senha IS DISTINCT FROM _senha_cnpj THEN
-                RAISE EXCEPTION 'Senha incorreta' USING ERRCODE = '28P01';
+                PERFORM public.registrar_falha(_key);
+                RETURN QUERY SELECT 0::bigint, ''::text, ''::text, false, 'SENHA';
+                RETURN;
             END IF;
-            RETURN QUERY SELECT _row.id, _row.razao_social, _row.email, coalesce(_row.senha_trocada, false);
+            DELETE FROM public.login_attempts WHERE key = _key;
+            RETURN QUERY SELECT _row.id, _row.razao_social, _row.email, coalesce(_row.senha_trocada, false), NULL::text;
             RETURN;
         END IF;
     END IF;
 
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'Cliente nao cadastrado. Contate a loja.' USING ERRCODE = '28P01';
+        PERFORM public.registrar_falha(_key);
+        RETURN QUERY SELECT 0::bigint, ''::text, ''::text, false, 'NAOCAD';
+        RETURN;
     END IF;
     IF _row.senha IS DISTINCT FROM _senha_email THEN
-        RAISE EXCEPTION 'Senha incorreta' USING ERRCODE = '28P01';
+        PERFORM public.registrar_falha(_key);
+        RETURN QUERY SELECT 0::bigint, ''::text, ''::text, false, 'SENHA';
+        RETURN;
     END IF;
-    RETURN QUERY SELECT _row.id, _row.razao_social, _row.email, coalesce(_row.senha_trocada, false);
+    DELETE FROM public.login_attempts WHERE key = _key;
+    RETURN QUERY SELECT _row.id, _row.razao_social, _row.email, coalesce(_row.senha_trocada, false), NULL::text;
 END;
 $$;
 

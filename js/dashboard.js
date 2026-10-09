@@ -1616,12 +1616,18 @@ function renderTracker() {
     if (!el) return;
     if (!tracker.length) { el.innerHTML = ''; if (empty) empty.style.display = ''; return; }
     if (empty) empty.style.display = 'none';
-    el.innerHTML = tracker.map(t => `
+    const now = new Date();
+    el.innerHTML = tracker.map(t => {
+        const d = t.criado_em ? new Date(t.criado_em) : null;
+        const isToday = d && !isNaN(d.getTime()) && d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        const iconColor = isToday ? '#800020' : '#a855f7';
+        return `
         <div class="pb-meta-row" style="align-items:flex-start;">
-            <span style="flex:0 0 34px;color:#a855f7;"><i class="fas fa-circle-info"></i></span>
+            <span style="flex:0 0 34px;color:${iconColor};"><i class="fas fa-circle-info"></i></span>
             <span style="flex:1;font-size:.9rem;line-height:1.45;">${escapeHtml(t.texto)}</span>
             <span style="font-size:.72rem;color:var(--text-secondary);white-space:nowrap;">${escapeHtml(trackerTime(t.criado_em))}</span>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 
 async function addTracker() {

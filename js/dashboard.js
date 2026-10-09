@@ -43,6 +43,9 @@ function cnpjDigits(s) { return String(s || '').replace(/\D/g, ''); }
 function formatCnpj(c) { if (!c) return ''; const d = c.replace(/\D/g, ''); if (d.length !== 14) return c; return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5'); }
 function timeAgo(ts) { if (!ts) return ''; const d = new Date(ts); const diff = Date.now() - d.getTime(); const min = Math.floor(diff / 60000); if (min < 1) return 'agora'; if (min < 60) return min + ' min atrás'; const hrs = Math.floor(min / 60); if (hrs < 24) return hrs + 'h atrás'; const days = Math.floor(hrs / 24); if (days < 7) return days + 'd atrás'; return d.toLocaleDateString('pt-BR'); }
 function formatDate(ts) { if (!ts) return ''; const d = new Date(ts); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
+// Data de referencia da VENDA = quando o status virou 'concluido' (concluido_em).
+// Quando nao ha conclusao (ex.: status antigo sem carimbo), usa a criacao.
+function saleDate(q) { if (q && q.concluido_em) { const d = new Date(q.concluido_em); if (!isNaN(d.getTime())) return d; } return new Date(q.created_at); }
 function toast(msg, isError) { const t = document.getElementById('toast'); if (!t) return; t.className = 'toast show' + (isError ? ' error' : ''); t.innerHTML = (isError ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>') + '<span>' + escapeHtml(msg) + '</span>'; clearTimeout(t._timer); t._timer = setTimeout(() => { t.className = 'toast'; }, 2600); }
 
 // ---------- Navigation ----------
@@ -106,10 +109,20 @@ function getQuotesInPeriod(period, group = currentChartGroup) {
     return quotes.filter(q => new Date(q.created_at) >= since && q.linha === group);
 }
 
+// Vendas concluidas: filtra pela DATA DA VENDA (concluido_em), nao pela criacao.
+function getSalesInPeriod(period, group = currentChartGroup) {
+    const now = new Date();
+    let since;
+    if (period === 'today') { since = new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
+    else if (period === 'month') { since = new Date(now.getFullYear(), now.getMonth(), 1); }
+    else { const d = parseInt(period) || 7; since = new Date(now.getTime() - d * 86400000); }
+    return quotes.filter(q => q.status === 'concluido' && q.linha === group && saleDate(q) >= since);
+}
+
 function buildQuoteChart(period) {
     const el = document.getElementById('chartQuotes');
     const empty = document.getElementById('chartQuotesEmpty');
-    const periodQ = getQuotesInPeriod(period);
+    const periodQ = getSalesInPeriod(period);
     if (empty) empty.style.display = periodQ.length ? 'none' : '';
 
 const labels = [];
@@ -146,7 +159,7 @@ const labels = [];
     }
     buckets.forEach(bkt => {
         labels.push(bkt.label);
-        dataConcluido.push(periodQ.filter(q => { const d = new Date(q.created_at); return d >= bkt.start && d < bkt.end && q.status === 'concluido'; }).length);
+        dataConcluido.push(periodQ.filter(q => { const d = saleDate(q); return d >= bkt.start && d < bkt.end; }).length);
     });
     if (chartQuotesInstance) { chartQuotesInstance.destroy(); chartQuotesInstance = null; }
     if (!el) return;
@@ -254,7 +267,7 @@ function buildPaymentChart() {
     const el = document.getElementById('chartPayments');
     const empty = document.getElementById('chartPaymentsEmpty');
     const map = {};
-    getQuotesInPeriod(currentChartPeriod).filter(q => q.status === 'concluido' && q.linha === currentChartGroup).forEach(q => {
+    getSalesInPeriod(currentChartPeriod).forEach(q => {
         (Array.isArray(q.itens) ? q.itens : []).forEach(i => {
             let cat = i.categoria;
             if (!cat) {
@@ -369,7 +382,7 @@ function getQuoteClientName(q) {
 function renderTopClients() {
     const el = document.getElementById('topClients');
     if (!el) return;
-    const periodQ = getQuotesInPeriod(currentChartPeriod).filter(q => q.status === 'concluido' && q.linha === currentChartGroup);
+    const periodQ = getSalesInPeriod(currentChartPeriod);
     const map = {};
     periodQ.forEach(q => {
         const email = (q.email || '').toLowerCase();
@@ -405,7 +418,7 @@ function renderTopSellers() {
     if (!products.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>Nenhum produto no catálogo.</p></div>'; return; }
     const groupProducts = products.filter(p => p.linha === currentChartGroup);
     const sold = {};
-    getQuotesInPeriod(currentChartPeriod).filter(q => q.status === 'concluido' && q.linha === currentChartGroup).forEach(q => {
+    getSalesInPeriod(currentChartPeriod).forEach(q => {
         (Array.isArray(q.itens) ? q.itens : []).forEach(i => {
             const k = String((i.codigo || i.nome || '')).trim().toLowerCase();
             if (!k) return;
@@ -441,7 +454,7 @@ function renderLowSellers() {
     const groupProducts = products.filter(p => p.linha === currentChartGroup);
     if (!groupProducts.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>Nenhum produto no catálogo.</p></div>'; return; }
     const sold = {};
-    getQuotesInPeriod(currentChartPeriod).filter(q => q.status === 'concluido' && q.linha === currentChartGroup).forEach(q => {
+    getSalesInPeriod(currentChartPeriod).forEach(q => {
         (Array.isArray(q.itens) ? q.itens : []).forEach(i => {
             const k = String((i.codigo || i.nome || '')).trim().toLowerCase();
             if (!k) return;
@@ -506,13 +519,14 @@ function updateChartTitles() {
 async function renderOverview() {
     updateChartTitles();
     const groupQuotes = getQuotesInPeriod(currentChartPeriod);
+    const salesQ = getSalesInPeriod(currentChartPeriod);
     document.getElementById('metricQuotes').textContent = groupQuotes.length;
-    document.getElementById('metricSales').textContent = groupQuotes.filter(q => q.status === 'concluido').length;
-    const totalSold = groupQuotes.filter(q => q.status === 'concluido').reduce((s, q) => s + (Number(q.total) || 0), 0);
+    document.getElementById('metricSales').textContent = salesQ.length;
+    const totalSold = salesQ.reduce((s, q) => s + (Number(q.total) || 0), 0);
     document.getElementById('metricSold').textContent = formatPrice(totalSold);
-    const soldClients = new Set(groupQuotes.filter(q => q.status === 'concluido').map(q => q.email || q.nome_cliente));
+    const soldClients = new Set(salesQ.map(q => q.email || q.nome_cliente));
     document.getElementById('metricClients').textContent = soldClients.size;
-    const soldItems = groupQuotes.filter(q => q.status === 'concluido').reduce((s, q) => s + (Array.isArray(q.itens) ? q.itens.reduce((a, i) => a + (Number(i.quantidade) || 0), 0) : 0), 0);
+    const soldItems = salesQ.reduce((s, q) => s + (Array.isArray(q.itens) ? q.itens.reduce((a, i) => a + (Number(i.quantidade) || 0), 0) : 0), 0);
     document.getElementById('metricSoldItems').textContent = soldItems;
 
     buildQuoteChart(currentChartPeriod);
@@ -607,9 +621,9 @@ function openQuoteDetail(id) {
     } catch (e) { console.error(e); toast('Erro ao abrir detalhes: ' + e.message, true); }
 }
 
-async function changeQuoteStatus(id) { const sel = document.getElementById('qdStatusSelect'); const newStatus = sel.value; try { await adminCall('admin_atualizar_status_orcamento', { _id: id, _status: newStatus }); } catch (e) { toast('Erro: ' + e.message, true); return; } const q = quotes.find(x => String(x.id) === String(id)); if (q) q.status = newStatus; updatePendingBadge(); document.getElementById('quoteDetailModal').classList.remove('open'); renderQuotes(); toast('Status atualizado para ' + statusLabel(newStatus)); }
+async function changeQuoteStatus(id) { const sel = document.getElementById('qdStatusSelect'); const newStatus = sel.value; try { await adminCall('admin_atualizar_status_orcamento', { _id: id, _status: newStatus }); } catch (e) { toast('Erro: ' + e.message, true); return; } const q = quotes.find(x => String(x.id) === String(id)); if (q) { q.status = newStatus; q.concluido_em = newStatus === 'concluido' ? new Date().toISOString() : null; } updatePendingBadge(); document.getElementById('quoteDetailModal').classList.remove('open'); renderQuotes(); toast('Status atualizado para ' + statusLabel(newStatus)); }
 
-async function advanceQuote(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; const next = STATUS_NEXT[q.status]; if (!next) { toast('Orçamento cancelado', true); return; } try { await adminCall('admin_atualizar_status_orcamento', { _id: id, _status: next }); } catch (e) { toast('Erro: ' + e.message, true); return; } q.status = next; updatePendingBadge(); renderQuotes(); toast('Status avançado para ' + statusLabel(next)); }
+async function advanceQuote(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; const next = STATUS_NEXT[q.status]; if (!next) { toast('Orçamento cancelado', true); return; } try { await adminCall('admin_atualizar_status_orcamento', { _id: id, _status: next }); } catch (e) { toast('Erro: ' + e.message, true); return; } q.status = next; q.concluido_em = next === 'concluido' ? new Date().toISOString() : null; updatePendingBadge(); renderQuotes(); toast('Status avançado para ' + statusLabel(next)); }
 
 async function deleteQuote(id) { if (!confirm('Excluir este orçamento?')) return; try { await adminCall('admin_excluir_orcamento', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } quotes = quotes.filter(x => String(x.id) !== String(id)); updatePendingBadge(); renderQuotes(); toast('Orçamento excluído'); }
 
@@ -1234,7 +1248,7 @@ function renderVisitLeads() {
     quotes.filter(q => q.status === 'concluido').forEach(q => {
         const key = String((q.email || q.nome_cliente || '') + '|').toLowerCase();
         if (!key || key === '|') return;
-        const t = new Date(q.created_at).getTime();
+        const t = saleDate(q).getTime();
         if (!(key in lastBuy) || t > lastBuy[key]) lastBuy[key] = t;
     });
     const list = clients.filter(c => {
@@ -1270,7 +1284,7 @@ function renderVisitFrequencia() {
     const buyDates = {};
     quotes.filter(q => q.status === 'concluido').forEach(q => {
         const keys = [String((q.email || '') + '|').toLowerCase(), String((q.nome_cliente || '') + '|').toLowerCase()];
-        keys.forEach(k => { if (!k || k === '|') return; if (!buyDates[k]) buyDates[k] = []; buyDates[k].push(new Date(q.created_at).getTime()); });
+        keys.forEach(k => { if (!k || k === '|') return; if (!buyDates[k]) buyDates[k] = []; buyDates[k].push(saleDate(q).getTime()); });
     });
     Object.keys(buyDates).forEach(k => buyDates[k].sort((a, b) => a - b));
     const rows = [];

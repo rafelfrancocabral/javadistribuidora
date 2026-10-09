@@ -17,12 +17,19 @@ async function adminCall(rpcName, params) {
     return data;
 }
 
+// Registra atividade no Tracker (fire-and-forget).
+function trackAction(texto) {
+    if (!texto) return;
+    adminCall('admin_registrar_tracker', { _texto: texto }).catch(e => console.error('tracker', e));
+}
+
 let products = [];
 let categories = [];
 let quotes = [];
 let pendingUploads = [];
 let clients = [];
-let currentChartPeriod = 'today';
+let tracker = [];
+let currentChartPeriod = 'month';
 let currentChartGroup = 'java';
 let mqLine = 'java';
 let goals = [];
@@ -50,7 +57,7 @@ function saleDate(q) { if (q && q.concluido_em) { const d = new Date(q.concluido
 function toast(msg, isError) { const t = document.getElementById('toast'); if (!t) return; t.className = 'toast show' + (isError ? ' error' : ''); t.innerHTML = (isError ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>') + '<span>' + escapeHtml(msg) + '</span>'; clearTimeout(t._timer); t._timer = setTimeout(() => { t.className = 'toast'; }, 2600); }
 
 // ---------- Navigation ----------
-const VIEW_TITLES = { 'dashboard': 'Painel do Lojista', 'orcamentos': 'Gerenciar Orçamentos', 'produtos': 'Gerenciar Produtos', 'categorias': 'Gerenciar Categorias', 'clientes': 'Gerenciar Clientes', 'agendar': 'Agendar Visita', 'playbook': 'Playbook — Metas e Estratégias' };
+const VIEW_TITLES = { 'dashboard': 'Painel do Lojista', 'orcamentos': 'Gerenciar Orçamentos', 'produtos': 'Gerenciar Produtos', 'categorias': 'Gerenciar Categorias', 'clientes': 'Gerenciar Clientes', 'agendar': 'Agendar Visita', 'playbook': 'Playbook — Metas e Estratégias', 'tracker': 'Tracker — Atividades' };
 
 function setCurrentGroup(group) {
     currentChartGroup = group;
@@ -72,6 +79,7 @@ function switchView(view) {
     if (view === 'clientes') renderClients();
     if (view === 'agendar') { renderAgenda(); renderVisitLeads(); renderVisitFrequencia(); }
     if (view === 'playbook') renderPlaybook();
+    if (view === 'tracker') renderTracker();
     if (view === 'dashboard') renderOverview();
     document.getElementById('dashSidebar').classList.remove('open');
 }
@@ -125,10 +133,10 @@ function buildQuoteChart(period) {
     const el = document.getElementById('chartQuotes');
     const empty = document.getElementById('chartQuotesEmpty');
     const periodQ = getSalesInPeriod(period);
-    if (empty) empty.style.display = periodQ.length ? 'none' : '';
 
 const labels = [];
-    const dataConcluido = [];
+    const dataAcum = [];
+    const dataMeta = [];
     const buckets = [];
     if (period === 'today') {
         for (let h = 8; h <= 20; h += 2) {
@@ -159,10 +167,42 @@ const labels = [];
             cur = next;
         }
     }
+
+    // Meta diaria = meta mensal da linha / dias do mes.
+    function metaDoDiaEm(d) {
+        const ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const g = goals.find(x => x && x.tipo === 'mensal' && x.linha === currentChartGroup && String(x.mes).slice(0, 7) === ym);
+        const goal = g ? (Number(g.valor) || 0) : 0;
+        const dim = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+        return dim ? (goal / dim) : 0;
+    }
+
+    const first = buckets.length ? buckets[0].start : new Date();
+    const last = buckets.length ? buckets[buckets.length - 1].end : new Date();
+    const daily = [];
+    for (let dd = new Date(first); dd < last && daily.length < 900; dd.setDate(dd.getDate() + 1)) {
+        daily.push({ start: new Date(dd.getFullYear(), dd.getMonth(), dd.getDate()), val: metaDoDiaEm(dd) });
+    }
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const dayMs = 86400000;
+
+    let sum = 0, metaAcum = 0, di = 0;
     buckets.forEach(bkt => {
         labels.push(bkt.label);
-        dataConcluido.push(periodQ.filter(q => { const d = saleDate(q); return d >= bkt.start && d < bkt.end; }).length);
+        const val = periodQ.reduce((s, q) => { const d = saleDate(q); return (d >= bkt.start && d < bkt.end) ? s + (Number(q.total) || 0) : s; }, 0);
+        sum += val;
+        dataAcum.push(sum);
+        if (period === 'today') {
+            const dm = metaDoDiaEm(dayStart);
+            dataMeta.push(dm * Math.min(1, Math.max(0, (bkt.end.getTime() - dayStart.getTime()) / dayMs)));
+        } else {
+            while (di < daily.length && daily[di].start < bkt.end) { metaAcum += daily[di].val; di++; }
+            dataMeta.push(metaAcum);
+        }
     });
+
+    if (empty) empty.style.display = (periodQ.length || dataMeta.some(v => v > 0)) ? 'none' : '';
+
     if (chartQuotesInstance) { chartQuotesInstance.destroy(); chartQuotesInstance = null; }
     if (!el) return;
 
@@ -177,8 +217,8 @@ const labels = [];
             labels, 
             datasets: [
                 { 
-                    label: 'Orçamentos Concluídos', 
-                    data: dataConcluido, 
+                    label: 'Vendas acumuladas (R$)', 
+                    data: dataAcum, 
                     fill: true,
                     tension: 0.45,
                     borderColor: '#00ffa3',
@@ -187,13 +227,26 @@ const labels = [];
                     pointBackgroundColor: '#fff',
                     pointBorderColor: '#00ffa3',
                     pointBorderWidth: 2,
-                    pointRadius: 4,
+                    pointRadius: 3,
                     pointHoverRadius: 7,
                     pointHoverBackgroundColor: '#4f6bff',
                     pointHoverBorderColor: '#fff',
                     pointHoverBorderWidth: 2,
                     hoverBorderColor: '#4f6bff',
                     hoverBorderWidth: 3
+                },
+                { 
+                    label: 'Meta diária acumulada (R$)', 
+                    data: dataMeta, 
+                    fill: false,
+                    tension: 0.3,
+                    borderColor: '#ffa502',
+                    borderWidth: 2.5,
+                    borderDash: [7, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: '#ffa502',
+                    pointHoverBorderColor: '#fff'
                 }
             ]},
         options: {
@@ -230,7 +283,7 @@ const labels = [];
                     borderColor: 'rgba(0,229,255,0.4)',
                     borderWidth: 1.5,
                     callbacks: {
-                        label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y} orçamentos`
+                        label: (ctx) => ` ${ctx.dataset.label}: ${formatPrice(ctx.parsed.y)}`
                     }
                 }
             },
@@ -246,7 +299,6 @@ const labels = [];
                 },
                 y: {
                     beginAtZero: true,
-                    precision: 0,
                     grid: {
                         color: 'rgba(168,85,247,0.10)',
                         drawBorder: false,
@@ -256,7 +308,7 @@ const labels = [];
                         font: { family: 'Chakra Petch', size: 11 },
                         color: '#6b6477',
                         padding: 10,
-                        callback: (value) => Number.isInteger(value) ? value : null
+                        callback: (value) => 'R$ ' + Number(value).toLocaleString('pt-BR')
                     },
                     border: { display: false }
                 }
@@ -514,7 +566,7 @@ function updateChartTitles() {
     const g = GROUP_LABELS[currentChartGroup] || 'Java';
     const qTitle = document.getElementById('chartQuotesTitle');
     const pTitle = document.getElementById('chartPaymentsTitle');
-    if (qTitle) qTitle.innerHTML = '<i class="fas fa-chart-bar"></i> Pedidos por período (' + g + ')';
+    if (qTitle) qTitle.innerHTML = '<i class="fas fa-chart-line"></i> Total em Vendas (R$) — ' + g;
     if (pTitle) pTitle.innerHTML = '<i class="fas fa-chart-pie"></i> Vendas por categoria (' + g + ')';
 }
 
@@ -623,11 +675,11 @@ function openQuoteDetail(id) {
     } catch (e) { console.error(e); toast('Erro ao abrir detalhes: ' + e.message, true); }
 }
 
-async function changeQuoteStatus(id) { const sel = document.getElementById('qdStatusSelect'); const newStatus = sel.value; try { await adminCall('admin_atualizar_status_orcamento', { _id: id, _status: newStatus }); } catch (e) { toast('Erro: ' + e.message, true); return; } const q = quotes.find(x => String(x.id) === String(id)); if (q) { q.status = newStatus; q.concluido_em = newStatus === 'concluido' ? new Date().toISOString() : null; } updatePendingBadge(); document.getElementById('quoteDetailModal').classList.remove('open'); renderQuotes(); toast('Status atualizado para ' + statusLabel(newStatus)); }
+async function changeQuoteStatus(id) { const sel = document.getElementById('qdStatusSelect'); const newStatus = sel.value; try { await adminCall('admin_atualizar_status_orcamento', { _id: id, _status: newStatus }); } catch (e) { toast('Erro: ' + e.message, true); return; } const q = quotes.find(x => String(x.id) === String(id)); if (q) { q.status = newStatus; q.concluido_em = newStatus === 'concluido' ? new Date().toISOString() : null; } trackAction('Orçamento ' + (q ? (q.codigo_cliente || q.id) : id) + ' (' + (q ? q.nome_cliente : '') + '): status alterado para ' + statusLabel(newStatus)); updatePendingBadge(); document.getElementById('quoteDetailModal').classList.remove('open'); renderQuotes(); toast('Status atualizado para ' + statusLabel(newStatus)); }
 
-async function advanceQuote(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; const next = STATUS_NEXT[q.status]; if (!next) { toast('Orçamento cancelado', true); return; } try { await adminCall('admin_atualizar_status_orcamento', { _id: id, _status: next }); } catch (e) { toast('Erro: ' + e.message, true); return; } q.status = next; q.concluido_em = next === 'concluido' ? new Date().toISOString() : null; updatePendingBadge(); renderQuotes(); toast('Status avançado para ' + statusLabel(next)); }
+async function advanceQuote(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; const next = STATUS_NEXT[q.status]; if (!next) { toast('Orçamento cancelado', true); return; } try { await adminCall('admin_atualizar_status_orcamento', { _id: id, _status: next }); } catch (e) { toast('Erro: ' + e.message, true); return; } q.status = next; q.concluido_em = next === 'concluido' ? new Date().toISOString() : null; trackAction('Orçamento ' + (q.codigo_cliente || q.id) + ' (' + q.nome_cliente + '): status avançado para ' + statusLabel(next)); updatePendingBadge(); renderQuotes(); toast('Status avançado para ' + statusLabel(next)); }
 
-async function deleteQuote(id) { if (!confirm('Excluir este orçamento?')) return; try { await adminCall('admin_excluir_orcamento', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } quotes = quotes.filter(x => String(x.id) !== String(id)); updatePendingBadge(); renderQuotes(); toast('Orçamento excluído'); }
+async function deleteQuote(id) { if (!confirm('Excluir este orçamento?')) return; const qq = quotes.find(x => String(x.id) === String(id)); try { await adminCall('admin_excluir_orcamento', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } quotes = quotes.filter(x => String(x.id) !== String(id)); trackAction('Orçamento excluído: ' + (qq ? (qq.codigo_cliente || qq.nome_cliente || qq.id) : id)); updatePendingBadge(); renderQuotes(); toast('Orçamento excluído'); }
 
 function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA*', '']; if (q.codigo_cliente) lines.push('Cliente: ' + q.nome_cliente + ' (#' + q.codigo_cliente + ')'); else lines.push('Cliente: ' + q.nome_cliente); if (q.codigo_retirada) lines.push('Cód. Retirada: ' + q.codigo_retirada); lines.push('Data: ' + formatDate(q.created_at)); lines.push(''); if (Array.isArray(q.itens) && q.itens.length) { q.itens.forEach(it => { lines.push('• ' + it.nome + ' (' + (it.codigo||'') + ')'); lines.push('  ' + it.quantidade + 'x ' + formatPrice(it.preco) + ' = ' + formatPrice(it.subtotal || (it.preco * it.quantidade))); }); } else { lines.push(String(q.itens || '')); } lines.push(''); lines.push('Total: ' + formatPrice(q.total)); if (q.pagamento) lines.push('Prazo de pagamento: ' + q.pagamento); lines.push(''); lines.push('WhatsApp: (12) 99778-0047'); return lines.join('\n'); }
 
@@ -730,8 +782,8 @@ async function loadProducts() { try { const data = await adminCall('admin_listar
 
 function renderProducts() { const search = document.getElementById('productSearch').value.trim().toLowerCase(); let list = products.filter(p => p.linha === currentChartGroup); if (search) list = list.filter(p => (p.nome || '').toLowerCase().includes(search) || (p.codigo || '').toLowerCase().includes(search) || (p.marca || '').toLowerCase().includes(search) || (p.categoria || '').toLowerCase().includes(search)); if (productsSort.key && PRODUCT_SORTERS[productsSort.key]) list = list.slice().sort((a, b) => PRODUCT_SORTERS[productsSort.key](a, b) * productsSort.dir); updateSortHeaders(); const tbody = document.getElementById('productTableBody'); if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted)">Nenhum produto encontrado</td></tr>'; return; } tbody.innerHTML = list.map(p => { const img = (p.imagens && p.imagens.length) ? p.imagens[0] : ''; const imgHtml = img ? `<img class="prod-img" src="${escapeHtml(img)}" alt="" loading="lazy" onerror="this.onerror=null;this.style.display='none'">` : '<div class="prod-no-img"><i class="fas fa-image"></i></div>'; const linhaLabel = p.linha === 'java' ? '<span class="linha-badge linha-java">Java</span>' : '<span class="linha-badge linha-dymar">Dymar</span>'; return `<tr><td data-label="Imagem">${imgHtml}</td><td data-label="Código"><span class="prod-code">${escapeHtml(p.codigo || '—')}</span></td><td data-label="Produto"><div class="prod-name" title="${escapeHtml(p.nome)}">${escapeHtml(p.nome)}</div><div class="prod-code">${escapeHtml(p.marca || '')}</div></td><td data-label="Categoria">${escapeHtml(p.categoria || '—')}</td><td data-label="Pasta">${linhaLabel}</td><td data-label="Preço" class="price-cell">${formatPrice(p.preco)}${p.ispromocao && p.precopromocional > 0 ? `<br><small style="color:var(--warning)">Promo: ${formatPrice(p.precopromocional)}</small>` : ''}</td><td data-label="Estoque">${p.estoque}</td><td data-label="Visível"><button class="toggle ${p.visivel ? 'on' : ''}" onclick="toggleVisibility('${p.id}')" title="Visível no catálogo"></button></td><td data-label="Ações"><div style="display:flex;gap:6px"><button class="icon-btn" onclick="openProductModal('${p.id}')" title="Editar"><i class="fas fa-pen"></i></button><button class="icon-btn danger" onclick="deleteProduct('${p.id}')" title="Excluir"><i class="fas fa-trash"></i></button></div></td></tr>`; }).join(''); }
 
-async function toggleVisibility(id) { const p = products.find(x => String(x.id) === String(id)); if (!p) return; const newVal = !p.visivel; try { await adminCall('admin_toggle_produto', { _id: id, _visivel: newVal }); } catch (e) { toast('Erro: ' + e.message, true); return; } p.visivel = newVal; renderProducts(); toast(newVal ? 'Produto visível no catálogo' : 'Produto oculto do catálogo'); }
-async function deleteProduct(id) { if (!confirm('Excluir este produto?')) return; try { await adminCall('admin_excluir_produto', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } products = products.filter(x => String(x.id) !== String(id)); renderProducts(); toast('Produto excluído'); }
+async function toggleVisibility(id) { const p = products.find(x => String(x.id) === String(id)); if (!p) return; const newVal = !p.visivel; try { await adminCall('admin_toggle_produto', { _id: id, _visivel: newVal }); } catch (e) { toast('Erro: ' + e.message, true); return; } p.visivel = newVal; trackAction('Produto ' + (p.codigo ? '[' + p.codigo + '] ' : '') + p.nome + ' ' + (newVal ? 'visível no catálogo' : 'oculto do catálogo')); renderProducts(); toast(newVal ? 'Produto visível no catálogo' : 'Produto oculto do catálogo'); }
+async function deleteProduct(id) { if (!confirm('Excluir este produto?')) return; const pp = products.find(x => String(x.id) === String(id)); try { await adminCall('admin_excluir_produto', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } products = products.filter(x => String(x.id) !== String(id)); trackAction('Produto excluído: ' + (pp ? ((pp.codigo ? '[' + pp.codigo + '] ' : '') + pp.nome) : id)); renderProducts(); toast('Produto excluído'); }
 
 // ---------- Product modal ----------
 let editingImages = [];
@@ -761,7 +813,7 @@ async function fileToWebP(file, width) { return new Promise((resolve, reject) =>
 async function uploadToR2(webpMain, webpThumb, hash) { console.log('[uploadToR2] Uploading:', hash); if (typeof R2_WORKER_URL === 'undefined' || !R2_WORKER_URL || typeof R2_PUBLIC_BASE_URL === 'undefined' || !R2_PUBLIC_BASE_URL) throw new Error('R2 não configurado: verifique js/r2-config.js'); const form = new FormData(); form.append('main', webpMain, hash + '.webp'); form.append('thumb', webpThumb, hash + '_thumb.webp'); form.append('hash', hash); const headers = {}; if (typeof R2_WORKER_SECRET !== 'undefined' && R2_WORKER_SECRET) headers['Authorization'] = 'Bearer ' + R2_WORKER_SECRET; console.log('[uploadToR2] Sending to:', R2_WORKER_URL + '/upload'); const res = await fetch(R2_WORKER_URL + '/upload', { method: 'POST', body: form, headers }); console.log('[uploadToR2] Response status:', res.status); if (!res.ok) { let msg = 'Falha no upload (' + res.status + ')'; try { const d = await res.json(); if (d.error) msg += ': ' + d.error; } catch (e) {} throw new Error(msg); } const result = { main: R2_PUBLIC_BASE_URL + '/produtos/' + hash + '.webp', thumb: R2_PUBLIC_BASE_URL + '/produtos/' + hash + '_thumb.webp' }; console.log('[uploadToR2] Success:', result); return result; }
 function showUploading(btn, on) { btn.disabled = on; if (on) { btn.dataset.orig = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...'; } else { if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig; } }
 
-async function saveProduct(e) { e.preventDefault(); const btn = document.getElementById('productSubmit'); showUploading(btn, true); try { const id = document.getElementById('productId').value; const uploadedNew = []; if (pendingUploads && pendingUploads.length) { console.log('[saveProduct] Processing', pendingUploads.length, 'pending uploads'); for (const f of pendingUploads) { try { console.log('[saveProduct] Processing file:', f.name, f.type, f.size); const buffer = await f.arrayBuffer(); console.log('[saveProduct] Buffer size:', buffer.byteLength); const hash = await hashFileBuffer(buffer); console.log('[saveProduct] Hash:', hash); const [main, thumb] = await Promise.all([fileToWebP(f, 1200), fileToWebP(f, 400)]); console.log('[saveProduct] WebP conversion done, main:', main.size, 'thumb:', thumb.size); const uploaded = await uploadToR2(main, thumb, hash); console.log('[saveProduct] Upload success:', uploaded); uploadedNew.push(uploaded.main); } catch (uploadErr) { console.error('Erro upload R2:', uploadErr); toast('Falha ao enviar imagem para R2: ' + uploadErr.message, true); showUploading(btn, false); return; } } pendingUploads = []; } const urlImgs = []; for (let i = 0; i < 5; i++) { const v = document.getElementById('prodImg' + (i + 1)).value.trim(); if (v) urlImgs.push(v); } editingImages = urlImgs.length ? urlImgs : []; if (uploadedNew.length) editingImages = editingImages.concat(uploadedNew).slice(0, 5); const palavraschave = document.getElementById('prodKeywords').value.split(',').map(s => s.trim()).filter(Boolean); const isp = document.getElementById('prodPromocao').checked; const somenteOrcamento = document.getElementById('prodSomenteOrcamento').checked; const payload = { codigo: document.getElementById('prodCodigo').value.trim() || null, nome: document.getElementById('prodNome').value.trim(), marca: document.getElementById('prodMarca').value.trim(), categoria: document.getElementById('prodCategoria').value, subcategoria: document.getElementById('prodSubcategoria').value || null, preco: parsePrice(document.getElementById('prodPreco').value), preco_custo: parsePrice(document.getElementById('prodPrecoCusto').value), unidade: document.getElementById('prodUnidade').value, embalagem: parseInt(document.getElementById('prodEmbalagem').value) || 1, descricao: document.getElementById('prodDescricao').value, palavraschave, imagens: editingImages, estoque: parseInt(document.getElementById('prodEstoque').value) || 0, isdestaque: document.getElementById('prodDestaque').checked, ispromocao: isp, precopromocional: isp ? parsePrice(document.getElementById('prodPrecoPromo').value) : 0, somente_orcamento: somenteOrcamento, linha: document.getElementById('prodLinha').value, icmsst: parsePrice(document.getElementById('prodIcmsSt').value) || 0, visivel: true, updated_at: new Date().toISOString() }; await adminCall('admin_salvar_produto', { _payload: id ? Object.assign({}, payload, { id: id }) : payload }); closeProductModal(); await loadProducts(); renderProducts(); toast(r2NotConfigured ? 'Produto salvo, mas imagens não enviadas (R2 ainda não configurado)' : 'Produto salvo com sucesso'); } catch (err) { console.error(err); toast('Erro: ' + err.message, true); } finally { showUploading(btn, false); } }
+async function saveProduct(e) { e.preventDefault(); const btn = document.getElementById('productSubmit'); showUploading(btn, true); try { const id = document.getElementById('productId').value; const uploadedNew = []; if (pendingUploads && pendingUploads.length) { console.log('[saveProduct] Processing', pendingUploads.length, 'pending uploads'); for (const f of pendingUploads) { try { console.log('[saveProduct] Processing file:', f.name, f.type, f.size); const buffer = await f.arrayBuffer(); console.log('[saveProduct] Buffer size:', buffer.byteLength); const hash = await hashFileBuffer(buffer); console.log('[saveProduct] Hash:', hash); const [main, thumb] = await Promise.all([fileToWebP(f, 1200), fileToWebP(f, 400)]); console.log('[saveProduct] WebP conversion done, main:', main.size, 'thumb:', thumb.size); const uploaded = await uploadToR2(main, thumb, hash); console.log('[saveProduct] Upload success:', uploaded); uploadedNew.push(uploaded.main); } catch (uploadErr) { console.error('Erro upload R2:', uploadErr); toast('Falha ao enviar imagem para R2: ' + uploadErr.message, true); showUploading(btn, false); return; } } pendingUploads = []; } const urlImgs = []; for (let i = 0; i < 5; i++) { const v = document.getElementById('prodImg' + (i + 1)).value.trim(); if (v) urlImgs.push(v); } editingImages = urlImgs.length ? urlImgs : []; if (uploadedNew.length) editingImages = editingImages.concat(uploadedNew).slice(0, 5); const palavraschave = document.getElementById('prodKeywords').value.split(',').map(s => s.trim()).filter(Boolean); const isp = document.getElementById('prodPromocao').checked; const somenteOrcamento = document.getElementById('prodSomenteOrcamento').checked; const payload = { codigo: document.getElementById('prodCodigo').value.trim() || null, nome: document.getElementById('prodNome').value.trim(), marca: document.getElementById('prodMarca').value.trim(), categoria: document.getElementById('prodCategoria').value, subcategoria: document.getElementById('prodSubcategoria').value || null, preco: parsePrice(document.getElementById('prodPreco').value), preco_custo: parsePrice(document.getElementById('prodPrecoCusto').value), unidade: document.getElementById('prodUnidade').value, embalagem: parseInt(document.getElementById('prodEmbalagem').value) || 1, descricao: document.getElementById('prodDescricao').value, palavraschave, imagens: editingImages, estoque: parseInt(document.getElementById('prodEstoque').value) || 0, isdestaque: document.getElementById('prodDestaque').checked, ispromocao: isp, precopromocional: isp ? parsePrice(document.getElementById('prodPrecoPromo').value) : 0, somente_orcamento: somenteOrcamento, linha: document.getElementById('prodLinha').value, icmsst: parsePrice(document.getElementById('prodIcmsSt').value) || 0, visivel: true, updated_at: new Date().toISOString() }; await adminCall('admin_salvar_produto', { _payload: id ? Object.assign({}, payload, { id: id }) : payload }); closeProductModal(); await loadProducts(); renderProducts(); trackAction((id ? 'Produto atualizado' : 'Produto cadastrado') + ': ' + (payload.codigo ? '[' + payload.codigo + '] ' : '') + payload.nome + (uploadedNew.length ? ' (com nova imagem)' : '')); toast(r2NotConfigured ? 'Produto salvo, mas imagens não enviadas (R2 ainda não configurado)' : 'Produto salvo com sucesso'); } catch (err) { console.error(err); toast('Erro: ' + err.message, true); } finally { showUploading(btn, false); } }
 
 // ---------- Importação de Produtos (CSV) ----------
 let importRows = [];
@@ -1225,8 +1277,8 @@ async function renderCategories() { const el = document.getElementById('category
 
 async function loadCategories() { try { let all = []; let from = 0; while (true) { const { data, error } = await db.from(SUPABASE_CATEGORIES_TABLE).select('*').order('id', { ascending: true }).range(from, from + 499); if (error) throw error; if (!data || !data.length) break; all = all.concat(data); if (data.length < 500) break; from += 500; } try { const { data: subs } = await db.from(SUPABASE_SUBCATEGORIES_TABLE).select('*').order('id', { ascending: true }); all = all.map(c => ({ ...c, subcategorias: (subs || []).filter(s => s.categoria === c.nome).map(s => s.nome) })); } catch (e) { console.error('Subcats:', e); } categories = all; } catch (e) { console.error('Erro ao carregar categorias:', e); categories = []; } }
 
-async function addCategory() { const input = document.getElementById('newCategoryName'); const name = input.value.trim(); if (!name) { toast('Digite um nome', true); return; } try { await adminCall('admin_salvar_categoria', { _nome: name }); } catch (e) { toast('Erro: ' + e.message, true); return; } input.value = ''; await loadCategories(); renderCategories(); toast('Categoria adicionada'); }
-async function deleteCategory(id) { const c = categories.find(x => String(x.id) === String(id)); if (!c) return; if (!confirm('Excluir a categoria "' + c.nome + '"?')) return; try { await adminCall('admin_excluir_categoria', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } await loadCategories(); renderCategories(); toast('Categoria excluída'); }
+async function addCategory() { const input = document.getElementById('newCategoryName'); const name = input.value.trim(); if (!name) { toast('Digite um nome', true); return; } try { await adminCall('admin_salvar_categoria', { _nome: name }); } catch (e) { toast('Erro: ' + e.message, true); return; } input.value = ''; await loadCategories(); renderCategories(); trackAction('Categoria adicionada: ' + name); toast('Categoria adicionada'); }
+async function deleteCategory(id) { const c = categories.find(x => String(x.id) === String(id)); if (!c) return; if (!confirm('Excluir a categoria "' + c.nome + '"?')) return; try { await adminCall('admin_excluir_categoria', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } await loadCategories(); renderCategories(); trackAction('Categoria excluída: ' + c.nome); toast('Categoria excluída'); }
 async function addSubcategory(catId) { const c = categories.find(x => String(x.id) === String(catId)); if (!c) return; const input = document.getElementById('subcatInput_' + catId); const name = input.value.trim(); if (!name) { toast('Digite a subcategoria', true); return; } try { await adminCall('admin_salvar_subcategoria', { _nome: name, _categoria: c.nome }); } catch (e) { toast('Erro: ' + e.message, true); return; } await loadCategories(); renderCategories(); toast('Subcategoria adicionada'); }
 
 // ---------- Clients ----------
@@ -1237,9 +1289,9 @@ function renderClients() { const search = document.getElementById('clientSearch'
 function openClientModal(id) { const c = id ? clients.find(x => String(x.id) === String(id)) : null; document.getElementById('clientModalTitle').textContent = c ? 'Editar Cliente' : 'Novo Cliente'; document.getElementById('clientId').value = c ? c.id : ''; document.getElementById('clRazao').value = c ? c.razao_social : ''; document.getElementById('clCnpj').value = c ? (c.cnpj || '') : ''; document.getElementById('clEmail').value = c ? (c.email || '') : ''; document.getElementById('clTelefone').value = c ? (c.telefone || '') : ''; document.getElementById('clSenha').value = ''; const hint = document.getElementById('clSenhaHint'); if (!c) { hint.textContent = 'Se deixar em branco, a senha será o CNPJ somente com números.'; } else { hint.textContent = 'Deixe em branco para manter a senha atual. Senha padrão usada no cadastro: ' + (cnpjDigits(c.cnpj) || '—'); } document.getElementById('clTrocarSenha').checked = c ? !!c.senha_trocada : false; document.getElementById('clientModal').classList.add('open'); }
 function closeClientModal() { document.getElementById('clientModal').classList.remove('open'); }
 
-async function saveClient(e) { e.preventDefault(); try { const id = document.getElementById('clientId').value; const razao = document.getElementById('clRazao').value.trim(); const cnpj = document.getElementById('clCnpj').value.trim(); const email = document.getElementById('clEmail').value.trim().toLowerCase(); const telefone = document.getElementById('clTelefone').value.trim(); const manualSenha = document.getElementById('clSenha').value; const forceTroca = document.getElementById('clTrocarSenha').checked; if (!razao || !email) { toast('Preencha razão social e email', true); return; } const cnpjDV = cnpj && cnpj.replace(/\D/g, ''); if (cnpjDV) { const duplicado = clients.some(c => String(c.id) !== String(id) && c.cnpj && c.cnpj.replace(/\D/g, '') === cnpjDV); if (duplicado) { toast('Já existe um cliente com este CNPJ', true); return; } } const isNew = !id; const payload = { razao_social: razao, cnpj, email, telefone, updated_at: new Date().toISOString() }; if (isNew) { const pw = manualSenha || cnpjDigits(cnpj); if (!pw) { toast('Informe uma senha ou preencha o CNPJ', true); return; } payload.senha = await sha256Hex(pw); payload.senha_trocada = forceTroca || !manualSenha; } else { if (manualSenha) payload.senha = await sha256Hex(manualSenha); payload.senha_trocada = forceTroca; } let error; try { const cli = { razao_social: razao, cnpj: cnpj, email: email, telefone: telefone, novo: isNew }; if (manualSenha) cli.senha = await sha256Hex(manualSenha); cli.trocar = isNew ? (forceTroca || !manualSenha) : forceTroca; if (id) cli.id = id; await adminCall('admin_salvar_cliente', { _cliente: cli }); } catch (err2) { error = err2; } if (error) { if (/duplicate|unique|clientes_email|23505/i.test(error.message)) { toast('Já existe um cliente com este email', true); } else { toast('Erro: ' + error.message, true); } return; } closeClientModal(); await loadClients(); renderClients(); toast(id ? 'Cliente atualizado' : 'Cliente cadastrado'); } catch (err) { console.error('saveClient error:', err); toast('Erro ao salvar', true); } }
+async function saveClient(e) { e.preventDefault(); try { const id = document.getElementById('clientId').value; const razao = document.getElementById('clRazao').value.trim(); const cnpj = document.getElementById('clCnpj').value.trim(); const email = document.getElementById('clEmail').value.trim().toLowerCase(); const telefone = document.getElementById('clTelefone').value.trim(); const manualSenha = document.getElementById('clSenha').value; const forceTroca = document.getElementById('clTrocarSenha').checked; if (!razao || !email) { toast('Preencha razão social e email', true); return; } const cnpjDV = cnpj && cnpj.replace(/\D/g, ''); if (cnpjDV) { const duplicado = clients.some(c => String(c.id) !== String(id) && c.cnpj && c.cnpj.replace(/\D/g, '') === cnpjDV); if (duplicado) { toast('Já existe um cliente com este CNPJ', true); return; } } const isNew = !id; const payload = { razao_social: razao, cnpj, email, telefone, updated_at: new Date().toISOString() }; if (isNew) { const pw = manualSenha || cnpjDigits(cnpj); if (!pw) { toast('Informe uma senha ou preencha o CNPJ', true); return; } payload.senha = await sha256Hex(pw); payload.senha_trocada = forceTroca || !manualSenha; } else { if (manualSenha) payload.senha = await sha256Hex(manualSenha); payload.senha_trocada = forceTroca; } let error; try { const cli = { razao_social: razao, cnpj: cnpj, email: email, telefone: telefone, novo: isNew }; if (manualSenha) cli.senha = await sha256Hex(manualSenha); cli.trocar = isNew ? (forceTroca || !manualSenha) : forceTroca; if (id) cli.id = id; await adminCall('admin_salvar_cliente', { _cliente: cli }); } catch (err2) { error = err2; } if (error) { if (/duplicate|unique|clientes_email|23505/i.test(error.message)) { toast('Já existe um cliente com este email', true); } else { toast('Erro: ' + error.message, true); } return; } closeClientModal(); await loadClients(); renderClients(); trackAction((id ? 'Cliente atualizado' : 'Cliente cadastrado') + ': ' + razao); toast(id ? 'Cliente atualizado' : 'Cliente cadastrado'); } catch (err) { console.error('saveClient error:', err); toast('Erro ao salvar', true); } }
 
-async function deleteClient(id) { const c = clients.find(x => String(x.id) === String(id)); if (!c) return; if (!confirm('Excluir o cliente "' + c.razao_social + '"?')) return; try { await adminCall('admin_excluir_cliente', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } await loadClients(); renderClients(); toast('Cliente excluído'); }
+async function deleteClient(id) { const c = clients.find(x => String(x.id) === String(id)); if (!c) return; if (!confirm('Excluir o cliente "' + c.razao_social + '"?')) return; try { await adminCall('admin_excluir_cliente', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } await loadClients(); renderClients(); trackAction('Cliente excluído: ' + c.razao_social); toast('Cliente excluído'); }
 
 function renderVisitLeads() {
     const el = document.getElementById('visitLeadList');
@@ -1345,7 +1397,7 @@ function editQuote(id) { const q = quotes.find(x => String(x.id) === String(id))
 
 function closeQuoteModal() { document.getElementById('quoteModal').classList.remove('open'); document.getElementById('mqEditId').value = ''; document.querySelector('#quoteModal h3').textContent = 'Novo Orçamento Manual'; }
 
-async function saveManualQuote(e) { e.preventDefault(); const editId = document.getElementById('mqEditId').value; const isEdit = !!editId; const nome = document.getElementById('mqName').value.trim(); const tel = document.getElementById('mqPhone').value.trim().replace(/\D/g, ''); const pagamento = document.getElementById('mqPayment').value; const obs = document.getElementById('mqObs').value.trim(); const itens = collectQuoteItems(); const total = itens.reduce((s, i) => s + i.subtotal, 0); if (!nome) { toast('Preencha o nome do cliente', true); return; } if (!itens.length) { toast('Adicione ao menos um produto', true); return; } const mixed = itens.filter(i => i.codigo).map(i => products.find(p => p && p.codigo && String(p.codigo) === String(i.codigo))).filter(p => p && p.linha !== mqLine); if (mixed.length) { toast('Produtos não pertencem à linha selecionada (' + (mqLine === 'dymar' ? 'Dymar' : 'Java') + ')', true); return; } const embBad = itens.filter(i => i.codigo).map(i => ({ it: i, p: products.find(p => p && p.codigo && String(p.codigo) === String(i.codigo)) })).filter(x => x.p && x.p.embalagem > 1 && (x.it.quantidade % x.p.embalagem) !== 0); if (embBad.length) { toast('Produto ' + embBad[0].p.codigo + ' é vendido em caixas de ' + embBad[0].p.embalagem, true); return; } let email = ''; const foundClient = clients.find(c => c && c.razao_social && c.razao_social.toLowerCase() === nome.toLowerCase()); if (foundClient) email = foundClient.email || ''; if (obs) itens.push({ nome: 'Observações: ' + obs, quantidade: 1, subtotal: 0 }); const payload = { nome_cliente: nome, telefone: tel, email, itens, total, pagamento, linha: mqLine, updated_at: new Date().toISOString() }; if (!isEdit) { payload.codigo_cliente = 'C-' + String(Math.floor(1000 + Math.random() * 9000)); payload.codigo_retirada = String(Math.floor(1000 + Math.random() * 9000)); payload.status = 'recebido'; payload.status_entrega = 'pendente'; } let error; try { await adminCall('admin_salvar_orcamento', { _payload: payload, _id: isEdit ? editId : null }); } catch (e) { error = e; } if (error) { toast('Erro: ' + error.message, true); return; } closeQuoteModal(); await loadQuotes(); renderQuotes(); toast(isEdit ? 'Orçamento atualizado' : 'Orçamento criado'); }
+async function saveManualQuote(e) { e.preventDefault(); const editId = document.getElementById('mqEditId').value; const isEdit = !!editId; const nome = document.getElementById('mqName').value.trim(); const tel = document.getElementById('mqPhone').value.trim().replace(/\D/g, ''); const pagamento = document.getElementById('mqPayment').value; const obs = document.getElementById('mqObs').value.trim(); const itens = collectQuoteItems(); const total = itens.reduce((s, i) => s + i.subtotal, 0); if (!nome) { toast('Preencha o nome do cliente', true); return; } if (!itens.length) { toast('Adicione ao menos um produto', true); return; } const mixed = itens.filter(i => i.codigo).map(i => products.find(p => p && p.codigo && String(p.codigo) === String(i.codigo))).filter(p => p && p.linha !== mqLine); if (mixed.length) { toast('Produtos não pertencem à linha selecionada (' + (mqLine === 'dymar' ? 'Dymar' : 'Java') + ')', true); return; } const embBad = itens.filter(i => i.codigo).map(i => ({ it: i, p: products.find(p => p && p.codigo && String(p.codigo) === String(i.codigo)) })).filter(x => x.p && x.p.embalagem > 1 && (x.it.quantidade % x.p.embalagem) !== 0); if (embBad.length) { toast('Produto ' + embBad[0].p.codigo + ' é vendido em caixas de ' + embBad[0].p.embalagem, true); return; } let email = ''; const foundClient = clients.find(c => c && c.razao_social && c.razao_social.toLowerCase() === nome.toLowerCase()); if (foundClient) email = foundClient.email || ''; if (obs) itens.push({ nome: 'Observações: ' + obs, quantidade: 1, subtotal: 0 }); const payload = { nome_cliente: nome, telefone: tel, email, itens, total, pagamento, linha: mqLine, updated_at: new Date().toISOString() }; if (!isEdit) { payload.codigo_cliente = 'C-' + String(Math.floor(1000 + Math.random() * 9000)); payload.codigo_retirada = String(Math.floor(1000 + Math.random() * 9000)); payload.status = 'recebido'; payload.status_entrega = 'pendente'; } let error; try { await adminCall('admin_salvar_orcamento', { _payload: payload, _id: isEdit ? editId : null }); } catch (e) { error = e; } if (error) { toast('Erro: ' + error.message, true); return; } closeQuoteModal(); await loadQuotes(); renderQuotes(); trackAction((isEdit ? 'Orçamento atualizado' : 'Orçamento criado') + ' - ' + nome + ' (' + (mqLine === 'dymar' ? 'Dymar' : 'Java') + ') - R$ ' + total.toFixed(2).replace('.', ',')); toast(isEdit ? 'Orçamento atualizado' : 'Orçamento criado'); }
 
 // ---------- Agenda de Visitas (calendário + rotas) ----------
 let visits = [];
@@ -1515,6 +1567,7 @@ async function saveVisit(e) {
     await loadVisits();
     updateVisitRouteFilter();
     renderAgenda();
+    trackAction((id ? 'Visita atualizada' : 'Visita agendada') + ' - ' + nome + ' (' + data + ' ' + hora + ')');
     toast(id ? 'Visita atualizada' : 'Visita agendada');
 }
 
@@ -1522,6 +1575,7 @@ async function setVisitStatus(id, status) {
     try { await adminCall('admin_set_status_visita', { _id: id, _status: status }); } catch (e) { toast('Erro: ' + e.message, true); return; }
     await loadVisits();
     renderAgenda();
+    trackAction('Visita ' + id + ': status alterado para ' + (VISIT_STATUS_LABEL[status] || status));
     toast(VISIT_STATUS_LABEL[status] || status);
 }
 
@@ -1532,13 +1586,90 @@ try { await adminCall('admin_excluir_visita', { _id: id }); } catch (e) { toast(
     await loadVisits();
     updateVisitRouteFilter();
     renderAgenda();
+    trackAction('Visita excluída (id ' + id + ')');
     toast('Visita excluída');
 }
 
-// ---------- Playbook (Metas Mensais) ----------
+// ---------- Tracker (Atividades) ----------
+async function loadTracker() { try { tracker = (await adminCall('admin_listar_tracker', {})) || []; } catch (e) { console.error('loadTracker', e); tracker = []; } }
+
+function trackerTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const now = new Date();
+    const diff = now - d;
+    if (diff < 0) return d.toLocaleString('pt-BR');
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return 'agora';
+    if (min < 60) return min + ' min atrás';
+    const h = Math.floor(min / 60);
+    if (h < 24) return h + 'h atrás';
+    const dias = Math.floor(h / 24);
+    if (dias < 30) return dias + 'd atrás';
+    return d.toLocaleDateString('pt-BR');
+}
+
+function renderTracker() {
+    const el = document.getElementById('trackerList');
+    const empty = document.getElementById('trackerEmpty');
+    if (!el) return;
+    if (!tracker.length) { el.innerHTML = ''; if (empty) empty.style.display = ''; return; }
+    if (empty) empty.style.display = 'none';
+    el.innerHTML = tracker.map(t => `
+        <div class="pb-meta-row" style="align-items:flex-start;">
+            <span style="flex:0 0 34px;color:#a855f7;"><i class="fas fa-circle-info"></i></span>
+            <span style="flex:1;font-size:.9rem;line-height:1.45;">${escapeHtml(t.texto)}</span>
+            <span style="font-size:.72rem;color:var(--text-secondary);white-space:nowrap;">${escapeHtml(trackerTime(t.criado_em))}</span>
+        </div>`).join('');
+}
+
+async function addTracker() {
+    const input = document.getElementById('trackerNewText');
+    const texto = (input.value || '').trim();
+    if (!texto) { toast('Digite a atividade/anotação', true); return; }
+    let error;
+    try { await adminCall('admin_registrar_tracker', { _texto: texto }); } catch (r) { error = r; }
+    if (error) { toast('Erro: ' + error.message, true); return; }
+    input.value = '';
+    await loadTracker();
+    renderTracker();
+    toast('Atividade registrada');
+}
+
+// ---------- Playbook (Metas) ----------
 function monthSafe(d) { if (!d) return ''; const dt = new Date(d); if (isNaN(dt.getTime())) return ''; return dt.getUTCFullYear() + '-' + String(dt.getUTCMonth() + 1).padStart(2, '0'); }
 function currentYm() { return monthSafe(new Date()); }
+
 function salesForMonth(line, ym) { return quotes.reduce((s, q) => { if (q.linha !== line || q.status !== 'concluido') return s; if (monthSafe(saleDate(q)) !== ym) return s; return s + (Number(q.total) || 0); }, 0); }
+function produtoUnitsInMonth(line, prodId, ym) {
+    return quotes.reduce((s, q) => {
+        if (q.linha !== line || q.status !== 'concluido') return s;
+        if (monthSafe(saleDate(q)) !== ym) return s;
+        if (!Array.isArray(q.itens)) return s;
+        q.itens.forEach(i => {
+            const p = products.find(x => x && x.codigo && String(x.codigo) === String(i.codigo));
+            const isProd = p && p.id != null && String(p.id) === String(prodId);
+            if (isProd) s += Number(i.quantidade) || 0;
+        });
+        return s;
+    }, 0);
+}
+function clienteSalesInMonth(clienteId, ym) {
+    const c = clients.find(x => x && x.id != null && String(x.id) === String(clienteId));
+    if (!c) return 0;
+    const email = (c.email || '').toLowerCase();
+    const nome = (c.razao_social || '').toLowerCase();
+    return quotes.reduce((s, q) => {
+        if (q.status !== 'concluido') return s;
+        if (monthSafe(saleDate(q)) !== ym) return s;
+        const qe = (q.email || '').toLowerCase();
+        const qn = (q.nome_cliente || '').toLowerCase();
+        if (email && qe && email === qe) return s + (Number(q.total) || 0);
+        if (nome && qn && (nome === qn)) return s + (Number(q.total) || 0);
+        return s;
+    }, 0);
+}
 
 async function loadGoals() { try { goals = (await adminCall('admin_listar_metas', {})) || []; } catch (e) { console.error('loadGoals', e); goals = []; } }
 
@@ -1553,7 +1684,7 @@ function renderPlaybookLine(containerId, line) {
     const el = document.getElementById(containerId);
     if (!el) return;
     const ym = currentYm();
-    const lineGoals = goals.filter(g => g && g.linha === line).sort((a, b) => String(a.mes).localeCompare(String(b.mes)));
+    const lineGoals = goals.filter(g => g && g.linha === line && g.tipo === 'mensal').sort((a, b) => String(a.mes).localeCompare(String(b.mes)));
     const cur = lineGoals.find(g => String(g.mes).slice(0, 7) === ym);
     const done = salesForMonth(line, ym);
     let html = '';
@@ -1567,10 +1698,10 @@ function renderPlaybookLine(containerId, line) {
         html += '<div style="display:flex;justify-content:space-between;font-size:.75rem;"><span style="color:var(--text-secondary);">' + pct + '% atingido' + (ok ? ' — <b style="color:#2ed573;">Meta cumprida!</b>' : '') + '</span><span style="color:var(--text-secondary);">Falta ' + formatPrice(Math.max(0, goal - done)) + '</span></div>';
         html += '</div>';
     } else {
-        html += '<div class="pb-empty"><i class="fas fa-flag"></i> Sem meta para ' + pbMonthLabel(ym) + '.<br><button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="openMetaModal(null,\'' + line + '\')"><i class="fas fa-plus"></i> Definir meta</button></div>';
+        html += '<div class="pb-empty"><i class="fas fa-flag"></i> Sem meta mensal para ' + pbMonthLabel(ym) + '.<br><button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="openMetaModal(null,\'' + line + '\',\'mensal\')"><i class="fas fa-plus"></i> Definir meta</button></div>';
     }
     if (lineGoals.length) {
-        html += '<div style="margin-top:14px;"><h4 style="font-size:.8rem;color:var(--text-secondary);margin:0 0 6px;">Histórico de metas</h4>';
+        html += '<div style="margin-top:14px;"><h4 style="font-size:.8rem;color:var(--text-secondary);margin:0 0 6px;">Histórico de metas mensais</h4>';
         lineGoals.forEach(g => {
             const gm = String(g.mes).slice(0, 7);
             const gv = Number(g.valor) || 0;
@@ -1583,19 +1714,107 @@ function renderPlaybookLine(containerId, line) {
     el.innerHTML = html;
 }
 
-function renderPlaybook() { renderPlaybookLine('pbJava', 'java'); renderPlaybookLine('pbDymar', 'dymar'); }
+function renderProdutoGoals() {
+    const el = document.getElementById('pbProduto');
+    if (!el) return;
+    const ym = currentYm();
+    const listo = goals.filter(g => g && g.tipo === 'produto').sort((a, b) => String(a.mes).localeCompare(String(b.mes))).reverse();
+    if (!listo.length) { el.innerHTML = '<div class="pb-empty"><i class="fas fa-box-open"></i> Nenhuma meta de produto.</div>'; return; }
+    el.innerHTML = listo.map(g => {
+        const p = products.find(x => x && x.id != null && String(x.id) === String(g.produto_id));
+        const nome = p ? (p.codigo ? '[' + p.codigo + '] ' : '') + p.nome : 'Produto #' + g.produto_id;
+        const qtd = Number(g.unidades) || 0;
+        const done = produtoUnitsInMonth(g.linha, g.produto_id, String(g.mes).slice(0, 7));
+        const pct = qtd > 0 ? Math.min(100, Math.round((done / qtd) * 100)) : 0;
+        const ok = qtd > 0 && done >= qtd;
+        const chip = '<span class="dash-code-badge" style="background:' + (g.linha === 'dymar' ? 'rgba(157,107,255,.35)' : 'rgba(255,122,47,.35)') + ';color:#fff;border-radius:999px;padding:2px 10px;font-size:.7rem;">' + (g.linha === 'dymar' ? 'DYMAR' : 'JAVA') + '</span>';
+        return '<div class="pb-meta-row" style="flex-wrap:wrap;">' +
+            '<span style="flex:1 1 55%;font-size:.85rem;"><b>' + escapeHtml(nome) + '</b><br><span style="color:var(--text-secondary);font-size:.72rem;">' + pbMonthLabel(g.mes) + ' ' + chip + '</span></span>' +
+            '<span class="pb-val" style="font-size:.9rem;">' + done + ' <span style="color:var(--text-secondary);font-size:.72rem;">de ' + qtd + ' unid.</span></span>' +
+            '<span style="flex:0 0 28%;min-width:120px;"><span class="pb-bar" style="margin:4px 0 0;"><span style="display:block;width:' + pct + '%"></span></span><span style="font-size:.68rem;color:' + (ok ? '#2ed573' : 'var(--text-secondary)') + ';">' + pct + '%' + (ok ? ' — cumprida' : '') + '</span></span>' +
+            '<span class="pb-actions"><button class="btn btn-ghost btn-sm" title="Editar" onclick="openMetaModal(' + g.id + ')"><i class="fas fa-pen"></i></button><button class="btn btn-ghost btn-sm" title="Excluir" onclick="deleteGoal(' + g.id + ')"><i class="fas fa-trash"></i></button></span></div>';
+    }).join('');
+}
+
+function renderClienteGoals() {
+    const el = document.getElementById('pbCliente');
+    if (!el) return;
+    const ym = currentYm();
+    const listo = goals.filter(g => g && g.tipo === 'cliente').sort((a, b) => String(a.mes).localeCompare(String(b.mes))).reverse();
+    if (!listo.length) { el.innerHTML = '<div class="pb-empty"><i class="fas fa-user"></i> Nenhuma meta de cliente.</div>'; return; }
+    el.innerHTML = listo.map(g => {
+        const c = clients.find(x => x && x.id != null && String(x.id) === String(g.cliente_id));
+        const nome = c ? c.razao_social : 'Cliente #' + g.cliente_id;
+        const gv = Number(g.valor) || 0;
+        const gd = clienteSalesInMonth(g.cliente_id, String(g.mes).slice(0, 7));
+        const pct = gv > 0 ? Math.min(100, Math.round((gd / gv) * 100)) : 0;
+        const ok = gv > 0 && gd >= gv;
+        const chip = '<span class="dash-code-badge" style="background:' + (g.linha === 'dymar' ? 'rgba(157,107,255,.35)' : 'rgba(255,122,47,.35)') + ';color:#fff;border-radius:999px;padding:2px 10px;font-size:.7rem;">' + (g.linha === 'dymar' ? 'DYMAR' : 'JAVA') + '</span>';
+        return '<div class="pb-meta-row" style="flex-wrap:wrap;">' +
+            '<span style="flex:1 1 55%;font-size:.85rem;"><b>' + escapeHtml(nome) + '</b><br><span style="color:var(--text-secondary);font-size:.72rem;">' + pbMonthLabel(g.mes) + ' ' + chip + '</span></span>' +
+            '<span class="pb-val" style="font-size:.9rem;">' + formatPrice(gd) + ' <span style="color:var(--text-secondary);font-size:.72rem;">de ' + formatPrice(gv) + '</span></span>' +
+            '<span style="flex:0 0 28%;min-width:120px;"><span class="pb-bar" style="margin:4px 0 0;"><span style="display:block;width:' + pct + '%"></span></span><span style="font-size:.68rem;color:' + (ok ? '#2ed573' : 'var(--text-secondary)') + ';">' + pct + '%' + (ok ? ' — cumprida' : '') + '</span></span>' +
+            '<span class="pb-actions"><button class="btn btn-ghost btn-sm" title="Editar" onclick="openMetaModal(' + g.id + ')"><i class="fas fa-pen"></i></button><button class="btn btn-ghost btn-sm" title="Excluir" onclick="deleteGoal(' + g.id + ')"><i class="fas fa-trash"></i></button></span></div>';
+    }).join('');
+}
+
+function renderPlaybook() {
+    renderPlaybookLine('pbJava', 'java');
+    renderPlaybookLine('pbDymar', 'dymar');
+    renderProdutoGoals();
+    renderClienteGoals();
+}
 
 let metaLine = 'java';
-function openMetaModal(id, line) {
+let metaTipo = 'mensal';
+let metaProdutoId = null;
+let metaClienteId = null;
+
+function syncMetaModalFields() {
+    const isProd = metaTipo === 'produto';
+    const isCli = metaTipo === 'cliente';
+    document.getElementById('metaProdutoField').style.display = isProd ? '' : 'none';
+    document.getElementById('metaClienteField').style.display = isCli ? '' : 'none';
+    document.getElementById('metaUnidadesField').style.display = isProd ? '' : 'none';
+    document.getElementById('metaValorField').style.display = (isProd) ? 'none' : '';
+    document.getElementById('metaValorLabel').textContent = isCli ? 'Meta de venda do cliente (R$) *' : 'Meta de venda (R$) *';
+    document.getElementById('metaValor').required = !isProd;
+}
+
+function metaProdutoFill() {
+    const el = document.getElementById('metaProdutoList');
+    if (el) el.innerHTML = products.filter(p => p.linha === metaLine).map(p => '<option value="' + escapeHtml(p.codigo + ' — ' + p.nome) + '" data-id="' + p.id + '"></option>').join('');
+}
+function metaClienteFill() {
+    const el = document.getElementById('metaClienteList');
+    if (el) el.innerHTML = clients.map(c => '<option value="' + escapeHtml(c.razao_social + (c.email ? ' (' + c.email + ')' : '')) + '" data-id="' + c.id + '"></option>').join('');
+}
+
+function openMetaModal(id, line, tipo) {
     const g = id != null ? goals.find(x => String(x.id) === String(id)) : null;
-    metaLine = line || (g ? g.linha : 'java');
+    metaLine = line || (g ? g.linha : (metaTipo === 'mensal' ? currentChartGroup : 'java'));
+    metaTipo = tipo || (g ? (g.tipo || 'mensal') : 'mensal');
+    metaProdutoId = g ? g.produto_id : null;
+    metaClienteId = g ? g.cliente_id : null;
+    const tpSel = document.getElementById('metaTipo');
+    tpSel.value = metaTipo;
     document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.mline === metaLine));
     document.getElementById('metaId').value = g ? g.id : '';
     document.getElementById('metaMes').value = g ? String(g.mes).slice(0, 7) : currentYm();
     document.getElementById('metaValor').value = g ? priceInput(Number(g.valor) || 0) : '';
-    document.getElementById('metaModalTitle').textContent = g ? 'Editar Meta Mensal' : 'Nova Meta Mensal';
+    document.getElementById('metaUnidades').value = g && g.unidades != null ? g.unidades : '';
+    metaProdutoFill();
+    metaClienteFill();
+    document.getElementById('metaProdutoSearch').value = '';
+    const pSel = g && g.produto_id != null ? products.find(p => p.id != null && String(p.id) === String(g.produto_id)) : null;
+    if (pSel) document.getElementById('metaProdutoSearch').value = (pSel.codigo ? pSel.codigo + ' — ' : '') + pSel.nome;
+    document.getElementById('metaClienteSearch').value = '';
+    const cSel = g && g.cliente_id != null ? clients.find(c => c.id != null && String(c.id) === String(g.cliente_id)) : null;
+    if (cSel) document.getElementById('metaClienteSearch').value = cSel.razao_social + (cSel.email ? ' (' + cSel.email + ')' : '');
+    document.getElementById('metaModalTitle').textContent = g ? 'Editar Meta' : 'Nova Meta';
+    syncMetaModalFields();
     document.getElementById('metaModal').classList.add('open');
-    if (!g) document.getElementById('metaValor').focus();
+    if (!g && metaTipo === 'mensal') document.getElementById('metaValor').focus();
 }
 function closeMetaModal() { document.getElementById('metaModal').classList.remove('open'); }
 
@@ -1604,16 +1823,31 @@ function parsePriceInput(s) { return parseFloat(String(s).replace(/\./g, '').rep
 async function saveGoal(e) {
     e.preventDefault();
     const mes = document.getElementById('metaMes').value;
-    const valor = parsePriceInput(document.getElementById('metaValor').value);
     const id = document.getElementById('metaId').value;
+    const valor = parsePriceInput(document.getElementById('metaValor').value);
+    const unidadesRaw = document.getElementById('metaUnidades').value;
+    const unidades = unidadesRaw ? parseInt(unidadesRaw, 10) : null;
     if (!mes) { toast('Selecione o mês da meta', true); return; }
-    if (valor <= 0) { toast('Informe um valor de meta maior que zero', true); return; }
+    if (metaTipo === 'produto') {
+        if (!metaProdutoId) { toast('Selecione o produto', true); return; }
+        if (!unidades || unidades <= 0) { toast('Informe a quantidade de unidades', true); return; }
+    } else {
+        if (metaTipo === 'cliente') {
+            if (!metaClienteId) { toast('Selecione o cliente', true); return; }
+        }
+        if (valor <= 0) { toast('Informe um valor de meta maior que zero', true); return; }
+    }
     let error;
-    try { await adminCall('admin_salvar_meta', { _linha: metaLine, _mes: mes, _valor: valor, _id: id ? id : null }); } catch (r) { error = r; }
+    try {
+        await adminCall('admin_salvar_meta', { _linha: metaLine, _mes: mes, _valor: valor, _id: id ? id : null, _tipo: metaTipo, _produto_id: metaProdutoId, _cliente_id: metaClienteId, _unidades: unidades });
+    } catch (r) { error = r; }
     if (error) { toast('Erro: ' + error.message, true); return; }
     closeMetaModal();
     await loadGoals();
     renderPlaybook();
+    if (metaTipo === 'produto') { const p = products.find(x => x.id != null && String(x.id) === String(metaProdutoId)); trackAction('Meta de produto atualizada: ' + (p ? p.nome : '') + ' — ' + unidades + ' unid. em ' + pbMonthLabel(mes)); }
+    else if (metaTipo === 'cliente') { const c = clients.find(x => x.id != null && String(x.id) === String(metaClienteId)); trackAction('Meta de cliente atualizada: ' + (c ? c.razao_social : '') + ' — ' + formatPrice(valor) + ' em ' + pbMonthLabel(mes)); }
+    else trackAction('Meta mensal de venda atualizada: ' + formatPrice(valor) + ' (' + metaLine.toUpperCase() + ', ' + pbMonthLabel(mes) + ')');
     toast(id ? 'Meta atualizada' : 'Meta salva');
 }
 
@@ -1622,6 +1856,8 @@ async function deleteGoal(id) {
     let error;
     try { await adminCall('admin_excluir_meta', { _id: id }); } catch (r) { error = r; }
     if (error) { toast('Erro: ' + error.message, true); return; }
+    const g = goals.find(x => String(x.id) === String(id));
+    trackAction('Meta excluída');
     await loadGoals();
     renderPlaybook();
     toast('Meta excluída');
@@ -1679,9 +1915,28 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     document.getElementById('metaModalClose').addEventListener('click', closeMetaModal);
     document.getElementById('metaCancel').addEventListener('click', closeMetaModal);
     document.getElementById('metaForm').addEventListener('submit', saveGoal);
-    document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(btn => btn.addEventListener('click', () => { metaLine = btn.dataset.mline; document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(b => b.classList.toggle('active', b.dataset.mline === metaLine)); }));
+    document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(btn => btn.addEventListener('click', () => { metaLine = btn.dataset.mline; document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(b => b.classList.toggle('active', b.dataset.mline === metaLine)); metaProdutoFill(); }));
+    const mtSel = document.getElementById('metaTipo');
+    if (mtSel) mtSel.addEventListener('change', () => { metaTipo = mtSel.value; syncMetaModalFields(); if (metaTipo === 'produto') metaProdutoFill(); if (metaTipo === 'cliente') metaClienteFill(); });
+    const mpSearch = document.getElementById('metaProdutoSearch');
+    if (mpSearch) mpSearch.addEventListener('change', () => {
+        const v = mpSearch.value.trim().toLowerCase();
+        const p = products.find(x => x && x.linha === metaLine && ((x.codigo && x.codigo.toLowerCase() === v) || (x.codigo && x.nome && (x.codigo + ' — ' + x.nome).toLowerCase() === v) || (x.nome && x.nome.toLowerCase() === v)));
+        metaProdutoId = p ? p.id : (mpSearch.value ? metaProdutoId : null);
+        if (!p) { toast('Produto não encontrado nesta linha', true); }
+    });
+    const mcSearch = document.getElementById('metaClienteSearch');
+    if (mcSearch) mcSearch.addEventListener('change', () => {
+        const v = mcSearch.value.trim().toLowerCase();
+        const c = clients.find(x => x && ((x.razao_social && x.razao_social.toLowerCase() === v) || (x.razao_social && x.email && (x.razao_social + ' (' + x.email + ')').toLowerCase() === v)));
+        metaClienteId = c ? c.id : (mcSearch.value ? metaClienteId : null);
+        if (!c) { toast('Cliente não encontrado', true); }
+    });
     const mvInput = document.getElementById('metaValor');
     if (mvInput) mvInput.addEventListener('input', () => { const raw = mvInput.value.replace(/\D/g, ''); const v = raw ? Number(raw) / 100 : 0; mvInput.value = v ? v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''; });
+    document.getElementById('btnAddTracker').addEventListener('click', addTracker);
+    const trkInput = document.getElementById('trackerNewText');
+    if (trkInput) trkInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addTracker(); } });
     document.getElementById('visitClient').addEventListener('change', () => {
         const nome = document.getElementById('visitClient').value.trim().toLowerCase();
         const c = clients.find(x => x && x.razao_social && x.razao_social.toLowerCase() === nome);
@@ -1732,4 +1987,4 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
 async function init() { 
     const t0 = localStorage.getItem(AUTH_KEY);
     if (!t0 || !/^[0-9a-f]{48}$/.test(t0)) { redirectLogin(); return; }
-    try { await Promise.all([loadProducts(), loadCategories(), loadQuotes(), loadClients(), loadGoals()]); } catch (e) { console.error(e); } renderOverview(); updatePendingBadge(); switchView('dashboard'); }
+    try { await Promise.all([loadProducts(), loadCategories(), loadQuotes(), loadClients(), loadGoals(), loadTracker()]); } catch (e) { console.error(e); } renderOverview(); updatePendingBadge(); switchView('dashboard'); }

@@ -32,6 +32,7 @@
             <a href="#" class="dash-nav-item" data-view="clientes"><span class="dash-nav-ico"><i class="fas fa-users"></i></span> Clientes</a>
             <a href="#" class="dash-nav-item" data-view="agendar"><span class="dash-nav-ico"><i class="fas fa-calendar-check"></i></span> Agendar Visita</a>
             <a href="#" class="dash-nav-item" data-view="playbook"><span class="dash-nav-ico"><i class="fas fa-bullseye"></i></span> Playbook</a>
+            <a href="#" class="dash-nav-item" data-view="tracker"><span class="dash-nav-ico"><i class="fas fa-list-check"></i></span> Tracker</a>
         </nav>
         <div class="dash-sidebar-footer">
             <a href="index.html" class="dash-nav-item"><span class="dash-nav-ico"><i class="fas fa-store"></i></span> Ver Catálogo</a>
@@ -51,9 +52,9 @@
             </div>
             <div class="dash-header-actions">
                 <div class="chart-period-tabs" id="quotePeriodTabs">
-                    <button class="chart-tab active" data-period="today">Hoje</button>
+                    <button class="chart-tab" data-period="today">Hoje</button>
                     <button class="chart-tab" data-period="7">7 dias</button>
-                    <button class="chart-tab" data-period="month">Este mês</button>
+                    <button class="chart-tab active" data-period="month">Este mês</button>
                     <button class="chart-tab" data-period="30">30 dias</button>
                     <button class="chart-tab" data-period="90">90 dias</button>
                     <button class="chart-tab" data-period="365">365 dias</button>
@@ -61,7 +62,7 @@
                 <select id="quotePeriodSelect" class="dash-select period-select" aria-label="Período">
                     <option value="today">Hoje</option>
                     <option value="7">7 dias</option>
-                    <option value="month">Este mês</option>
+                    <option value="month" selected>Este mês</option>
                     <option value="30">30 dias</option>
                     <option value="90">90 dias</option>
                     <option value="365">365 dias</option>
@@ -83,7 +84,7 @@
 
                 <div class="dash-charts-grid">
                     <div class="dash-chart-panel">
-                        <h3 id="chartQuotesTitle"><i class="fas fa-chart-bar"></i> Pedidos por período</h3>
+                        <h3 id="chartQuotesTitle"><i class="fas fa-chart-line"></i> Total em Vendas (R$)</h3>
                         <canvas id="chartQuotes" width="500" height="260"></canvas>
                         <p class="chart-empty-msg" id="chartQuotesEmpty" style="display:none;">Nenhum orçamento neste período.</p>
                     </div>
@@ -206,7 +207,19 @@
                             <h3><i class="fas fa-list-check"></i> Próximas Visitas</h3>
                             <div id="visitList" class="client-list"></div>
                         </div>
-                        <div class="dash-panel" style="margin-top:20px;">
+<div class="pb-grid" style="margin-top:20px;">
+                    <div class="dash-panel">
+                        <h3><i class="fas fa-boxes-stacked"></i> Metas de Produto <small class="dash-panel-sub">unidades no mês</small></h3>
+                        <button class="btn btn-ghost btn-sm" style="margin-bottom:10px;" onclick="openMetaModal(null,'','produto')"><i class="fas fa-plus"></i> Nova Meta de Produto</button>
+                        <div id="pbProduto"></div>
+                    </div>
+                    <div class="dash-panel">
+                        <h3><i class="fas fa-users"></i> Metas de Cliente <small class="dash-panel-sub">vendas em R$ no mês</small></h3>
+                        <button class="btn btn-ghost btn-sm" style="margin-bottom:10px;" onclick="openMetaModal(null,'','cliente')"><i class="fas fa-plus"></i> Nova Meta de Cliente</button>
+                        <div id="pbCliente"></div>
+                    </div>
+                </div>
+                <div class="dash-panel" style="margin-top:20px;">
                             <h3><i class="fas fa-route"></i> Rotas de Visita</h3>
                             <div id="visitRouteList" class="client-list"></div>
                         </div>
@@ -265,6 +278,23 @@
                 <div class="dash-panel" style="margin-top:20px;">
                     <h3><i class="fas fa-lightbulb"></i> Estratégia <small class="dash-panel-sub">Metas e direcionamento comercial</small></h3>
                     <p style="color:var(--text-secondary);font-size:.85rem;margin:0;">O <b>realizado</b> considera apenas vendas <b>concluídas</b> (data da conclusão, não do pedido) dentro do mês da meta, por linha.</p>
+                </div>
+            </section>
+
+            <!-- ===== Tracker ===== -->
+            <section class="dash-view" id="view-tracker" style="display:none;">
+                <div class="dash-toolbar">
+                    <div class="dash-toolbar-left">
+                        <span class="dash-live"><i class="fas fa-list-check"></i> Atividades recentes do sistema</span>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;flex:1;max-width:560px;margin-left:auto;">
+                        <input type="text" id="trackerNewText" class="dash-input" placeholder="Registrar anotação / atividade..." maxlength="300">
+                        <button class="btn btn-primary" id="btnAddTracker"><i class="fas fa-plus"></i> Registrar</button>
+                    </div>
+                </div>
+                <div class="dash-panel">
+                    <div id="trackerList" class="client-list"></div>
+                    <div id="trackerEmpty" class="empty-state" style="display:none;"><i class="fas fa-clipboard-list"></i><p>Nenhuma atividade registrada ainda.</p></div>
                 </div>
             </section>
 
@@ -445,9 +475,17 @@
     <!-- ===== Modal Meta (Playbook) ===== -->
     <div class="modal-overlay" id="metaModal">
         <div class="modal">
-            <div class="modal-header"><h3 id="metaModalTitle">Nova Meta Mensal</h3><button class="modal-close" id="metaModalClose"><i class="fas fa-xmark"></i></button></div>
+            <div class="modal-header"><h3 id="metaModalTitle">Nova Meta</h3><button class="modal-close" id="metaModalClose"><i class="fas fa-xmark"></i></button></div>
             <form id="metaForm" class="modal-body">
                 <input type="hidden" id="metaId" value="">
+                <div class="form-field">
+                    <label>Tipo de meta *</label>
+                    <select id="metaTipo" class="dash-input" required>
+                        <option value="mensal">Venda mensal (R$)</option>
+                        <option value="produto">Produto específico (unidades)</option>
+                        <option value="cliente">Cliente específico (R$)</option>
+                    </select>
+                </div>
                 <div class="form-field">
                     <label>Linha *</label>
                     <div class="mq-line-tabs" id="metaLineTabs">
@@ -455,8 +493,27 @@
                         <button type="button" class="mq-line-tab" data-mline="dymar"><i class="fas fa-gem"></i> Dymar</button>
                     </div>
                 </div>
-                <div class="form-field"><label>Mês *</label><input type="month" id="metaMes" class="dash-input" required></div>
-                <div class="form-field"><label>Meta de venda (R$) *</label><input type="text" id="metaValor" class="dash-input" placeholder="0,00" inputmode="decimal" required></div>
+                <div class="form-row">
+                    <div class="form-field"><label>Mês *</label><input type="month" id="metaMes" class="dash-input" required></div>
+                </div>
+                <div class="form-field" id="metaProdutoField" style="display:none;">
+                    <label>Produto *</label>
+                    <input type="text" id="metaProdutoSearch" class="dash-input" list="metaProdutoList" autocomplete="off" placeholder="Busque o produto...">
+                    <datalist id="metaProdutoList"></datalist>
+                </div>
+                <div class="form-field" id="metaClienteField" style="display:none;">
+                    <label>Cliente *</label>
+                    <input type="text" id="metaClienteSearch" class="dash-input" list="metaClienteList" autocomplete="off" placeholder="Busque o cliente (razão social)...">
+                    <datalist id="metaClienteList"></datalist>
+                </div>
+                <div class="form-field" id="metaUnidadesField" style="display:none;">
+                    <label>Meta em unidades *</label>
+                    <input type="number" id="metaUnidades" class="dash-input" min="1" step="1" placeholder="Ex: 400">
+                </div>
+                <div class="form-field" id="metaValorField">
+                    <label id="metaValorLabel">Meta de venda (R$) *</label>
+                    <input type="text" id="metaValor" class="dash-input" placeholder="0,00" inputmode="decimal" required>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-ghost" id="metaCancel">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Salvar Meta</button>
@@ -473,6 +530,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=2"></script>
-    <script src="js/dashboard.js?v=44"></script>
+    <script src="js/dashboard.js?v=46"></script>
 </body>
 </html>

@@ -25,6 +25,7 @@ let clients = [];
 let currentChartPeriod = 'today';
 let currentChartGroup = 'java';
 let mqLine = 'java';
+let goals = [];
 let chartQuotesInstance = null;
 let chartPaymentsInstance = null;
 
@@ -49,7 +50,7 @@ function saleDate(q) { if (q && q.concluido_em) { const d = new Date(q.concluido
 function toast(msg, isError) { const t = document.getElementById('toast'); if (!t) return; t.className = 'toast show' + (isError ? ' error' : ''); t.innerHTML = (isError ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>') + '<span>' + escapeHtml(msg) + '</span>'; clearTimeout(t._timer); t._timer = setTimeout(() => { t.className = 'toast'; }, 2600); }
 
 // ---------- Navigation ----------
-const VIEW_TITLES = { 'dashboard': 'Painel do Lojista', 'orcamentos': 'Gerenciar Orçamentos', 'produtos': 'Gerenciar Produtos', 'categorias': 'Gerenciar Categorias', 'clientes': 'Gerenciar Clientes', 'agendar': 'Agendar Visita' };
+const VIEW_TITLES = { 'dashboard': 'Painel do Lojista', 'orcamentos': 'Gerenciar Orçamentos', 'produtos': 'Gerenciar Produtos', 'categorias': 'Gerenciar Categorias', 'clientes': 'Gerenciar Clientes', 'agendar': 'Agendar Visita', 'playbook': 'Playbook — Metas e Estratégias' };
 
 function setCurrentGroup(group) {
     currentChartGroup = group;
@@ -70,6 +71,7 @@ function switchView(view) {
     if (view === 'categorias') renderCategories();
     if (view === 'clientes') renderClients();
     if (view === 'agendar') { renderAgenda(); renderVisitLeads(); renderVisitFrequencia(); }
+    if (view === 'playbook') renderPlaybook();
     if (view === 'dashboard') renderOverview();
     document.getElementById('dashSidebar').classList.remove('open');
 }
@@ -1533,6 +1535,98 @@ try { await adminCall('admin_excluir_visita', { _id: id }); } catch (e) { toast(
     toast('Visita excluída');
 }
 
+// ---------- Playbook (Metas Mensais) ----------
+function monthSafe(d) { if (!d) return ''; const dt = new Date(d); if (isNaN(dt.getTime())) return ''; return dt.getUTCFullYear() + '-' + String(dt.getUTCMonth() + 1).padStart(2, '0'); }
+function currentYm() { return monthSafe(new Date()); }
+function salesForMonth(line, ym) { return quotes.reduce((s, q) => { if (q.linha !== line || q.status !== 'concluido') return s; if (monthSafe(saleDate(q)) !== ym) return s; return s + (Number(q.total) || 0); }, 0); }
+
+async function loadGoals() { try { goals = (await adminCall('admin_listar_metas', {})) || []; } catch (e) { console.error('loadGoals', e); goals = []; } }
+
+function pbMonthLabel(mes) {
+    const m = String(mes).slice(0, 7);
+    const [y, mm] = m.split('-');
+    const names = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    return names[parseInt(mm, 10)] + ' ' + y;
+}
+
+function renderPlaybookLine(containerId, line) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const ym = currentYm();
+    const lineGoals = goals.filter(g => g && g.linha === line).sort((a, b) => String(a.mes).localeCompare(String(b.mes)));
+    const cur = lineGoals.find(g => String(g.mes).slice(0, 7) === ym);
+    const done = salesForMonth(line, ym);
+    let html = '';
+    if (cur) {
+        const goal = Number(cur.valor) || 0;
+        const pct = goal > 0 ? Math.min(100, Math.round((done / goal) * 100)) : 0;
+        const ok = goal > 0 && done >= goal;
+        html += '<div style="padding:12px;border-radius:12px;background:' + (ok ? 'rgba(46,213,115,.10)' : 'rgba(255,255,255,.04)') + ';border:1px solid ' + (ok ? 'rgba(46,213,115,.35)' : 'rgba(255,255,255,.08)') + ';">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;"><span style="font-size:.8rem;color:var(--text-secondary);">Meta de ' + pbMonthLabel(cur.mes) + '</span><span style="font-family:\'Chakra Petch\',sans-serif;">' + formatPrice(done) + ' <span style="color:var(--text-secondary);font-size:.75rem;">de</span> <b>' + formatPrice(goal) + '</b></span></div>';
+        html += '<div class="pb-bar"><div style="width:' + pct + '%"></div></div>';
+        html += '<div style="display:flex;justify-content:space-between;font-size:.75rem;"><span style="color:var(--text-secondary);">' + pct + '% atingido' + (ok ? ' — <b style="color:#2ed573;">Meta cumprida!</b>' : '') + '</span><span style="color:var(--text-secondary);">Falta ' + formatPrice(Math.max(0, goal - done)) + '</span></div>';
+        html += '</div>';
+    } else {
+        html += '<div class="pb-empty"><i class="fas fa-flag"></i> Sem meta para ' + pbMonthLabel(ym) + '.<br><button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="openMetaModal(null,\'' + line + '\')"><i class="fas fa-plus"></i> Definir meta</button></div>';
+    }
+    if (lineGoals.length) {
+        html += '<div style="margin-top:14px;"><h4 style="font-size:.8rem;color:var(--text-secondary);margin:0 0 6px;">Histórico de metas</h4>';
+        lineGoals.forEach(g => {
+            const gm = String(g.mes).slice(0, 7);
+            const gv = Number(g.valor) || 0;
+            const gd = salesForMonth(line, gm);
+            const achieved = gv > 0 && gd >= gv;
+            html += '<div class="pb-meta-row"><span style="font-size:.85rem;">' + pbMonthLabel(g.mes) + '</span><span class="pb-val" style="' + (achieved ? 'color:#2ed573;' : '') + '">' + formatPrice(gv) + ' <span style="color:var(--text-secondary);font-size:.7rem;font-weight:400;">· ' + (achieved ? 'atingida' : 'realizado ' + formatPrice(gd)) + '</span></span><span class="pb-actions"><button class="btn btn-ghost btn-sm" title="Editar meta" onclick="openMetaModal(' + g.id + ')"><i class="fas fa-pen"></i></button><button class="btn btn-ghost btn-sm" title="Excluir meta" onclick="deleteGoal(' + g.id + ')"><i class="fas fa-trash"></i></button></span></div>';
+        });
+        html += '</div>';
+    }
+    el.innerHTML = html;
+}
+
+function renderPlaybook() { renderPlaybookLine('pbJava', 'java'); renderPlaybookLine('pbDymar', 'dymar'); }
+
+let metaLine = 'java';
+function openMetaModal(id, line) {
+    const g = id != null ? goals.find(x => String(x.id) === String(id)) : null;
+    metaLine = line || (g ? g.linha : 'java');
+    document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.mline === metaLine));
+    document.getElementById('metaId').value = g ? g.id : '';
+    document.getElementById('metaMes').value = g ? String(g.mes).slice(0, 7) : currentYm();
+    document.getElementById('metaValor').value = g ? priceInput(Number(g.valor) || 0) : '';
+    document.getElementById('metaModalTitle').textContent = g ? 'Editar Meta Mensal' : 'Nova Meta Mensal';
+    document.getElementById('metaModal').classList.add('open');
+    if (!g) document.getElementById('metaValor').focus();
+}
+function closeMetaModal() { document.getElementById('metaModal').classList.remove('open'); }
+
+function parsePriceInput(s) { return parseFloat(String(s).replace(/\./g, '').replace(',', '.')) || 0; }
+
+async function saveGoal(e) {
+    e.preventDefault();
+    const mes = document.getElementById('metaMes').value;
+    const valor = parsePriceInput(document.getElementById('metaValor').value);
+    const id = document.getElementById('metaId').value;
+    if (!mes) { toast('Selecione o mês da meta', true); return; }
+    if (valor <= 0) { toast('Informe um valor de meta maior que zero', true); return; }
+    let error;
+    try { await adminCall('admin_salvar_meta', { _linha: metaLine, _mes: mes, _valor: valor, _id: id ? id : null }); } catch (r) { error = r; }
+    if (error) { toast('Erro: ' + error.message, true); return; }
+    closeMetaModal();
+    await loadGoals();
+    renderPlaybook();
+    toast(id ? 'Meta atualizada' : 'Meta salva');
+}
+
+async function deleteGoal(id) {
+    if (!confirm('Excluir esta meta?')) return;
+    let error;
+    try { await adminCall('admin_excluir_meta', { _id: id }); } catch (r) { error = r; }
+    if (error) { toast('Erro: ' + error.message, true); return; }
+    await loadGoals();
+    renderPlaybook();
+    toast('Meta excluída');
+}
+
 // ---------- Init ----------
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.dash-nav-item[data-view]').forEach(item => { item.addEventListener('click', (e) => { e.preventDefault(); switchView(item.dataset.view); }); });
@@ -1581,6 +1675,13 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     document.getElementById('visitModalClose').addEventListener('click', closeVisitModal);
     document.getElementById('visitCancel').addEventListener('click', closeVisitModal);
     document.getElementById('visitForm').addEventListener('submit', saveVisit);
+    document.getElementById('btnNewGoal').addEventListener('click', () => openMetaModal(null));
+    document.getElementById('metaModalClose').addEventListener('click', closeMetaModal);
+    document.getElementById('metaCancel').addEventListener('click', closeMetaModal);
+    document.getElementById('metaForm').addEventListener('submit', saveGoal);
+    document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(btn => btn.addEventListener('click', () => { metaLine = btn.dataset.mline; document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(b => b.classList.toggle('active', b.dataset.mline === metaLine)); }));
+    const mvInput = document.getElementById('metaValor');
+    if (mvInput) mvInput.addEventListener('input', () => { const raw = mvInput.value.replace(/\D/g, ''); const v = raw ? Number(raw) / 100 : 0; mvInput.value = v ? v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''; });
     document.getElementById('visitClient').addEventListener('change', () => {
         const nome = document.getElementById('visitClient').value.trim().toLowerCase();
         const c = clients.find(x => x && x.razao_social && x.razao_social.toLowerCase() === nome);
@@ -1631,4 +1732,4 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
 async function init() { 
     const t0 = localStorage.getItem(AUTH_KEY);
     if (!t0 || !/^[0-9a-f]{48}$/.test(t0)) { redirectLogin(); return; }
-    try { await Promise.all([loadProducts(), loadCategories(), loadQuotes(), loadClients()]); } catch (e) { console.error(e); } renderOverview(); updatePendingBadge(); switchView('dashboard'); }
+    try { await Promise.all([loadProducts(), loadCategories(), loadQuotes(), loadClients(), loadGoals()]); } catch (e) { console.error(e); } renderOverview(); updatePendingBadge(); switchView('dashboard'); }

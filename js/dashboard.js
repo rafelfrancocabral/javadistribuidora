@@ -1774,64 +1774,51 @@ function renderGoalsCharts() {
     const listo = goals.filter(g => g && g.linha === currentChartGroup && (g.tipo === 'produto' || g.tipo === 'cliente') && String(g.mes).slice(0, 7) === ym);
     if (!listo.length) { if (section) section.style.display = 'none'; grid.innerHTML = ''; return; }
     if (section) section.style.display = '';
-    const now = new Date();
-    const dia = now.getDate();
-    const diasNoMes = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const diasRestantes = Math.max(1, diasNoMes - dia + 1);
-    const pctMes = Math.round((dia / diasNoMes) * 100);
-    const chip = l => '<span style="background:' + (l === 'dymar' ? 'rgba(157,107,255,.35)' : 'rgba(255,122,47,.35)') + ';color:#fff;border-radius:999px;padding:2px 8px;font-size:.65rem;letter-spacing:.5px;">' + (l === 'dymar' ? 'DYMAR' : 'JAVA') + '</span>';
     grid.innerHTML = listo.map(g => {
-        let titulo, meta, done, resto, porDia, doneTxt, metaTxt, restoTxt, porDiaTxt, icon;
+        let titulo, meta, done, resto, porDia, doneTxt, metaTxt, restoTxt, icon, tipoLabel;
         if (g.tipo === 'produto') {
             const p = products.find(x => x && x.id != null && String(x.id) === String(g.produto_id));
             titulo = p ? ((p.codigo ? '[' + p.codigo + '] ' : '') + p.nome) : 'Produto #' + g.produto_id;
             meta = Number(g.unidades) || 0;
             done = produtoUnitsInMonth(g.linha, g.produto_id, ym);
             icon = 'fa-boxes-stacked';
-            doneTxt = String(done);
-            metaTxt = String(meta) + ' unid.';
+            tipoLabel = 'unid.';
+            doneTxt = done + ' unid.';
+            metaTxt = meta + ' unid.';
             resto = Math.max(0, meta - done);
-            restoTxt = resto > 0 ? 'Faltam <b>' + resto + '</b> unid.' : '';
-            porDia = resto > 0 ? Math.ceil(resto / diasRestantes) : 0;
-            porDiaTxt = porDia > 0 ? 'precisa &#8776; ' + porDia + ' unid./dia' : '';
+            restoTxt = resto + ' unid.';
+            porDia = Math.ceil(resto / Math.max(1, new Date().getDate() ? (new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate() + 1) : 1));
         } else {
             const c = clients.find(x => x && x.id != null && String(x.id) === String(g.cliente_id));
             titulo = c ? c.razao_social : 'Cliente #' + g.cliente_id;
             meta = Number(g.valor) || 0;
             done = clienteSalesInMonth(g.cliente_id, ym);
             icon = 'fa-users';
+            tipoLabel = 'R$';
             doneTxt = formatPrice(done);
-            metaTxt = formatPrice(meta) + ' em vendas';
+            metaTxt = formatPrice(meta);
             resto = Math.max(0, meta - done);
-            restoTxt = resto > 0 ? 'Faltam <b>' + formatPrice(resto) + '</b>' : '';
-            porDia = resto > 0 ? resto / diasRestantes : 0;
-            porDiaTxt = porDia > 0 ? 'precisa &#8776; ' + formatPrice(porDia) + '/dia' : '';
+            restoTxt = formatPrice(resto);
+            porDia = resto / Math.max(1, new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate() + 1);
         }
         const ok = meta > 0 && done >= meta;
         const pct = meta > 0 ? Math.min(100, Math.round((done / meta) * 100)) : 0;
+        const now = new Date();
+        const pctMes = Math.round((now.getDate() / new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()) * 100);
         const behind = !ok && pctMes > 0 && pct < pctMes;
         const barBg = ok ? 'linear-gradient(90deg,#2ed573,#7bed9f)' : (behind ? 'linear-gradient(90deg,#e74c3c,#ff6b81)' : 'linear-gradient(90deg,#ff9f43,#feca57)');
         const stColor = ok ? '#2ed573' : (behind ? '#e74c3c' : '#ff9f43');
-        return '<div class="dash-chart-panel" style="padding:14px;">' +
-            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
-                '<div style="min-width:0;">' +
-                    '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
-                        '<i class="fas ' + icon + '" style="font-size:.9rem;color:' + stColor + ';"></i>' +
-                        '<b style="font-size:.85rem;">' + escapeHtml(titulo) + '</b>' +
-                        '<span style="color:var(--text-secondary);font-size:.72rem;">' + pbMonthLabel(g.mes) + '</span>' + chip(g.linha) +
-                    '</div>' +
-                    '<div style="color:var(--text-secondary);font-size:.72rem;margin-top:4px;">' + (g.tipo === 'produto' ? 'Meta de unidades no mês' : 'Meta de vendas no mês') + '</div>' +
-                '</div>' +
-                '<div style="text-align:right;flex:0 0 auto;">' +
-                    '<span style="font-family:\'Chakra Petch\',sans-serif;font-size:1.2rem;color:' + stColor + ';">' + pct + '%</span>' +
-                    '<div style="font-size:.65rem;color:var(--text-secondary);">da meta' + (ok ? ' — cumprida' : '') + '</div>' +
-                '</div>' +
+        const porDiaTxt = (!ok && porDia > 0) ? (g.tipo === 'produto' ? '≈ ' + porDia + ' ' + tipoLabel + '/dia' : '≈ ' + formatPrice(porDia) + '/dia') : '';
+        return '<div class="top-client">' +
+            '<div class="top-client-rank" style="background:' + stColor + ';color:#fff;"><i class="fas ' + icon + '"></i></div>' +
+            '<div class="top-client-body">' +
+                '<div class="top-client-name" title="' + escapeHtml(titulo) + '">' + escapeHtml(titulo) + '</div>' +
+                '<div class="top-client-bar"><div class="top-client-bar-fill" style="width:' + pct + '%;background:' + barBg + ';"></div></div>' +
+                '<div style="font-size:.68rem;color:var(--text-muted);margin-top:4px;">' + doneTxt + ' de ' + metaTxt + (porDiaTxt ? ' · ' + porDiaTxt : '') + '</div>' +
             '</div>' +
-            '<div style="height:10px;border-radius:999px;background:rgba(0,0,0,.07);overflow:hidden;margin:10px 0 4px;"><span style="display:block;height:100%;width:' + pct + '%;border-radius:999px;background:' + barBg + ';transition:width .4s ease;"></span></div>' +
-            '<div style="display:flex;justify-content:space-between;font-size:.78rem;"><span>Realizado <b>' + doneTxt + '</b></span><span style="color:var(--text-secondary);">de <b>' + metaTxt + '</b></span></div>' +
-            '<div style="display:flex;justify-content:space-between;gap:8px;font-size:.74rem;padding-top:8px;margin-top:8px;border-top:1px solid rgba(0,0,0,.07);">' +
-                (resto > 0 ? '<span style="color:' + stColor + ';font-weight:600;">' + restoTxt + (behind ? ' <i class="fas fa-arrow-trend-down" style="font-size:.72rem;"></i> abaixo do ritmo' : '') + '</span>' : '<span style="color:#2ed573;font-weight:600;">Meta batida! Excedente: <b>' + (g.tipo === 'produto' ? (done - meta) + ' unid.' : formatPrice(done - meta)) + '</b></span>') +
-                '<span style="color:var(--text-secondary);text-align:right;">' + (porDiaTxt ? porDiaTxt + ' <span style="white-space:nowrap;">(' + dia + '/' + diasNoMes + ' dias, ' + pctMes + '% do mês)</span>' : '<span style="white-space:nowrap;">(' + dia + '/' + diasNoMes + ' dias, ' + pctMes + '% do mês)</span>') + '</span>' +
+            '<div class="top-client-meta">' +
+                '<span class="top-client-total" style="color:' + stColor + ';">' + pct + '%</span>' +
+                '<span class="top-client-count" style="color:' + (ok ? '#2ed573' : 'var(--text-muted)') + ';">' + (ok ? 'batida' : 'faltam ' + restoTxt + (behind ? ' <i class="fas fa-arrow-trend-down"></i>' : '')) + '</span>' +
             '</div>' +
         '</div>';
     }).join('');

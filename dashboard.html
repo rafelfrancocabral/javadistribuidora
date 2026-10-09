@@ -108,11 +108,10 @@
                         <h3><i class="fas fa-triangle-exclamation"></i> Top 7 Produtos com Menor Saída</h3>
                         <div id="lowSellers"></div>
                     </div>
-                </div>
-
-                <div class="dash-panel" id="goalsCharts" style="margin-top:20px;">
-                    <h3><i class="fas fa-crosshairs"></i> Acompanhamento de Metas <small class="dash-panel-sub">produtos e clientes — mês atual, contra o ritmo do mês</small></h3>
-                    <div id="goalsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:12px;"></div>
+                    <div class="dash-panel" id="goalsCharts">
+                        <h3><i class="fas fa-crosshairs"></i> Acompanhamento de Metas <small class="dash-panel-sub">mês atual</small></h3>
+                        <div id="goalsGrid"></div>
+                    </div>
                 </div>
             </section>
 
@@ -212,18 +211,6 @@
                             <h3><i class="fas fa-list-check"></i> Próximas Visitas</h3>
                             <div id="visitList" class="client-list"></div>
                         </div>
-<div class="pb-grid" style="margin-top:20px;">
-                    <div class="dash-panel">
-                        <h3><i class="fas fa-boxes-stacked"></i> Metas de Produto <small class="dash-panel-sub">unidades no mês</small></h3>
-                        <button class="btn btn-ghost btn-sm" style="margin-bottom:10px;" onclick="openMetaModal(null,'','produto')"><i class="fas fa-plus"></i> Nova Meta de Produto</button>
-                        <div id="pbProduto"></div>
-                    </div>
-                    <div class="dash-panel">
-                        <h3><i class="fas fa-users"></i> Metas de Cliente <small class="dash-panel-sub">vendas em R$ no mês</small></h3>
-                        <button class="btn btn-ghost btn-sm" style="margin-bottom:10px;" onclick="openMetaModal(null,'','cliente')"><i class="fas fa-plus"></i> Nova Meta de Cliente</button>
-                        <div id="pbCliente"></div>
-                    </div>
-                </div>
                 <div class="dash-panel" style="margin-top:20px;">
                             <h3><i class="fas fa-route"></i> Rotas de Visita</h3>
                             <div id="visitRouteList" class="client-list"></div>
@@ -278,6 +265,18 @@
                             <div><b>Dymar</b><div style="font-size:.75rem;color:var(--text-secondary)">Dymar Ferramentas</div></div>
                         </div>
                         <div id="pbDymar"></div>
+                    </div>
+                </div>
+                <div class="pb-grid" style="margin-top:20px;">
+                    <div class="dash-panel">
+                        <h3><i class="fas fa-boxes-stacked"></i> Metas de Produto <small class="dash-panel-sub">unidades no mês</small></h3>
+                        <button class="btn btn-ghost btn-sm" style="margin-bottom:10px;" onclick="openMetaModal(null,'','produto')"><i class="fas fa-plus"></i> Nova Meta de Produto</button>
+                        <div id="pbProduto"></div>
+                    </div>
+                    <div class="dash-panel">
+                        <h3><i class="fas fa-users"></i> Metas de Cliente <small class="dash-panel-sub">vendas em R$ no mês</small></h3>
+                        <button class="btn btn-ghost btn-sm" style="margin-bottom:10px;" onclick="openMetaModal(null,'','cliente')"><i class="fas fa-plus"></i> Nova Meta de Cliente</button>
+                        <div id="pbCliente"></div>
                     </div>
                 </div>
                 <div class="dash-panel" style="margin-top:20px;">
@@ -535,6 +534,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=2"></script>
-    <script src="js/dashboard.js?v=47"></script>
+    <script src="js/dashboard.js?v=48"></script>
 </body>
 </html>

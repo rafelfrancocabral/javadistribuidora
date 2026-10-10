@@ -786,6 +786,28 @@ function renderProducts() { const search = document.getElementById('productSearc
 async function toggleVisibility(id) { const p = products.find(x => String(x.id) === String(id)); if (!p) return; const newVal = !p.visivel; try { await adminCall('admin_toggle_produto', { _id: id, _visivel: newVal }); } catch (e) { toast('Erro: ' + e.message, true); return; } p.visivel = newVal; trackAction('Produto ' + (p.codigo ? '[' + p.codigo + '] ' : '') + p.nome + ' ' + (newVal ? 'visível no catálogo' : 'oculto do catálogo')); renderProducts(); toast(newVal ? 'Produto visível no catálogo' : 'Produto oculto do catálogo'); }
 async function deleteProduct(id) { if (!confirm('Excluir este produto?')) return; const pp = products.find(x => String(x.id) === String(id)); try { await adminCall('admin_excluir_produto', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } products = products.filter(x => String(x.id) !== String(id)); trackAction('Produto excluído: ' + (pp ? ((pp.codigo ? '[' + pp.codigo + '] ' : '') + pp.nome) : id)); renderProducts(); toast('Produto excluído'); }
 
+async function clearAllFlags() {
+    const count = products.filter(p => p.isdestaque || p.ispromocao).length;
+    if (count === 0) { toast('Nenhum produto está em destaque ou promoção.'); return; }
+    if (!confirm(`Remover DESTAQUE e PROMOÇÃO de todos os ${count} produto(s)? Essa ação atualiza a vitrine do site.`)) return;
+    const btn = document.getElementById('btnClearFlags');
+    const oldHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Limpando...'; }
+    try {
+        const changed = await adminCall('admin_limpar_flags_produtos');
+        const limpos = (typeof changed === 'number') ? changed : count;
+        products.forEach(p => { p.isdestaque = false; p.ispromocao = false; p.precopromocional = 0; });
+        trackAction('Destaques e promoções removidos em massa (' + limpos + ' produtos)');
+        renderProducts();
+        updateChartTitles();
+        toast('Vitrine limpa: ' + limpos + ' produto(s) atualizado(s).');
+    } catch (e) {
+        toast('Erro: ' + e.message, true);
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
+    }
+}
+
 // ---------- Product modal ----------
 let editingImages = [];
 function fillCategorySelects() { const catSel = document.getElementById('prodCategoria'); catSel.innerHTML = '<option value="">Sem categoria</option>' + categories.map(c => `<option value="${escapeHtml(c.nome)}">${escapeHtml(c.nome)}</option>`).join(''); fillSubcatSelect(); }
@@ -1971,6 +1993,7 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     document.getElementById('btnImportProducts').addEventListener('click', () => document.getElementById('productImportFile').click());
     document.getElementById('btnImportTemplate').addEventListener('click', downloadImportTemplate);
     document.getElementById('btnExportProducts').addEventListener('click', exportProductsXlsx);
+    document.getElementById('btnClearFlags').addEventListener('click', clearAllFlags);
     document.getElementById('productImportFile').addEventListener('change', handleProductImport);
     document.getElementById('importModalClose').addEventListener('click', () => document.getElementById('importModal').classList.remove('open'));
     document.getElementById('importCancel').addEventListener('click', () => document.getElementById('importModal').classList.remove('open'));

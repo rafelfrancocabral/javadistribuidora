@@ -547,6 +547,19 @@ function openCheckout() {
     if (cart.length === 0) { showToast('Seu carrinho está vazio.', true); return; }
     if (!isClientLoggedIn()) { openClientLoginModal(); return; }
 
+    const itemEl = document.getElementById('checkoutItems');
+    const formEl = document.getElementById('checkoutForm');
+    const totalEl = document.querySelector('.checkout-total');
+    const successEl = document.getElementById('checkoutSuccess');
+    const sendBtn = document.getElementById('checkoutSendBtn');
+    const errBox = document.getElementById('checkoutError');
+    if (itemEl) itemEl.style.display = '';
+    if (formEl) formEl.style.display = '';
+    if (totalEl) totalEl.style.display = '';
+    if (successEl) successEl.style.display = 'none';
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = '<i class="fas fa-check"></i> Concluir Orçamento'; }
+    if (errBox) errBox.style.display = 'none';
+
     document.getElementById('checkoutItems').innerHTML = cart.map(item => `
         <div class="checkout-item-summary">
             <span class="ci-name">${escapeHtml(item.nome)} ${item.codigo ? `<small>(${escapeHtml(item.codigo)})</small>` : ''}</span>
@@ -594,11 +607,7 @@ async function submitQuote(e) {
     }
 
     const btn = document.getElementById('checkoutSendBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...'; }
-
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('pt-BR');
-    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...'; }
 
     let total = 0;
     const itens = cart.map(item => {
@@ -617,28 +626,6 @@ async function submitQuote(e) {
     const code = generateClientCode(email);
     const pickupCode = generatePickupCode();
 
-    let itemsMsg = '';
-    cart.forEach((item, i) => {
-        const code = item.codigo ? `${item.codigo} - ` : '';
-        itemsMsg += `${code}${item.nome} - ${item.qty}x - ${formatPrice(item.preco)}\n`;
-    });
-
-    const msg =
-        `*Orçamento - Java Distribuidora*\n` +
-        `........................................................\n\n` +
-        `*Orçamento:* #${code}\n` +
-        `*Data:* ${dateStr}\n` +
-        `........................................................\n\n` +
-        `*Itens*\n` +
-        itemsMsg + `\n` +
-        `........................................................\n\n` +
-        `*Total: ${formatPrice(total)}*\n\n` +
-        `*Prazo de pagamento:* ${pagamento}\n` +
-        `........................................................\n\n` +
-        `_Por favor confirmar disponibilidade._`;
-
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
-
     try {
         await db.rpc('criar_orcamento', { _payload: {
             nome_cliente: email,
@@ -655,16 +642,31 @@ async function submitQuote(e) {
         } });
     } catch (err) {
         console.error('Erro ao salvar orçamento:', err);
+        if (errBox) { errText.textContent = 'Não foi possível registrar o orçamento. Tente novamente em instantes.'; errBox.style.display = ''; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Concluir Orçamento'; }
+        return;
     }
 
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fab fa-whatsapp"></i> Enviar Orçamento pelo WhatsApp'; }
     const form = document.getElementById('checkoutForm');
     if (form) form.reset();
     localStorage.setItem(CART_KEY, '[]');
     updateCartBadge();
     renderCartSidebar();
-    closeCheckout();
-    showToast('Orçamento enviado! Acompanhe pelo WhatsApp.');
+    showCheckoutSuccess(code);
+}
+
+function showCheckoutSuccess(code) {
+    const itemsEl = document.getElementById('checkoutItems');
+    const totalEl = document.querySelector('.checkout-total');
+    const formEl = document.getElementById('checkoutForm');
+    const successEl = document.getElementById('checkoutSuccess');
+    const codeEl = document.getElementById('checkoutSuccessCode');
+    if (itemsEl) itemsEl.style.display = 'none';
+    if (totalEl) totalEl.style.display = 'none';
+    if (formEl) formEl.style.display = 'none';
+    if (codeEl) codeEl.textContent = '#' + code;
+    if (successEl) successEl.style.display = '';
+    showToast('Orçamento #' + code + ' registrado com sucesso!');
 }
 
 // ---------- Auth modals ----------
@@ -842,6 +844,9 @@ function setupUI() {
 
     const checkoutForm = document.getElementById('checkoutForm');
     if (checkoutForm) checkoutForm.addEventListener('submit', submitQuote);
+
+    const checkoutSuccessClose = document.getElementById('checkoutSuccessClose');
+    if (checkoutSuccessClose) checkoutSuccessClose.addEventListener('click', closeCheckout);
 
     const productOverlay = document.getElementById('productOverlay');
     if (productOverlay) productOverlay.addEventListener('click', (e) => {

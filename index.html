@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Java Distribuidora — Faturamento e Distribuição</title>
-<meta name="description" content="Distribuidora de bebidas e produtos essenciais. Monte seu orçamento online e receba no seu WhatsApp.">
+<meta name="description" content="Distribuidora de bebidas e produtos essenciais. Monte seu orçamento online e receba a confirmação na hora no site.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=9">
+    <link rel="stylesheet" href="css/style.css?v=10">
 </head>
 <body>
 
@@ -48,7 +48,7 @@
         <div class="hero-text">
             <span class="hero-tag"><i class="fas fa-bolt"></i> Área exclusiva para lojistas cadastrados</span>
             <h1>Melhor Preço para <span class="grad-text">Lojistas</span></h1>
-            <p>Catálogo exclusivo para revenda. Aproveite condições especiais para o seu comércio e faça o orçamento rápido pelo WhatsApp.</p>
+            <p>Catálogo exclusivo para revenda. Aproveite condições especiais para o seu comércio e faça o orçamento rápido, com confirmação na hora.</p>
             <div class="hero-actions">
                 <a href="#produtos" class="btn btn-primary btn-lg"><i class="fas fa-box-open"></i> Ver produtos</a>
                 <a href="#como-fazer" class="btn btn-outline btn-lg"><i class="fas fa-circle-play"></i> Como funciona</a>
@@ -79,7 +79,7 @@
         <div class="section-head">
             <span class="section-eyebrow"><i class="fas fa-compass"></i> PASSO A PASSO</span>
             <h2>Como fazer seu <span class="grad-text">orçamento</span></h2>
-            <p>Em poucos minutos você tem uma cotação completa e recebe a confirmação no WhatsApp.</p>
+            <p>Em poucos minutos você tem uma cotação completa e recebe a confirmação direto no site.</p>
         </div>
         <div class="howto-grid">
             <div class="howto-card">
@@ -102,9 +102,9 @@
             </div>
             <div class="howto-card">
                 <div class="howto-num">4</div>
-                <i class="fab fa-whatsapp"></i>
-                <h3>Receba no WhatsApp</h3>
-                <p>Seu orçamento é enviado automaticamente. Nossa equipe confirma disponibilidade e valores.</p>
+                <i class="fas fa-circle-check"></i>
+                <h3>Confirmação no site</h3>
+                <p>Seu orçamento é registrado na hora. Nossa equipe confirma disponibilidade e valores.</p>
             </div>
         </div>
     </div>
@@ -198,7 +198,7 @@
             <span class="cart-total-value" id="cartTotal">R$ 0,00</span>
         </div>
         <button class="cart-checkout-btn" id="cartCheckout">
-            <i class="fab fa-whatsapp"></i> Finalizar pelo WhatsApp
+            <i class="fas fa-check"></i> Concluir Orçamento
         </button>
     </div>
 </div>
@@ -207,7 +207,7 @@
 <div class="checkout-overlay" id="checkoutOverlay">
     <div class="checkout-modal">
         <div class="checkout-header">
-            <h3><i class="fab fa-whatsapp"></i> Finalizar Orçamento</h3>
+            <h3><i class="fas fa-clipboard-list"></i> Finalizar Orçamento</h3>
             <button class="checkout-close" id="checkoutClose"><i class="fas fa-xmark"></i></button>
         </div>
         <div class="checkout-body">
@@ -236,9 +236,15 @@
                     <span id="checkoutErrorText">Faça login para finalizar.</span>
                 </div>
                 <button type="submit" class="checkout-send-btn" id="checkoutSendBtn">
-                    <i class="fab fa-whatsapp"></i> Enviar Orçamento pelo WhatsApp
+                    <i class="fas fa-check"></i> Concluir Orçamento
                 </button>
             </form>
+            <div class="checkout-success" id="checkoutSuccess" style="display:none;">
+                <div class="checkout-success-icon"><i class="fas fa-circle-check"></i></div>
+                <h3>Orçamento registrado!</h3>
+                <p>Seu pedido de orçamento <b id="checkoutSuccessCode">#0000</b> foi enviado para a nossa equipe. Em breve entraremos em contato para confirmar disponibilidade e prazo de pagamento.</p>
+                <button type="button" class="checkout-send-btn" id="checkoutSuccessClose"><i class="fas fa-check"></i> Fechar</button>
+            </div>
         </div>
     </div>
 </div>
@@ -311,6 +317,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-config.js?v=2"></script>
-<script src="js/script.js?v=10"></script>
+<script src="js/script.js?v=11"></script>
 </body>
 </html>

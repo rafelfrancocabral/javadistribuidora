@@ -224,9 +224,12 @@ function getFilteredProducts() {
             return haystack.includes(t) || kw.includes(t);
         });
     }
-    // Dentro de uma categoria: ordem alfabética.
+    // Dentro de uma categoria: destaques no início; o restante em ordem alfabética.
     if (categorySelected) {
-        return list.sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+        return list.sort((a, b) => {
+            if (a.isDestaque !== b.isDestaque) return a.isDestaque ? -1 : 1;
+            return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
+        });
     }
     // No "Todos": destaque e promoção no início; dentro de cada grupo ordem aleatória (estável por página).
     return list.sort((a, b) => {

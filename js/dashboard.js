@@ -255,7 +255,7 @@ const labels = [];
             devicePixelRatio: 2,
             interaction: { intersect: false, mode: 'index' },
             animation: { duration: 900, easing: 'easeOutQuart' },
-            layout: { padding: { top: 18, right: 16, bottom: 8, left: 8 } },
+            layout: { padding: { top: 6, right: 16, bottom: 8, left: 8 } },
             plugins: {
                 legend: {
                     position: 'top',
@@ -269,7 +269,7 @@ const labels = [];
                         boxWidth: 14,
                         boxHeight: 14
                     },
-                    padding: { top: 6, bottom: 16 }
+                    padding: { top: 4, bottom: 30 }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(11,6,20,0.96)',

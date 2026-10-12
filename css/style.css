@@ -48,14 +48,14 @@
 html { scroll-behavior: smooth; }
 
 body {
-    font-family: 'Rajdhani', 'Inter', sans-serif;
+    font-family: 'Inter', sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
     overflow-x: hidden;
 }
 
-h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
+h1, h2, h3, h4 { font-family: 'Inter', sans-serif; line-height: 1.25; }
 .grad-text {
     background: var(--gradient-tech);
     -webkit-background-clip: text;
@@ -68,7 +68,7 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 .section-head { text-align: center; max-width: 640px; margin: 0 auto 44px; }
 .section-eyebrow {
     display: inline-flex; align-items: center; gap: 8px;
-    font-family: 'Orbitron', sans-serif; font-size: 12px; letter-spacing: 2px;
+    font-family: 'Inter', sans-serif; font-size: 12px; letter-spacing: 2px;
     color: var(--neon-fuchsia); text-transform: uppercase; margin-bottom: 12px;
 }
 .section-head h2 { font-size: clamp(26px, 4vw, 40px); margin-bottom: 10px; }
@@ -78,7 +78,7 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     padding: 12px 22px; border-radius: 999px; border: none; cursor: pointer;
-    font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 15px;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px;
     transition: transform .18s, box-shadow .18s, background .18s, color .18s;
     text-decoration: none;
 }
@@ -105,7 +105,7 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 .nav-wrap { display: flex; align-items: center; justify-content: space-between; height: 100%; gap: 18px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .brand-logo { height: 44px; width: auto; }
-.brand-text { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 18px; color: var(--accent-dark);
+.brand-text { font-family: 'Inter', sans-serif; font-weight: 900; font-size: 18px; color: var(--accent-dark);
     letter-spacing: 1px; display: flex; flex-direction: column; line-height: 1; }
 .brand-acc { color: var(--neon-fuchsia); font-weight: 500; font-size: 9px; letter-spacing: 3px; margin-top: 3px; }
 .main-nav { display: flex; gap: 26px; }
@@ -132,7 +132,7 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
     position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 6px;
     background: var(--danger); color: #fff; border-radius: 999px;
     font-size: 11px; font-weight: 700; display: none; align-items: center; justify-content: center;
-    font-family: 'Chakra Petch', sans-serif;
+    font-family: 'Inter', sans-serif;
     box-shadow: 0 2px 8px rgba(255,71,87,.5);
     animation: badgePulse 0.4s ease-out;
 }
@@ -177,7 +177,7 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 .hero-content { position: relative; z-index: 2; display: grid; grid-template-columns: 1.15fr .85fr; gap: 50px; align-items: center; }
 .hero-tag {
     display: inline-flex; align-items: center; gap: 8px;
-    font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 2px;
+    font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: 2px;
     padding: 7px 14px; border: 1px solid rgba(255,47,230,.4); border-radius: 999px;
     color: var(--neon-fuchsia); background: rgba(255,47,230,.06); margin-bottom: 22px;
     box-shadow: var(--glow-fuchsia);
@@ -187,7 +187,7 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 40px; }
 .hero-stats { display: flex; gap: 40px; }
 .stat { display: flex; flex-direction: column; }
-.stat-num { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 700;
+.stat-num { font-family: 'Inter', sans-serif; font-size: 26px; font-weight: 700;
     background: var(--gradient-tech); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .stat-lbl { color: var(--text-muted); font-size: 13px; font-weight: 500; }
 
@@ -199,17 +199,17 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
     padding: 28px; color: #fff;
 }
 .hero-card::before { content:''; position:absolute; inset:-1px; border-radius: var(--radius); opacity:0; }
-.hero-card-top { display:flex; align-items:center; gap:10px; font-family:'Chakra Petch',sans-serif; font-weight:600;
+.hero-card-top { display:flex; align-items:center; gap:10px; font-family:'Inter', sans-serif; font-weight:600;
     font-size:14px; color: var(--neon-cyan); padding-bottom:16px; border-bottom:1px dashed rgba(255,255,255,.14); }
 .hero-card-top i { font-size:20px; }
 .hero-card-body { padding: 16px 0; display:flex; flex-direction:column; gap:12px; }
 .hero-card-line { display:flex; justify-content:space-between; align-items:center; }
 .hero-card-line div { display:flex; align-items:center; gap:10px; color: rgba(255,255,255,.6); font-size:14px; }
 .hero-card-line div i { color: #fff; font-size: 16px; width: 18px; text-align: center; }
-.hero-card-line strong { font-family:'Chakra Petch',sans-serif; font-size:15px; }
+.hero-card-line strong { font-family:'Inter', sans-serif; font-size:15px; }
 .hero-card-foot { margin-top: 6px; padding: 12px 14px; border-radius: 12px;
     background: rgba(0,255,163,.1); color: var(--neon-green); display:flex; gap:8px; align-items:center;
-    font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:14px; }
+    font-family:'Inter', sans-serif; font-weight:600; font-size:14px; }
 .scroll-hint { position:absolute; bottom: 26px; left: 50%; transform: translateX(-50%); color: var(--text-muted); animation: bounce 2s infinite; }
 @keyframes bounce { 0%,100%{ transform:translate(-50%,0)} 50%{ transform:translate(-50%,10px)} }
 
@@ -227,7 +227,7 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 }
 .howto-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md), var(--glow-cyan); }
 .howto-num {
-    position: absolute; top: 16px; right: 20px; font-family: 'Orbitron', sans-serif;
+    position: absolute; top: 16px; right: 20px; font-family: 'Inter', sans-serif;
     font-size: 40px; font-weight: 900; color: rgba(88,28,135,.1);
 }
 .howto-card i { font-size: 34px; color: var(--neon-fuchsia); margin-bottom: 16px; display: block;
@@ -249,7 +249,7 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 .catalog-cats { display: flex; gap: 8px; flex-wrap: wrap; }
 .cat-pill {
     padding: 8px 16px; border-radius: 999px; border: 1.5px solid var(--border);
-    background: #fff; color: var(--text-secondary); font-family: 'Chakra Petch', sans-serif;
+    background: #fff; color: var(--text-secondary); font-family: 'Inter', sans-serif;
     font-weight: 600; font-size: 13.5px; cursor: pointer; transition: all .18s;
 }
 .cat-pill:hover { border-color: var(--neon-purple); color: var(--neon-purple); }
@@ -276,12 +276,12 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 .cat-thumb img { width: 100%; height: 100%; object-fit: contain; transition: transform .25s; }
 .catalog-card:hover .cat-thumb img { transform: scale(1.06); }
 .cat-badges { position: absolute; top: 10px; left: 10px; display: flex; gap: 4px; flex-wrap: wrap; max-width: calc(100% - 20px); }
-.cat-badge { font-size: 10.5px; font-weight: 700; font-family: 'Chakra Petch', sans-serif; padding: 4px 9px; border-radius: 999px; color:#fff; }
+.cat-badge { font-size: 10.5px; font-weight: 700; font-family: 'Inter', sans-serif; padding: 4px 9px; border-radius: 999px; color:#fff; }
 .cat-badge.destaque { background: linear-gradient(135deg,#00e5ff,#4f6bff); }
 .cat-badge.promo { background: linear-gradient(135deg,#ff2fe6,#ff8a5c); }
 
 .cat-body { padding: 16px 16px 18px; display: flex; flex-direction: column; flex: 1; }
-.cat-code { font-size: 11px; color: var(--text-muted); font-family: 'Chakra Petch', sans-serif; letter-spacing: 1px; }
+.cat-code { font-size: 11px; color: var(--text-muted); font-family: 'Inter', sans-serif; letter-spacing: 1px; }
 .cat-name { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 4px 0 8px; cursor: pointer; min-height: 20px; overflow-wrap: anywhere; }
 .cat-name:hover { color: var(--neon-fuchsia); }
 .cat-meta { font-size: 13px; color: var(--text-muted); font-family: 'Inter', sans-serif; overflow-wrap: anywhere; }
@@ -289,13 +289,13 @@ h1, h2, h3, h4 { font-family: 'Chakra Petch', sans-serif; line-height: 1.25; }
 /* Preço: visível só com login (via .isAuth no body) */
 .cat-price { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
 body.isAuth .cat-price { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; row-gap: 2px; }
-.cat-price .price-now { font-family: 'Rajdhani', sans-serif; font-size: 24px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+.cat-price .price-now { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
 .cat-price .price-old { color: var(--text-muted); font-size: 14px; text-decoration: line-through; font-weight: 500; }
 .cat-price .price-unit { color: var(--text-muted); font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif; }
 
 .price-lock {
     display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 12px;
-    color: var(--text-muted); font-size: 13.5px; font-family: 'Chakra Petch', sans-serif;
+    color: var(--text-muted); font-size: 13.5px; font-family: 'Inter', sans-serif;
 }
 .price-lock i { color: var(--neon-purple); }
 body.isAuth .cat-price { display: block; }
@@ -305,9 +305,9 @@ body.isAuth .price-lock { display: none; }
 .catalog-qty { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .catalog-qty button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background:#fff; cursor:pointer; font-weight:700; color: var(--accent); }
 .catalog-qty button:hover { border-color: var(--neon-purple); color: var(--neon-purple); }
-.catalog-qty input { width: 40px; text-align: center; border: 1px solid var(--border); border-radius: 8px; height: 30px; font-family:'Chakra Petch',sans-serif; font-weight:600; }
+.catalog-qty input { width: 40px; text-align: center; border: 1px solid var(--border); border-radius: 8px; height: 30px; font-family:'Inter', sans-serif; font-weight:600; }
 .btn-add-cart { flex: 1; min-width: 0; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer;
-    background: var(--gradient-accent); color: #fff; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 14px;
+    background: var(--gradient-accent); color: #fff; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px;
     transition: transform .15s, box-shadow .15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .btn-add-cart:hover { box-shadow: 0 10px 24px rgba(88,28,135,.4); transform: translateY(-2px); }
 
@@ -377,21 +377,21 @@ body.isAuth .price-lock { display: none; }
 .cart-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px dashed var(--border); align-items: center; }
 .cart-item img { width: 56px; height: 56px; object-fit: contain; border-radius: 10px; background: var(--bg-secondary); }
 .cart-item-info { flex: 1; min-width: 0; }
-.cart-item-code { font-size: 10.5px; color: var(--text-muted); font-family: 'Chakra Petch', sans-serif; letter-spacing: 1px; }
+.cart-item-code { font-size: 10.5px; color: var(--text-muted); font-family: 'Inter', sans-serif; letter-spacing: 1px; }
 .cart-item-info h4 { font-size: 14px; line-height: 1.3; }
-.cart-item-price { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+.cart-item-price { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
 .cart-item-qty { display: flex; align-items: center; gap: 6px; }
 .cart-item-qty button { width: 26px; height: 26px; border: 1px solid var(--border); background:#fff; border-radius: 7px; cursor: pointer; font-weight: 700; color: var(--accent); }
 .cart-item-qty button:hover { border-color: var(--neon-fuchsia); color: var(--neon-fuchsia); }
-.cart-item-qty span { min-width: 22px; text-align: center; font-weight: 600; font-family: 'Chakra Petch', sans-serif; }
+.cart-item-qty span { min-width: 22px; text-align: center; font-weight: 600; font-family: 'Inter', sans-serif; }
 .cart-item-remove { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 6px; }
 .cart-item-remove:hover { color: var(--danger); }
 
 .cart-footer { border-top: 1px solid var(--border); padding: 18px 22px; }
 .cart-total { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
-.cart-total-value { font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+.cart-total-value { font-family: 'Inter', sans-serif; font-size: 26px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
 .cart-checkout-btn { width: 100%; border: none; border-radius: 14px; padding: 15px; cursor: pointer;
-    background: var(--gradient-accent); color: #fff; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 16px;
+    background: var(--gradient-accent); color: #fff; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 16px;
     transition: transform .15s, box-shadow .15s; }
 .cart-checkout-btn:hover { box-shadow: 0 12px 30px rgba(88,28,135,.4); transform: translateY(-2px); }
 
@@ -402,10 +402,10 @@ body.isAuth .price-lock { display: none; }
 .checkout-item-summary .ci-name { flex: 1; }
 .checkout-item-summary .ci-val { font-weight: 600; white-space: nowrap; }
 .checkout-total { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-top: 1px solid var(--border); }
-.checkout-total-value { font-family: 'Rajdhani', sans-serif; font-size: 30px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+.checkout-total-value { font-family: 'Inter', sans-serif; font-size: 30px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
 .checkout-form { display: flex; flex-direction: column; gap: 16px; }
 .checkout-field { display: flex; flex-direction: column; gap: 6px; }
-.checkout-field label, .auth-field label { font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 14px; color: var(--text-primary); }
+.checkout-field label, .auth-field label { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--text-primary); }
 .checkout-field input, .checkout-field select, .auth-field input {
     border: 1.5px solid var(--border); border-radius: 12px; padding: 12px 14px;
     font-family: 'Inter', sans-serif; font-size: 15px; outline: none; background: #fff; transition: border .18s, box-shadow .18s;
@@ -418,7 +418,7 @@ body.isAuth .price-lock { display: none; }
 }
 .checkout-send-btn { border: none; border-radius: 14px; padding: 15px; cursor: pointer;
     background: var(--gradient-accent); color: #fff;
-    font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 16px;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 16px;
     transition: transform .15s, box-shadow .15s; }
 
 .checkout-send-btn:hover { box-shadow: 0 12px 30px rgba(88,28,135,.35); transform: translateY(-2px); }
@@ -428,7 +428,7 @@ body.isAuth .price-lock { display: none; }
 .checkout-success-icon { width: 76px; height: 76px; margin: 6px auto 14px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: #fff;
     background: linear-gradient(135deg, #2ed573, #17c0a3); box-shadow: 0 14px 34px rgba(46,213,115,.35); }
-.checkout-success h3 { font-family: 'Chakra Petch', sans-serif; font-size: 20px; margin: 0 0 8px; }
+.checkout-success h3 { font-family: 'Inter', sans-serif; font-size: 20px; margin: 0 0 8px; }
 .checkout-success p { color: var(--text-secondary); font-size: 14px; line-height: 1.55; margin: 0 0 20px; }
 .checkout-success p b { color: var(--accent); }
 
@@ -438,14 +438,14 @@ body.isAuth .price-lock { display: none; }
 .auth-form, .auth-field { margin-bottom: 14px; }
 
 .auth-field { display: flex; flex-direction: column; gap: 6px; }
-.auth-field label { display: flex; align-items: center; gap: 8px; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 14px; color: var(--text-primary); }
+.auth-field label { display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--text-primary); }
 .auth-field input { border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; font-family: 'Inter', sans-serif; font-size: 15px; outline: none; background: #fff; transition: border .18s, box-shadow .18s; width: 100%; box-sizing: border-box; }
 .auth-field input:focus { border-color: var(--neon-purple); box-shadow: 0 0 0 4px rgba(168,85,247,.12); }
 .auth-field i { color: var(--neon-purple); font-size: 16px; width: 20px; text-align: center; }
 
 /* Password change modal improvements */
 .auth-field-pwd { display: flex; flex-direction: column; gap: 6px; }
-.auth-field-pwd label { display: flex; align-items: center; gap: 8px; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 14px; color: var(--text-primary); }
+.auth-field-pwd label { display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--text-primary); }
 .auth-field-pwd input { border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; font-family: 'Inter', sans-serif; font-size: 15px; outline: none; background: #fff; transition: border .18s, box-shadow .18s; width: 100%; box-sizing: border-box; }
 .auth-field-pwd input:focus { border-color: var(--neon-purple); box-shadow: 0 0 0 4px rgba(168,85,247,.12); }
 .auth-field-pwd i { color: var(--neon-purple); font-size: 16px; width: 20px; text-align: center; }
@@ -460,10 +460,10 @@ body.isAuth .price-lock { display: none; }
 .pm-img { border-radius: var(--radius); background: linear-gradient(140deg,#f7f3ff,#efe7fb); display:flex; align-items:center; justify-content:center; min-height: 280px; }
 .pm-img img { max-width: 92%; max-height: 320px; object-fit: contain; }
 .pm-info h2 { font-size: 24px; margin-bottom: 6px; }
-.pm-code { color: var(--text-muted); font-size: 12.5px; font-family: 'Chakra Petch', sans-serif; margin-bottom: 12px; }
+.pm-code { color: var(--text-muted); font-size: 12.5px; font-family: 'Inter', sans-serif; margin-bottom: 12px; }
 .pm-desc { color: var(--text-secondary); font-size: 15px; margin-bottom: 16px; font-family: 'Inter', sans-serif; line-height: 1.7; }
 .pm-price { margin: 16px 0; padding-top: 14px; border-top: 1px solid var(--border); }
-body.isAuth .pm-price .price-now { font-family: 'Rajdhani', sans-serif; font-size: 30px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+body.isAuth .pm-price .price-now { font-family: 'Inter', sans-serif; font-size: 30px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
 body.isAuth .pm-price-msg { display:none; }
 .pm-price-msg { color: var(--text-muted); }
 .pm-actions { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
@@ -475,7 +475,7 @@ body.isAuth .pm-price-msg { display:none; }
 .toast-bar {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
     background: var(--bg-dark); color: #fff; padding: 14px 22px; border-radius: 14px;
-    font-family: 'Chakra Petch', sans-serif; font-size: 15px; z-index: 200; opacity: 0; pointer-events: none;
+    font-family: 'Inter', sans-serif; font-size: 15px; z-index: 200; opacity: 0; pointer-events: none;
     transition: all .25s; box-shadow: var(--shadow-lg); display: flex; gap: 10px; align-items: center;
 }
 .toast-bar.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -498,7 +498,7 @@ body.isAuth .pm-price-msg { display:none; }
 }
 .cookie-text { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 280px; }
 .cookie-text i { font-size: 1.8rem; color: var(--accent); flex-shrink: 0; }
-.cookie-text strong { display: block; font-family: 'Chakra Petch', sans-serif; color: var(--text-primary); margin-bottom: 2px; }
+.cookie-text strong { display: block; font-family: 'Inter', sans-serif; color: var(--text-primary); margin-bottom: 2px; }
 .cookie-text p { margin: 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
 .cookie-text a { color: var(--accent); text-decoration: underline; }
 .cookie-actions { display: flex; gap: 12px; flex-shrink: 0; }
@@ -508,3 +508,8 @@ body.isAuth .pm-price-msg { display:none; }
     .cookie-actions { width: 100%; justify-content: stretch; }
     .cookie-actions .btn { flex: 1; justify-content: center; }
 }
+/* Precos com digitos alinhados (font Inter) */
+.cat-price .price-now, .cart-item-price, .cart-total-value, .checkout-total-value, .pm-price .price-now, .stat-num { font-variant-numeric: tabular-nums; }
+
+/* Precos com digitos alinhados (font Inter) */
+.cat-price .price-now, .cart-item-price, .cart-total-value, .checkout-total-value, .pm-price .price-now, .stat-num { font-variant-numeric: tabular-nums; }

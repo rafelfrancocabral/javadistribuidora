@@ -94,7 +94,7 @@ input, select, textarea { font-family: inherit; }
 .group-tab {
     padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--border);
     display: inline-flex; align-items: center; gap: 8px;
-    font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 0.78rem;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.78rem;
     color: var(--text-muted); background: #fff; cursor: pointer; transition: all .18s; white-space: nowrap;
 }
 .group-tab:hover { border-color: var(--neon-purple); color: var(--neon-purple); transform: translateY(-1px); }
@@ -131,7 +131,7 @@ input, select, textarea { font-family: inherit; }
 .dash-card-icon.green { background: rgba(46,213,115,.12); color: var(--success); }
 .dash-card-icon.orange { background: rgba(255,165,2,.12); color: var(--warning); }
 .dash-card-icon.purple { background: rgba(165,94,234,.12); color: var(--purple); }
-.dash-card h3 { font-size: 1.5rem; font-weight: 700; font-family: 'Chakra Petch', sans-serif; }
+.dash-card h3 { font-size: 1.5rem; font-weight: 700; font-family: 'Inter', sans-serif; }
 .dash-card span { font-size: 0.8rem; color: var(--text-muted); }
 
 /* ============ CHARTS ============ */
@@ -154,7 +154,7 @@ input, select, textarea { font-family: inherit; }
 .dash-chart-panel:hover { box-shadow: 0 14px 38px rgba(88,28,135,.12); border-color: rgba(88,28,135,.25); }
 .dash-chart-panel:hover::before { opacity: 1; }
 .dash-chart-panel h3 {
-    font-family: 'Chakra Petch', sans-serif; font-size: 0.95rem; font-weight: 600; margin-bottom: 14px;
+    font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; margin-bottom: 14px;
     display: flex; align-items: center; gap: 8px; color: var(--text-secondary);
 }
 .dash-chart-panel h3 i { color: var(--accent-color); }
@@ -162,7 +162,7 @@ input, select, textarea { font-family: inherit; }
 .chart-period-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .chart-tab {
     padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--border);
-    background: #fff; color: var(--text-muted); font-family: 'Chakra Petch', sans-serif;
+    background: #fff; color: var(--text-muted); font-family: 'Inter', sans-serif;
     font-weight: 600; font-size: 0.78rem; cursor: pointer; transition: all .18s;
 }
 .chart-tab:hover { border-color: var(--neon-purple); color: var(--neon-purple); }
@@ -173,7 +173,7 @@ input, select, textarea { font-family: inherit; }
     background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;
 }
 .dash-panel h3 {
-    font-family: 'Chakra Petch', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 16px;
+    font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 16px;
     display: flex; align-items: center; gap: 8px; color: var(--text-secondary);
 }
 .dash-panel h3 i { color: var(--accent-color); }
@@ -183,14 +183,14 @@ input, select, textarea { font-family: inherit; }
 .top-client:last-child { border-bottom: none; }
 .top-client-rank {
     width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-    background: var(--gradient-tech); color: #0b0712; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 0.8rem;
+    background: var(--gradient-tech); color: #0b0712; font-family: 'Inter', sans-serif; font-weight:600; font-size: 0.8rem;
 }
 .top-client-body { flex: 1; min-width: 0; }
-.top-client-name { font-family: 'Chakra Petch', sans-serif; font-size: 0.83rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-client-name { font-family: 'Inter', sans-serif; font-size: 0.83rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .top-client-bar { margin-top: 5px; height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
 .top-client-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); }
 .top-client-meta { text-align: right; flex: 0 0 auto; }
-.top-client-total { display: block; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 0.88rem; color: var(--accent); }
+.top-client-total { display: block; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.88rem; color: var(--accent); }
 .top-client-count { display: block; font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
 
 /* ============ TOOLBAR ============ */
@@ -228,12 +228,12 @@ input, select, textarea { font-family: inherit; }
 .quote-card-row { display: flex; align-items: center; gap: 16px; width: 100%; flex-wrap: wrap; }
 .quote-main-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 280px; flex-wrap: wrap; }
 .quote-card-name { font-weight: 600; font-size: 0.9rem; }
-.quote-code-badge { font-family: 'Chakra Petch', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--accent); background: rgba(88,28,135,.08); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.quote-code-badge { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--accent); background: rgba(88,28,135,.08); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
 .quote-meta-icons { display: flex; align-items: center; gap: 12px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap; }
 .quote-meta-icons span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .quote-meta-icons i { color: var(--accent-dark); font-size: 0.85rem; width: 14px; text-align: center; }
-.quote-card-total { font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--text-primary); white-space: nowrap; letter-spacing: -0.5px; }
-.quote-code-badge { font-family: 'Chakra Petch', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--accent); background: rgba(88,28,135,.08); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.quote-card-total { font-family: 'Inter', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--text-primary); white-space: nowrap; letter-spacing: -0.5px; }
+.quote-code-badge { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--accent); background: rgba(88,28,135,.08); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
 .linha-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
 .linha-java { background: rgba(88,28,135,.15); color: var(--accent); }
 .linha-dymar { background: rgba(255,47,230,.15); color: var(--neon-fuchsia); }
@@ -274,7 +274,7 @@ input, select, textarea { font-family: inherit; }
     color: var(--text-muted); border-bottom: 1px solid var(--border); background: var(--bg-secondary);
 }
 .dash-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: middle; }
-.dash-table .price-cell { font-family: 'Chakra Petch', sans-serif; font-weight: 600; white-space: nowrap; }
+.dash-table .price-cell { font-family: 'Inter', sans-serif; font-weight: 600; white-space: nowrap; }
 .dash-table tr:last-child td { border-bottom: none; }
 .dash-table tbody tr:hover { background: var(--bg-hover); }
 .prod-img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--bg-secondary); }
@@ -325,12 +325,12 @@ input, select, textarea { font-family: inherit; }
 .low-seller-head img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); background: #fff; flex-shrink: 0; }
 .low-no-img { width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--bg-hover); color: var(--text-muted); font-size: 1rem; flex-shrink: 0; }
 .low-seller-info { flex: 1; min-width: 0; }
-.low-seller-name { font-family: 'Chakra Petch', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.low-seller-name { font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .low-seller-name small { color: var(--text-muted); font-weight: 500; font-size: 0.68rem; margin-left: 6px; }
 .low-seller-meta { display: flex; flex-wrap: wrap; gap: 10px; color: var(--text-muted); font-size: 0.72rem; margin-top: 3px; }
 .low-seller-meta span { display: inline-flex; align-items: center; gap: 4px; }
 .low-promo-on { color: var(--neon-fuchsia); font-weight: 600; }
-.low-seller-price { font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--accent); flex-shrink: 0; }
+.low-seller-price { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--accent); flex-shrink: 0; }
 .low-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; background: rgba(165,94,234,.15); color: var(--purple); margin-top: 5px; }
 .low-badge i { margin-right: 3px; }
 .low-zero { background: rgba(255,71,87,.13); color: var(--danger); }
@@ -345,15 +345,15 @@ input, select, textarea { font-family: inherit; }
 .top-seller:last-child { border-bottom: none; }
 .top-seller-rank {
     width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-    background: var(--accent); color: #fff; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 0.8rem;
+    background: var(--accent); color: #fff; font-family: 'Inter', sans-serif; font-weight:600; font-size: 0.8rem;
 }
 .top-seller-body { flex: 1; min-width: 0; }
-.top-seller-name { font-family: 'Chakra Petch', sans-serif; font-size: 0.83rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-seller-name { font-family: 'Inter', sans-serif; font-size: 0.83rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .top-seller-name small { color: var(--text-muted); font-weight: 500; font-size: 0.68rem; margin-left: 6px; }
 .top-seller-bar { margin-top: 5px; height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
 .top-seller-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--neon-fuchsia), var(--neon-purple)); }
 .top-seller-meta { text-align: right; flex: 0 0 auto; }
-.top-seller-qty { display: block; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 0.9rem; color: var(--accent); }
+.top-seller-qty { display: block; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.9rem; color: var(--accent); }
 .top-seller-count { display: block; font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
 
 @media (max-width: 900px) { .dash-two-col { grid-template-columns: 1fr; } .dash-three-col { grid-template-columns: 1fr; } }
@@ -367,7 +367,7 @@ input, select, textarea { font-family: inherit; }
 .modal-lg { max-width: 680px; }
 @keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: none; } }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
-.modal-header h3 { font-family: 'Chakra Petch', sans-serif; font-size: 1.1rem; font-weight: 600; }
+.modal-header h3 { font-family: 'Inter', sans-serif; font-size: 1.1rem; font-weight: 600; }
 .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.1rem; }
 .modal-close:hover { color: var(--text-primary); }
 .modal-body { padding: 20px 22px; }
@@ -384,7 +384,7 @@ input, select, textarea { font-family: inherit; }
 .mq-line-tab {
     padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--border);
     display: inline-flex; align-items: center; gap: 8px;
-    font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 0.78rem;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.78rem;
     color: var(--text-muted); background: #fff; cursor: pointer; transition: all .18s; white-space: nowrap;
 }
 .mq-line-tab:hover { border-color: var(--neon-purple); color: var(--neon-purple); transform: translateY(-1px); }
@@ -432,13 +432,13 @@ input, select, textarea { font-family: inherit; }
 .img-url-fields { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .qd-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
 .qd-row span:first-child { color: var(--text-muted); }
-.qd-row span:last-child { font-family: 'Chakra Petch', sans-serif; font-weight: 500; }
+.qd-row span:last-child { font-family: 'Inter', sans-serif; font-weight: 500; }
 .qd-items { margin: 12px 0; }
 .qd-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-.qd-item span:last-child { font-family: 'Chakra Petch', sans-serif; font-weight: 600; }
+.qd-item span:last-child { font-family: 'Inter', sans-serif; font-weight: 600; }
 .qd-status-form { margin-top: 16px; }
 .qd-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
-.btn-whatsapp-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; background: #fff; color: var(--accent-color) !important; border: 1.5px solid var(--accent-color); border-radius: 10px; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.92rem; cursor: pointer; transition: all 0.3s ease; }
+.btn-whatsapp-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; background: #fff; color: var(--accent-color) !important; border: 1.5px solid var(--accent-color); border-radius: 10px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.92rem; cursor: pointer; transition: all 0.3s ease; }
 .btn-whatsapp-outline:hover { background: var(--accent-color); color: #fff !important; transform: translateY(-2px); }
 .qd-actions a.btn-whatsapp-outline { text-decoration: none; }
 
@@ -701,3 +701,5 @@ input, select, textarea { font-family: inherit; }
     #productTable .prod-name { font-size: 0.85rem; }
     #productTable .price-cell { font-size: 0.85rem; }
 }
+/* Precos e totais com digitos alinhados */
+.quote-card-total, .top-client-total, .low-seller-price, .top-seller-qty, .dash-table .price-cell, .quote-total-amount { font-variant-numeric: tabular-nums; }

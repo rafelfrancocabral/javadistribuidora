@@ -261,15 +261,15 @@ const labels = [];
                     position: 'top',
                     align: 'start',
                     labels: {
-                        font: { family: 'Inter', weight: '700', size: 13 },
-                        color: '#efe9fb',
-                        padding: 18,
+                        font: { family: 'Inter', weight: '600', size: 13 },
+                        color: '#3a3146',
+                        padding: 20,
                         usePointStyle: true,
                         pointStyle: 'rectRounded',
-                        boxWidth: 13,
-                        boxHeight: 13
+                        boxWidth: 14,
+                        boxHeight: 14
                     },
-                    padding: { top: 8, bottom: 14 }
+                    padding: { top: 6, bottom: 16 }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(11,6,20,0.96)',
@@ -293,7 +293,7 @@ const labels = [];
                     grid: { display: false, drawBorder: false },
                     ticks: {
                         font: { family: 'Inter', size: 12, weight: '600' },
-                        color: '#c4bcd4',
+                        color: '#5b5466',
                         padding: 10
                     },
                     border: { display: false }
@@ -307,7 +307,7 @@ const labels = [];
                     },
                     ticks: {
                         font: { family: 'Inter', size: 12 },
-                        color: '#c4bcd4',
+                        color: '#5b5466',
                         padding: 10,
                         callback: (value) => 'R$ ' + Number(value).toLocaleString('pt-BR')
                     },
@@ -374,7 +374,7 @@ function buildPaymentChart() {
                     maxWidth: 240,
                     labels: {
                         font: { family: 'Inter', size: 13, weight: '600' },
-                        color: '#efe9fb',
+                        color: '#3a3146',
                         padding: 18,
                         usePointStyle: true,
                         pointStyle: 'circle',

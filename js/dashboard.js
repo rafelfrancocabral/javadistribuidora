@@ -259,23 +259,24 @@ const labels = [];
             plugins: {
                 legend: {
                     position: 'top',
-                    align: 'end',
+                    align: 'start',
                     labels: {
-                        font: { family: 'Chakra Petch', weight: '600', size: 12 },
-                        color: '#4b4453',
-                        padding: 20,
+                        font: { family: 'Inter', weight: '700', size: 13 },
+                        color: '#efe9fb',
+                        padding: 18,
                         usePointStyle: true,
                         pointStyle: 'rectRounded',
-                        boxWidth: 10,
-                        boxHeight: 10
-                    }
+                        boxWidth: 13,
+                        boxHeight: 13
+                    },
+                    padding: { top: 8, bottom: 14 }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(11,6,20,0.96)',
-                    titleFont: { family: 'Chakra Petch', size: 13, weight: '700' },
+                    titleFont: { family: 'Inter', size: 13, weight: '700' },
                     titleColor: '#fff',
-                    bodyFont: { family: 'Chakra Petch', size: 12, weight: '500' },
-                    bodyColor: '#e9e4f5',
+                    bodyFont: { family: 'Inter', size: 12.5, weight: '500' },
+                    bodyColor: '#f3f0fc',
                     padding: 14,
                     cornerRadius: 12,
                     displayColors: true,
@@ -291,8 +292,8 @@ const labels = [];
                 x: {
                     grid: { display: false, drawBorder: false },
                     ticks: {
-                        font: { family: 'Chakra Petch', size: 11, weight: '600' },
-                        color: '#6b6477',
+                        font: { family: 'Inter', size: 12, weight: '600' },
+                        color: '#c4bcd4',
                         padding: 10
                     },
                     border: { display: false }
@@ -305,8 +306,8 @@ const labels = [];
                         drawTicks: false
                     },
                     ticks: {
-                        font: { family: 'Chakra Petch', size: 11 },
-                        color: '#6b6477',
+                        font: { family: 'Inter', size: 12 },
+                        color: '#c4bcd4',
                         padding: 10,
                         callback: (value) => 'R$ ' + Number(value).toLocaleString('pt-BR')
                     },
@@ -370,22 +371,25 @@ function buildPaymentChart() {
                 legend: {
                     position: 'right',
                     align: 'center',
+                    maxWidth: 240,
                     labels: {
-                        font: { family: 'Chakra Petch', size: 11, weight: '600' },
-                        color: '#4b4453',
-                        padding: 16,
+                        font: { family: 'Inter', size: 13, weight: '600' },
+                        color: '#efe9fb',
+                        padding: 18,
                         usePointStyle: true,
                         pointStyle: 'circle',
-                        boxWidth: 9,
-                        boxHeight: 9,
+                        boxWidth: 11,
+                        boxHeight: 11,
                         generateLabels: (chart) => {
                             const data = chart.data;
                             if (data.labels.length && data.datasets.length) {
                                 return data.labels.map((label, i) => {
+                                    const raw = String(label || '');
+                                    const shortLabel = raw.length > 24 ? raw.slice(0, 23) + '…' : raw;
                                     const value = data.datasets[0].data[i];
                                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                     return {
-                                        text: `${label} — ${percentage}%`,
+                                        text: `${shortLabel} — ${percentage}%`,
                                         fillStyle: chart.data.datasets[0].backgroundColor[i],
                                         strokeStyle: 'transparent',
                                         lineWidth: 0,
@@ -397,14 +401,15 @@ function buildPaymentChart() {
                             }
                             return [];
                         }
-                    }
+                    },
+                    padding: { top: 8, right: 6, bottom: 8, left: 6 }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(11,6,20,0.96)',
-                    titleFont: { family: 'Chakra Petch', size: 13, weight: '700' },
+                    titleFont: { family: 'Inter', size: 13, weight: '700' },
                     titleColor: '#fff',
-                    bodyFont: { family: 'Chakra Petch', size: 12, weight: '500' },
-                    bodyColor: '#e9e4f5',
+                    bodyFont: { family: 'Inter', size: 12.5, weight: '500' },
+                    bodyColor: '#f3f0fc',
                     padding: 14,
                     cornerRadius: 12,
                     displayColors: true,

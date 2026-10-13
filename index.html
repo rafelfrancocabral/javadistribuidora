@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=11">
+    <link rel="stylesheet" href="css/style.css?v=12">
 </head>
 <body>
 
@@ -98,7 +98,7 @@
                 <div class="howto-num">3</div>
                 <i class="fas fa-calendar-check"></i>
                 <h3>Escolha o prazo</h3>
-                <p>Defina a forma e o prazo de pagamento: à vista, 7, 15, 30, 45, 60 ou 30/60/90.</p>
+                <p>Escolha o prazo de pagamento disponível para o valor do seu pedido.</p>
             </div>
             <div class="howto-card">
                 <div class="howto-num">4</div>
@@ -221,15 +221,8 @@
                     <label for="checkoutPayment"><i class="fas fa-credit-card"></i> Prazo de pagamento *</label>
                     <select id="checkoutPayment" class="checkout-select" required>
                         <option value="">Selecione o prazo...</option>
-                        <option value="A vista">À vista</option>
-                        <option value="7 dias">7 dias</option>
-                        <option value="15 dias">15 dias</option>
-                        <option value="30 dias">30 dias</option>
-                        <option value="30 60">30/60</option>
-                        <option value="30 60 90">30/60/90</option>
-                        <option value="45 dias">45 dias</option>
-                        <option value="60 dias">60 dias</option>
                     </select>
+                    <p class="checkout-note"><i class="fas fa-truck"></i> Frete CIF acima de R$300,00 e Boleto mínimo R$250,00.</p>
                 </div>
                 <div class="checkout-error" id="checkoutError" style="display:none;">
                     <i class="fas fa-exclamation-circle"></i>
@@ -317,6 +310,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-config.js?v=2"></script>
-<script src="js/script.js?v=14"></script>
+<script src="js/script.js?v=15"></script>
 </body>
 </html>

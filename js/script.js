@@ -590,6 +590,27 @@ function descartarPedido(email) {
     try { Promise.resolve(db.rpc('descartar_pedido', { _email: email })).catch(() => {}); } catch (e) {}
 }
 
+// ---------- Prazos de pagamento ----------
+// Regras: abaixo de R$500 -> apenas 1 data; acima de R$500 -> +2 datas;
+// acima de R$750 -> +3 datas; acima de R$1000 -> libera todas (4 datas).
+const PRAZOS_1DATA = ['7', '14', '21', '28', '35', '42'];
+const PRAZOS_2DATAS = ['7/14', '28/35', '28/56'];
+const PRAZOS_3DATAS = ['7/14/21', '21/28/35', '28/35/42', '28/42/56'];
+const PRAZOS_4DATAS = ['28/35/42/77'];
+const prazoLabel = p => p.indexOf('/') === -1 ? p + ' dias' : p;
+
+function renderPaymentOptions(total) {
+    const sel = document.getElementById('checkoutPayment');
+    if (!sel) return;
+    let prazos = PRAZOS_1DATA.slice();
+    if (total > 500) prazos = prazos.concat(PRAZOS_2DATAS);
+    if (total > 750) prazos = prazos.concat(PRAZOS_3DATAS);
+    if (total > 1000) prazos = prazos.concat(PRAZOS_4DATAS);
+    sel.innerHTML = '<option value="">Selecione o prazo...</option>' +
+        prazos.map(p => `<option value="${prazoLabel(p)}">${prazoLabel(p)}</option>`).join('');
+    sel.value = '';
+}
+
 function openCheckout() {
     const cart = getCart();
     if (cart.length === 0) { showToast('Seu carrinho está vazio.', true); return; }
@@ -617,6 +638,7 @@ function openCheckout() {
 
     const total = cart.reduce((s, i) => s + i.qty * i.preco, 0);
     document.getElementById('checkoutSubtotal').textContent = formatPrice(total);
+    renderPaymentOptions(total);
     document.getElementById('checkoutOverlay').classList.add('active');
     document.body.style.overflow = 'hidden';
 }

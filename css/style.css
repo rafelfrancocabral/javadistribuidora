@@ -412,6 +412,13 @@ body.isAuth .price-lock { display: none; }
 }
 .checkout-field input:focus, .checkout-field select:focus, .auth-field input:focus { border-color: var(--neon-purple); box-shadow: 0 0 0 4px rgba(168,85,247,.12); }
 .checkout-hint, .auth-hint { color: var(--text-muted); font-size: 12.5px; }
+.checkout-note {
+    margin: 2px 0 0; padding: 8px 12px; border-radius: 10px;
+    background: rgba(168,85,247,.08); border: 1px solid rgba(168,85,247,.22);
+    color: var(--text-primary); font-size: 12.5px; font-weight: 500; line-height: 1.4;
+    display: flex; align-items: center; gap: 8px;
+}
+.checkout-note i { color: var(--neon-purple); }
 .checkout-error, .auth-error {
     background: rgba(255,71,87,.08); color: var(--danger); border: 1px solid rgba(255,71,87,.25);
     border-radius: 10px; padding: 10px 14px; font-size: 14px;

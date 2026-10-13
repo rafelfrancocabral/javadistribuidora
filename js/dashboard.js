@@ -646,7 +646,43 @@ function renderQuotes() {
     if (search) list = list.filter(q => (q.nome_cliente || '').toLowerCase().includes(search) || (q.email || '').toLowerCase().includes(search) || (q.telefone || '').toLowerCase().includes(search) || (q.codigo_cliente || '').toLowerCase().includes(search));
     const el = document.getElementById('quoteList');
     if (!list.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum orçamento encontrado</p></div>'; return; }
-    el.innerHTML = list.map(q => `
+    el.innerHTML = groupsHtml(list);
+}
+
+function groupsHtml(list) {
+    const groups = [];
+    const byKey = {};
+    list.forEach(q => {
+        const d = new Date(q.created_at);
+        const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        if (!byKey[k]) { byKey[k] = { ts: q.created_at, items: [] }; groups.push(byKey[k]); }
+        byKey[k].items.push(q);
+    });
+    const now = new Date();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return groups.map(g => {
+        const d = new Date(g.ts);
+        const startD = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const diff = Math.round((startToday - startD) / 86400000);
+        const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        let name = d.toLocaleDateString('pt-BR', { weekday: 'long' });
+        name = name.charAt(0).toUpperCase() + name.slice(1);
+        const isToday = diff === 0;
+        if (isToday) name = 'Hoje';
+        else if (diff === 1) name = 'Ontem';
+        return `<div class="quote-day-group${isToday ? ' today' : ''}">
+            <div class="quote-day-head">
+                <span class="quote-day-name">${name}</span>
+                <span class="quote-day-date">${dateStr}</span>
+                <span class="quote-day-count">${g.items.length}</span>
+            </div>
+            <div class="quote-day-body">${g.items.map(quoteCardHtml).join('')}</div>
+        </div>`;
+    }).join('');
+}
+
+function quoteCardHtml(q) {
+    return `
         <div class="quote-card">
             <div class="quote-card-row">
                 <div class="quote-main-info">
@@ -655,7 +691,7 @@ function renderQuotes() {
                     <span class="quote-meta-icons">
                         ${q.email ? `<span title="Email"><i class="fas fa-envelope"></i>${escapeHtml(q.email)}</span>` : ''}
                         ${q.telefone ? `<span title="Telefone"><i class="fas fa-phone"></i>${escapeHtml(q.telefone)}</span>` : ''}
-                        <span title="Data"><i class="fas fa-clock"></i>${formatDate(q.created_at)}</span>
+                        <span class="quote-meta-date" title="Data"><i class="fas fa-clock"></i>${formatDate(q.created_at)}</span>
                         ${q.pagamento ? `<span title="Prazo"><i class="fas fa-calendar-alt"></i>${escapeHtml(q.pagamento)}</span>` : ''}
                     </span>
                 </div>
@@ -672,7 +708,7 @@ function renderQuotes() {
                     <button class="icon-btn danger" onclick="deleteQuote('${q.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
-        </div>`).join('');
+        </div>`;
 }
 
 function openQuoteDetail(id) {

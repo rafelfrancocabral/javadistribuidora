@@ -220,6 +220,18 @@ input, select, textarea { font-family: inherit; }
 
 /* ============ QUOTE LIST ============ */
 .quote-list { display: flex; flex-direction: column; gap: 10px; }
+.quote-day-group { display: flex; flex-direction: column; gap: 10px; }
+.quote-day-head { display: flex; align-items: center; gap: 10px; padding: 4px 4px 2px; }
+.quote-day-name { font-weight: 800; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); }
+.quote-day-date { font-size: 0.75rem; color: var(--text-muted); }
+.quote-day-count { font-size: 0.7rem; font-weight: 700; color: var(--accent); background: rgba(88,28,135,.08); border-radius: 20px; padding: 1px 10px; }
+.quote-day-body { display: flex; flex-direction: column; gap: 10px; }
+.quote-day-group.today .quote-day-head { background: linear-gradient(90deg, rgba(88,28,135,.10), rgba(88,28,135,0)); border-radius: 8px; padding: 6px 10px; }
+.quote-day-group.today .quote-day-name { color: var(--accent); }
+.quote-day-group.today .quote-day-date { color: var(--accent); }
+.quote-day-group.today .quote-card { border-color: rgba(88,28,135,.35); box-shadow: 0 0 0 1px rgba(88,28,135,.07); }
+.quote-meta-date { color: var(--accent) !important; font-weight: 600; }
+.quote-meta-date i { color: var(--accent) !important; }
 .quote-card {
     background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 12px 16px; display: flex; align-items: center; gap: 16px; transition: border-color 0.2s;

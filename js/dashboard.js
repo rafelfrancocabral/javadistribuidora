@@ -41,6 +41,33 @@ const STATUS_NEXT = { recebido: 'analise', analise: 'aprovado', aprovado: 'concl
 const PRODUCT_SELECT = 'id, codigo, nome, marca, categoria, subcategoria, preco, preco_custo, unidade, descricao, palavraschave, imagens, video, visivel, estoque, isdestaque, ispromocao, precopromocional, somente_orcamento, linha, icmsst, embalagem, created_at, updated_at';
 const PDF_HEADER_STYLE = 1;
 
+// Chart.js v4 nao tem opcao nativa de espaco entre a legenda (topo) e a area
+// do grafico. Este plugin aumenta a altura da legenda para afasta-la do eixo.
+const legendTopSpacer = {
+    id: 'legendTopSpacer',
+    beforeInit(chart) {
+        if (!chart.legend) return;
+        const originalFit = chart.legend.fit;
+        chart.legend.fit = function fit() {
+            originalFit.bind(chart.legend)();
+            this.height += 20;
+        };
+    }
+};
+
+// Espaco lateral entre a legenda (direita) e a area do grafico.
+const legendRightSpacer = {
+    id: 'legendRightSpacer',
+    beforeInit(chart) {
+        if (!chart.legend) return;
+        const originalFit = chart.legend.fit;
+        chart.legend.fit = function fit() {
+            originalFit.bind(chart.legend)();
+            this.width += 16;
+        };
+    }
+};
+
 // ---------- Helpers ----------
 function formatPrice(v) { return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function parsePrice(str) { if (str == null || str === '') return 0; let s = String(str).replace(/\./g, '').replace(/,/g, '.').replace(/[^\d.]/g, ''); const n = parseFloat(s); return isNaN(n) ? 0 : n; }
@@ -110,22 +137,22 @@ const centerDoughnutText = {
 };
 Chart.register(centerDoughnutText);
 
-function getQuotesInPeriod(period, group = currentChartGroup) {
+function periodSince(period) {
     const now = new Date();
-    let since;
-    if (period === 'today') { since = new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
-    else if (period === 'month') { since = new Date(now.getFullYear(), now.getMonth(), 1); }
-    else { const d = parseInt(period) || 7; since = new Date(now.getTime() - d * 86400000); }
+    if (period === 'today') return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
+    const d = parseInt(period) || 7;
+    return new Date(now.getTime() - d * 86400000);
+}
+
+function getQuotesInPeriod(period, group = currentChartGroup) {
+    const since = periodSince(period);
     return quotes.filter(q => new Date(q.created_at) >= since && q.linha === group);
 }
 
 // Vendas concluidas: filtra pela DATA DA VENDA (concluido_em), nao pela criacao.
 function getSalesInPeriod(period, group = currentChartGroup) {
-    const now = new Date();
-    let since;
-    if (period === 'today') { since = new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
-    else if (period === 'month') { since = new Date(now.getFullYear(), now.getMonth(), 1); }
-    else { const d = parseInt(period) || 7; since = new Date(now.getTime() - d * 86400000); }
+    const since = periodSince(period);
     return quotes.filter(q => q.status === 'concluido' && q.linha === group && saleDate(q) >= since);
 }
 
@@ -213,6 +240,7 @@ const labels = [];
 
     chartQuotesInstance = new Chart(el, {
         type: 'line',
+        plugins: [legendTopSpacer],
         data: { 
             labels, 
             datasets: [
@@ -255,7 +283,7 @@ const labels = [];
             devicePixelRatio: 2,
             interaction: { intersect: false, mode: 'index' },
             animation: { duration: 900, easing: 'easeOutQuart' },
-            layout: { padding: { top: 6, right: 16, bottom: 8, left: 8 } },
+            layout: { padding: { top: 10, right: 16, bottom: 8, left: 8 } },
             plugins: {
                 legend: {
                     position: 'top',
@@ -268,8 +296,7 @@ const labels = [];
                         pointStyle: 'rectRounded',
                         boxWidth: 14,
                         boxHeight: 14
-                    },
-                    padding: { top: 4, bottom: 30 }
+                    }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(11,6,20,0.96)',
@@ -343,6 +370,7 @@ function buildPaymentChart() {
 
     chartPaymentsInstance = new Chart(el, {
         type: 'doughnut',
+        plugins: [legendRightSpacer],
         data: { 
             labels, 
             datasets: [{ 
@@ -577,9 +605,13 @@ function updateChartTitles() {
 
 async function renderOverview() {
     updateChartTitles();
-    const groupQuotes = getQuotesInPeriod(currentChartPeriod);
     const salesQ = getSalesInPeriod(currentChartPeriod);
-    document.getElementById('metricQuotes').textContent = groupQuotes.length;
+    let acessos = 0;
+    try {
+        const r = await adminCall('admin_contar_acessos', { _desde: periodSince(currentChartPeriod).toISOString() });
+        if (typeof r === 'number') acessos = r;
+    } catch (e) { acessos = 0; }
+    document.getElementById('metricVisits').textContent = acessos;
     document.getElementById('metricSales').textContent = salesQ.length;
     const totalSold = salesQ.reduce((s, q) => s + (Number(q.total) || 0), 0);
     document.getElementById('metricSold').textContent = formatPrice(totalSold);

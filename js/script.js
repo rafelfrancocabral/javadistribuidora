@@ -771,11 +771,28 @@ document.addEventListener('DOMContentLoaded', function () {
     updateCartBadge();
     renderCartSidebar();
     setupUI();
+    recordAccess();
     Promise.all([loadProducts(), loadCategories()]).then(() => {
         renderCategoryPills();
         renderCatalog();
     });
 });
+
+// Registra um acesso ao site (contabilizado no painel, por periodo).
+function recordAccess() {
+    try {
+        let vid = localStorage.getItem('jv_visitante');
+        if (!vid) {
+            vid = 'v_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+            localStorage.setItem('jv_visitante', vid);
+        }
+        db.rpc('registrar_acesso', {
+            _pagina: location.pathname || '/',
+            _origem: document.referrer || '',
+            _visitante: vid
+        }).catch(() => {});
+    } catch (e) {}
+}
 
 function setupUI() {
     const toggle = document.getElementById('navToggle');

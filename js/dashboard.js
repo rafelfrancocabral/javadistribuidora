@@ -650,35 +650,28 @@ function renderQuotes() {
 }
 
 function groupsHtml(list) {
-    const groups = [];
-    const byKey = {};
-    list.forEach(q => {
-        const d = new Date(q.created_at);
-        const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        if (!byKey[k]) { byKey[k] = { ts: q.created_at, items: [] }; groups.push(byKey[k]); }
-        byKey[k].items.push(q);
-    });
     const now = new Date();
     const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return groups.map(g => {
-        const d = new Date(g.ts);
+    const today = [], yesterday = [], older = [];
+    list.forEach(q => {
+        const d = new Date(q.created_at);
         const startD = new Date(d.getFullYear(), d.getMonth(), d.getDate());
         const diff = Math.round((startToday - startD) / 86400000);
-        const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        let name = d.toLocaleDateString('pt-BR', { weekday: 'long' });
-        name = name.charAt(0).toUpperCase() + name.slice(1);
-        const isToday = diff === 0;
-        if (isToday) name = 'Hoje';
-        else if (diff === 1) name = 'Ontem';
-        return `<div class="quote-day-group${isToday ? ' today' : ''}">
-            <div class="quote-day-head">
-                <span class="quote-day-name">${name}</span>
-                <span class="quote-day-date">${dateStr}</span>
-                <span class="quote-day-count">${g.items.length}</span>
-            </div>
-            <div class="quote-day-body">${g.items.map(quoteCardHtml).join('')}</div>
-        </div>`;
-    }).join('');
+        if (diff <= 0) today.push(q);
+        else if (diff === 1) yesterday.push(q);
+        else older.push(q);
+    });
+    const dateOf = ts => new Date(ts).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const head = (name, ts, count) => `<div class="quote-day-head">
+        <span class="quote-day-name">${name}</span>
+        <span class="quote-day-date">${dateOf(ts)}</span>
+        <span class="quote-day-count">${count}</span>
+    </div>`;
+    let html = '';
+    if (today.length) html += `<div class="quote-day-group today">${head('Hoje', today[0].created_at, today.length)}<div class="quote-day-body">${today.map(quoteCardHtml).join('')}</div></div>`;
+    if (yesterday.length) html += `<div class="quote-day-group">${head('Ontem', yesterday[0].created_at, yesterday.length)}<div class="quote-day-body">${yesterday.map(quoteCardHtml).join('')}</div></div>`;
+    if (older.length) html += `<div class="quote-day-group"><div class="quote-day-body">${older.map(quoteCardHtml).join('')}</div></div>`;
+    return html;
 }
 
 function quoteCardHtml(q) {

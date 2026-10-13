@@ -670,7 +670,10 @@ function groupsHtml(list) {
     let html = '';
     if (today.length) html += `<div class="quote-day-group today">${head('Hoje', today[0].created_at, today.length)}<div class="quote-day-body">${today.map(quoteCardHtml).join('')}</div></div>`;
     if (yesterday.length) html += `<div class="quote-day-group">${head('Ontem', yesterday[0].created_at, yesterday.length)}<div class="quote-day-body">${yesterday.map(quoteCardHtml).join('')}</div></div>`;
-    if (older.length) html += `<div class="quote-day-group"><div class="quote-day-body">${older.map(quoteCardHtml).join('')}</div></div>`;
+    if (older.length) html += `<div class="quote-day-group"><div class="quote-day-head">
+        <span class="quote-day-name">Outros dias</span>
+        <span class="quote-day-count">${older.length}</span>
+    </div><div class="quote-day-body">${older.map(quoteCardHtml).join('')}</div></div>`;
     return html;
 }
 

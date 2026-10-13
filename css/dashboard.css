@@ -226,10 +226,11 @@ input, select, textarea { font-family: inherit; }
 .quote-day-date { font-size: 0.75rem; color: var(--text-muted); }
 .quote-day-count { font-size: 0.7rem; font-weight: 700; color: var(--accent); background: rgba(88,28,135,.08); border-radius: 20px; padding: 1px 10px; }
 .quote-day-body { display: flex; flex-direction: column; gap: 10px; }
-.quote-day-group.today .quote-day-head { background: linear-gradient(90deg, rgba(88,28,135,.10), rgba(88,28,135,0)); border-radius: 8px; padding: 6px 10px; }
-.quote-day-group.today .quote-day-name { color: var(--accent); }
-.quote-day-group.today .quote-day-date { color: var(--accent); }
-.quote-day-group.today .quote-card { border-color: rgba(88,28,135,.35); box-shadow: 0 0 0 1px rgba(88,28,135,.07); }
+.quote-day-group.today .quote-day-head { background: linear-gradient(90deg, rgba(250,204,21,.32), rgba(250,204,21,0)); border-radius: 8px; padding: 6px 10px; border-left: 4px solid #eab308; }
+.quote-day-group.today .quote-day-name { color: #a16207; }
+.quote-day-group.today .quote-day-date { color: #a16207; }
+.quote-day-group.today .quote-day-count { color: #a16207; background: rgba(250,204,21,.28); }
+.quote-day-group.today .quote-card { border-color: rgba(234,179,8,.55); background: rgba(255,253,240,.7); box-shadow: 0 0 0 1px rgba(234,179,8,.12); }
 .quote-meta-date { color: var(--accent) !important; font-weight: 600; }
 .quote-meta-date i { color: var(--accent) !important; }
 .quote-card {

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=18">
+    <link rel="stylesheet" href="css/dashboard.css?v=19">
 </head>
 <body>
     <script>
@@ -122,8 +122,9 @@
                     <div class="dash-toolbar-left">
                         <button class="btn btn-primary" id="btnNewQuote"><i class="fas fa-plus"></i> Novo Orçamento</button>
                         <select id="statusFilter" class="dash-select">
-                            <option value="all">Todos os status</option>
-                            <option value="recebido">Recebido</option>
+                <option value="all">Todos os status</option>
+                <option value="em_andamento">Em andamento</option>
+                <option value="recebido">Recebido</option>
                             <option value="analise">Em análise</option>
                             <option value="aprovado">Aprovado</option>
                             <option value="concluido">Concluído</option>
@@ -536,6 +537,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=2"></script>
-    <script src="js/dashboard.js?v=55"></script>
+    <script src="js/dashboard.js?v=56"></script>
 </body>
 </html>

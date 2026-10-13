@@ -36,8 +36,8 @@ let goals = [];
 let chartQuotesInstance = null;
 let chartPaymentsInstance = null;
 
-const STATUS_FLOW = ['recebido', 'analise', 'aprovado', 'concluido', 'cancelado'];
-const STATUS_NEXT = { recebido: 'analise', analise: 'aprovado', aprovado: 'concluido', concluido: 'recebido', entregue: 'concluido' };
+const STATUS_FLOW = ['em_andamento', 'recebido', 'analise', 'aprovado', 'concluido', 'cancelado'];
+const STATUS_NEXT = { em_andamento: 'recebido', recebido: 'analise', analise: 'aprovado', aprovado: 'concluido', concluido: 'recebido', entregue: 'concluido' };
 const PRODUCT_SELECT = 'id, codigo, nome, marca, categoria, subcategoria, preco, preco_custo, unidade, descricao, palavraschave, imagens, video, visivel, estoque, isdestaque, ispromocao, precopromocional, somente_orcamento, linha, icmsst, embalagem, created_at, updated_at';
 const PDF_HEADER_STYLE = 1;
 
@@ -629,7 +629,7 @@ async function renderOverview() {
 }
 
 // ---------- Quotes ----------
-function statusLabel(s) { const map = { recebido: 'Recebido', analise: 'Em análise', aprovado: 'Aprovado', entregue: 'Entregue', concluido: 'Concluído', cancelado: 'Cancelado' }; return map[s] || s; }
+function statusLabel(s) { const map = { em_andamento: 'Em andamento', recebido: 'Recebido', analise: 'Em análise', aprovado: 'Aprovado', entregue: 'Entregue', concluido: 'Concluído', cancelado: 'Cancelado' }; return map[s] || s; }
 
 async function loadQuotes() {
     try { const data = await adminCall('admin_listar_orcamentos', {}); quotes = (Array.isArray(data) ? data : []).map(q => { q.linha = q.linha || 'java'; return q; }); } catch (e) { console.error('Erro ao carregar orçamentos:', e); quotes = []; }

@@ -334,6 +334,7 @@ function saveCart(cart) {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
     updateCartBadge();
     renderCartSidebar();
+    schedulePedidoSync();
     // Trigger pulse animation on badge
     const badge = document.getElementById('cartBadge');
     if (badge && badge.style.display !== 'none') {
@@ -545,6 +546,50 @@ function generatePickupCode() {
     return String(Math.floor(1000 + Math.random() * 9000));
 }
 
+// ---------- Pedido em andamento (visibilidade no painel) ----------
+let _pedidoSyncTimer = null;
+function schedulePedidoSync() {
+    if (!isClientLoggedIn()) return;
+    clearTimeout(_pedidoSyncTimer);
+    _pedidoSyncTimer = setTimeout(syncPedido, 900);
+}
+async function syncPedido() {
+    if (!isClientLoggedIn()) return;
+    const email = getClientEmail();
+    if (!email) return;
+    const cart = getCart();
+    if (cart.length === 0) { descartarPedido(email); return; }
+    let total = 0;
+    const itens = cart.map(item => {
+        const subtotal = item.preco * item.qty;
+        total += subtotal;
+        return {
+            codigo: item.codigo || '',
+            nome: item.nome,
+            categoria: item.categoria || '',
+            quantidade: item.qty,
+            preco: item.preco,
+            subtotal: subtotal
+        };
+    });
+    try {
+        await db.rpc('salvar_pedido', { _payload: {
+            nome_cliente: email,
+            email: email,
+            telefone: '',
+            codigo_cliente: generateClientCode(email),
+            itens: itens,
+            total: total,
+            linha: 'java'
+        }, _finalizar: false });
+    } catch (e) {
+        console.warn('Falha ao registrar pedido em andamento:', e);
+    }
+}
+function descartarPedido(email) {
+    try { Promise.resolve(db.rpc('descartar_pedido', { _email: email })).catch(() => {}); } catch (e) {}
+}
+
 function openCheckout() {
     const cart = getCart();
     if (cart.length === 0) { showToast('Seu carrinho está vazio.', true); return; }
@@ -629,8 +674,10 @@ async function submitQuote(e) {
     const code = generateClientCode(email);
     const pickupCode = generatePickupCode();
 
+    clearTimeout(_pedidoSyncTimer);
+
     try {
-        await db.rpc('criar_orcamento', { _payload: {
+        await db.rpc('salvar_pedido', { _payload: {
             nome_cliente: email,
             email: email,
             telefone: '',
@@ -639,10 +686,9 @@ async function submitQuote(e) {
             itens: itens,
             total: total,
             pagamento: pagamento,
-            status: 'recebido',
             status_entrega: 'pendente',
             linha: 'java'
-        } });
+        }, _finalizar: true });
     } catch (err) {
         console.error('Erro ao salvar orçamento:', err);
         if (errBox) { errText.textContent = 'Não foi possível registrar o orçamento. Tente novamente em instantes.'; errBox.style.display = ''; }

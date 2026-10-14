@@ -914,12 +914,12 @@ async function processProductImage(file) {
         try { bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) { bitmap = null; }
     }
     if (!bitmap) {
-        const main = await fileToWebP(file, 1200);
+        const main = await fileToWebP(file, 1000);
         const thumb = await fileToWebP(file, 400);
         const hash = await hashFileBuffer(await main.arrayBuffer());
         return { main, thumb, hash };
     }
-    const main = await bitmapToWebP(bitmap, 1200, 0.8);
+    const main = await bitmapToWebP(bitmap, 1000, 0.75);
     const thumb = await bitmapToWebP(bitmap, 400, 0.8);
     if (bitmap.close) bitmap.close();
     const hash = await hashFileBuffer(await main.arrayBuffer());

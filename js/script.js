@@ -574,7 +574,7 @@ async function syncPedido() {
     });
     try {
         await db.rpc('salvar_pedido', { _payload: {
-            nome_cliente: email,
+            nome_cliente: (_client && _client.razao) || email,
             email: email,
             telefone: '',
             codigo_cliente: generateClientCode(email),
@@ -700,7 +700,7 @@ async function submitQuote(e) {
 
     try {
         await db.rpc('salvar_pedido', { _payload: {
-            nome_cliente: email,
+            nome_cliente: (_client && _client.razao) || email,
             email: email,
             telefone: '',
             codigo_cliente: code,

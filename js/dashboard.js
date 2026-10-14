@@ -458,10 +458,14 @@ function buildPaymentChart() {
 }
 
 // ---------- Helpers ----------
+function findQuoteClient(q) {
+    const email = String(q.email || '').toLowerCase();
+    const nome = String(q.nome_cliente || '').toLowerCase();
+    return clients.find(c => (c.email && c.email.toLowerCase() === email) || (c.razao_social && c.razao_social.toLowerCase() === nome)) || null;
+}
+
 function getQuoteClientName(q) {
-    const email = (q.email || '').toLowerCase();
-    const nome = (q.nome_cliente || '').toLowerCase();
-    const client = clients.find(c => (c.email && c.email.toLowerCase() === email) || (c.razao_social && c.razao_social.toLowerCase() === nome));
+    const client = findQuoteClient(q);
     return client?.razao_social || q.nome_cliente || q.email || 'Desconhecido';
 }
 
@@ -751,7 +755,7 @@ async function advanceQuote(id) { const q = quotes.find(x => String(x.id) === St
 
 async function deleteQuote(id) { if (!confirm('Excluir este orçamento?')) return; const qq = quotes.find(x => String(x.id) === String(id)); try { await adminCall('admin_excluir_orcamento', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } quotes = quotes.filter(x => String(x.id) !== String(id)); trackAction('Orçamento excluído: ' + (qq ? (qq.codigo_cliente || qq.nome_cliente || qq.id) : id)); updatePendingBadge(); renderQuotes(); toast('Orçamento excluído'); }
 
-function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA*', '']; if (q.codigo_cliente) lines.push('Cliente: ' + q.nome_cliente + ' (#' + q.codigo_cliente + ')'); else lines.push('Cliente: ' + q.nome_cliente); if (q.codigo_retirada) lines.push('Cód. Retirada: ' + q.codigo_retirada); lines.push('Data: ' + formatDate(q.created_at)); lines.push(''); if (Array.isArray(q.itens) && q.itens.length) { q.itens.forEach(it => { lines.push('• ' + it.nome + ' (' + (it.codigo||'') + ')'); lines.push('  ' + it.quantidade + 'x ' + formatPrice(it.preco) + ' = ' + formatPrice(it.subtotal || (it.preco * it.quantidade))); }); } else { lines.push(String(q.itens || '')); } lines.push(''); lines.push('Total: ' + formatPrice(q.total)); if (q.pagamento) lines.push('Prazo de pagamento: ' + q.pagamento); lines.push(''); lines.push('WhatsApp: (12) 99778-0047'); return lines.join('\n'); }
+function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA*', '']; const quoteName = getQuoteClientName(q); if (q.codigo_cliente) lines.push('Cliente: ' + quoteName + ' (#' + q.codigo_cliente + ')'); else lines.push('Cliente: ' + quoteName); if (q.codigo_retirada) lines.push('Cód. Retirada: ' + q.codigo_retirada); lines.push('Data: ' + formatDate(q.created_at)); lines.push(''); if (Array.isArray(q.itens) && q.itens.length) { q.itens.forEach(it => { lines.push('• ' + it.nome + ' (' + (it.codigo||'') + ')'); lines.push('  ' + it.quantidade + 'x ' + formatPrice(it.preco) + ' = ' + formatPrice(it.subtotal || (it.preco * it.quantidade))); }); } else { lines.push(String(q.itens || '')); } lines.push(''); lines.push('Total: ' + formatPrice(q.total)); if (q.pagamento) lines.push('Prazo de pagamento: ' + q.pagamento); lines.push(''); lines.push('WhatsApp: (12) 99778-0047'); return lines.join('\n'); }
 
 function buildPaymentLines(pagamento, baseDate, total) { if (!pagamento) return []; const p = String(pagamento).trim(); const pLower = p.toLowerCase(); const nums = p.match(/\d+/g) || []; let prazos = []; if (/^\d+x$/i.test(p)) { const n = parseInt(nums[0]); if (n > 1) for (let i = 1; i <= n; i++) prazos.push(30 * i); } else if (/boleto/.test(pLower)) { prazos.push(nums.length ? parseInt(nums[0]) : 30); } else if (nums.length) { prazos = nums.map(n => parseInt(n)).filter(n => n > 0); } if (!prazos.length) return []; const base = baseDate ? new Date(baseDate) : new Date(); const qtd = prazos.length; const valorParcela = Number(total) > 0 ? Number(total) / qtd : 0; return prazos.map((dias, i) => { const dt = new Date(base.getTime() + dias * 86400000); const dia = dt.toLocaleDateString('pt-BR'); const parcelaText = prazos.length === 1 ? 'Vencimento em ' + dia + ' (' + dias + ' dias)' : (i + 1) + 'ª parcela' + (dias ? ' (' + dias + ' dias)' : '') + ' — ' + dia; return valorParcela > 0 ? parcelaText + ' — ' + formatPrice(valorParcela) : parcelaText; }); }
 
@@ -774,9 +778,9 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
 
     doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('DADOS DO CLIENTE', margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
     doc.setTextColor(30, 30, 40); doc.setFontSize(10);
-    let cnpjCliente = ''; const cCliente = clients.find(c => c && c.razao_social && c.razao_social.toLowerCase() === String(q.nome_cliente || '').toLowerCase()); if (cCliente && cCliente.cnpj) cnpjCliente = formatCnpj(cCliente.cnpj);
+    let cnpjCliente = ''; const cCliente = findQuoteClient(q); if (cCliente && cCliente.cnpj) cnpjCliente = formatCnpj(cCliente.cnpj);
     const colHalf = pageW / 2; let colIdx = 0;
-    [['Razão Social', q.nome_cliente], ['CNPJ', cnpjCliente], ['Email', q.email], ['Telefone', q.telefone]].filter(r => r[1]).forEach(row => { const cx = colIdx % 2 === 0 ? margin : colHalf; const cy = y + Math.floor(colIdx / 2) * 12; doc.setFont('helvetica', 'bold'); doc.setTextColor(light); doc.setFontSize(8); doc.text(row[0].toUpperCase(), cx, cy); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(10); let val = String(row[1]); if (doc.getTextWidth(val) > colHalf - margin - 4) val = doc.splitTextToSize(val, colHalf - margin - 4)[0]; doc.text(val, cx, cy + 6); colIdx++; });
+    [['Razão Social', getQuoteClientName(q)], ['CNPJ', cnpjCliente], ['Email', q.email], ['Telefone', q.telefone]].filter(r => r[1]).forEach(row => { const cx = colIdx % 2 === 0 ? margin : colHalf; const cy = y + Math.floor(colIdx / 2) * 12; doc.setFont('helvetica', 'bold'); doc.setTextColor(light); doc.setFontSize(8); doc.text(row[0].toUpperCase(), cx, cy); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(10); let val = String(row[1]); if (doc.getTextWidth(val) > colHalf - margin - 4) val = doc.splitTextToSize(val, colHalf - margin - 4)[0]; doc.text(val, cx, cy + 6); colIdx++; });
     y += Math.ceil(colIdx / 2) * 12 + 4;
 
     doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('ITENS DO ORÇAMENTO', margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
@@ -816,7 +820,7 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     y += tBoxH + 6;
     if (q.pagamento) { const payLines = buildPaymentLines(q.pagamento, q.created_at, q.total); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
-    const fileName = 'orcamento-' + (q.codigo_cliente || q.id) + '-' + (q.nome_cliente ? q.nome_cliente.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
+    const fileName = 'orcamento-' + (q.codigo_cliente || q.id) + '-' + (getQuoteClientName(q) ? getQuoteClientName(q).replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
     const url = URL.createObjectURL(doc.output('blob'));
     const win = window.open(url, '_blank');
     if (win) { setTimeout(() => URL.revokeObjectURL(url), 60000); }

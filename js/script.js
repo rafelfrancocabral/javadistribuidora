@@ -1064,7 +1064,7 @@ function recordAccess() {
             _pagina: location.pathname || '/',
             _origem: document.referrer || '',
             _visitante: vid
-        }).catch(() => {});
+        }).then(function () {}, function () {});
     } catch (e) {}
 }
 

@@ -833,15 +833,7 @@ async function submitClientPwdChange(e) {
 }
 
 // ---------- Meus pedidos (area do lojista) ----------
-const ORDER_STATUS_LABEL = {
-    em_andamento: 'Em andamento',
-    recebido: 'Recebido',
-    analise: 'Em análise',
-    aprovado: 'Aprovado',
-    concluido: 'Concluído',
-    entregue: 'Entregue',
-    cancelado: 'Cancelado'
-};
+let _clientOrders = [];
 
 async function openClientOrders() {
     if (!isClientLoggedIn()) { openClientLoginModal(); return; }
@@ -864,12 +856,12 @@ async function openClientOrders() {
 function renderClientOrders(orders) {
     const list = document.getElementById('ordersList');
     if (!list) return;
-    if (!orders.length) {
+    _clientOrders = Array.isArray(orders) ? orders : [];
+    if (!_clientOrders.length) {
         list.innerHTML = '<div class="orders-empty"><i class="fas fa-receipt"></i><p>Você ainda não fez nenhum pedido.</p></div>';
         return;
     }
-    list.innerHTML = orders.map(o => {
-        const st = o.status || 'recebido';
+    list.innerHTML = _clientOrders.map(o => {
         const dt = new Date(o.created_at);
         const date = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const time = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -877,7 +869,7 @@ function renderClientOrders(orders) {
         return `<div class="order-card">
             <div class="order-card-head">
                 <div><span class="order-code">#${escapeHtml(o.codigo_cliente || o.id)}</span><span class="order-date">${date} ${time}</span></div>
-                <span class="order-status st-${escapeHtml(st)}">${escapeHtml(ORDER_STATUS_LABEL[st] || st)}</span>
+                <button type="button" class="order-pdf-btn" onclick="downloadOrderPDF('${o.id}')" title="Baixar este pedido em PDF"><i class="fas fa-file-pdf"></i> PDF</button>
             </div>
             ${items.length ? `<div class="order-items">${items.map(it => `<div class="order-item"><span>${escapeHtml(it.nome || '')} ${it.codigo ? `<small>(${escapeHtml(it.codigo)})</small>` : ''}</span><span>${it.quantidade || 0}x ${formatPrice(it.preco || 0)}</span></div>`).join('')}</div>` : ''}
             <div class="order-card-foot">
@@ -892,6 +884,144 @@ function closeClientOrders() {
     const ov = document.getElementById('ordersOverlay');
     if (ov) ov.classList.remove('active');
     document.body.style.overflow = '';
+}
+
+// ---------- PDF do pedido (area do lojista) ----------
+let _jspdfLoading = null;
+function ensureJsPDF() {
+    if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+    if (_jspdfLoading) return _jspdfLoading;
+    _jspdfLoading = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'js/jspdf.umd.min.js';
+        s.onload = () => {
+            if (typeof COMPANY_LOGO_DATA === 'undefined') {
+                const l = document.createElement('script');
+                l.src = 'js/logo-data.js';
+                l.onload = () => resolve();
+                l.onerror = () => resolve();
+                document.head.appendChild(l);
+            } else { resolve(); }
+        };
+        s.onerror = () => { _jspdfLoading = null; reject(new Error('Falha ao carregar a biblioteca de PDF.')); };
+        document.head.appendChild(s);
+    });
+    return _jspdfLoading;
+}
+
+function formatCnpjSite(v) {
+    const d = String(v || '').replace(/\D/g, '');
+    if (d.length !== 14) return String(v || '');
+    return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+}
+
+function buildPaymentLinesSite(pagamento, baseDate, total) {
+    if (!pagamento) return [];
+    const p = String(pagamento).trim();
+    const pLower = p.toLowerCase();
+    const nums = p.match(/\d+/g) || [];
+    let prazos = [];
+    if (/^\d+x$/i.test(p)) { const n = parseInt(nums[0]); if (n > 1) for (let i = 1; i <= n; i++) prazos.push(30 * i); }
+    else if (/boleto/.test(pLower)) { prazos.push(nums.length ? parseInt(nums[0]) : 30); }
+    else if (nums.length) { prazos = nums.map(n => parseInt(n)).filter(n => n > 0); }
+    if (!prazos.length) return [];
+    const base = baseDate ? new Date(baseDate) : new Date();
+    const qtd = prazos.length;
+    const valorParcela = Number(total) > 0 ? Number(total) / qtd : 0;
+    return prazos.map((dias, i) => {
+        const dt = new Date(base.getTime() + dias * 86400000);
+        const dia = dt.toLocaleDateString('pt-BR');
+        const parcelaText = prazos.length === 1 ? 'Vencimento em ' + dia + ' (' + dias + ' dias)' : (i + 1) + 'ª parcela' + (dias ? ' (' + dias + ' dias)' : '') + ' — ' + dia;
+        return valorParcela > 0 ? parcelaText + ' — ' + formatPrice(valorParcela) : parcelaText;
+    });
+}
+
+async function downloadOrderPDF(id) {
+    const order = _clientOrders.find(o => String(o.id) === String(id));
+    if (!order) return;
+    try { await ensureJsPDF(); }
+    catch (e) { showToast('Não foi possível gerar o PDF. Verifique a conexão.', true); return; }
+    if (!window.jspdf || !window.jspdf.jsPDF) { showToast('Biblioteca de PDF não carregada.', true); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = 210, margin = 16, width = pageW - margin * 2, subX = pageW - margin;
+    const brand = '#581c87', light = '#5b5466';
+    const dt = new Date(order.created_at);
+    const emitido = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    let y = margin;
+
+    const Hd = 40;
+    doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, Hd, 'F');
+    doc.setFillColor(255, 47, 230); doc.rect(0, Hd, pageW, 2.2, 'F');
+    if (typeof COMPANY_LOGO_DATA === 'string' && COMPANY_LOGO_DATA) { try { doc.addImage(COMPANY_LOGO_DATA, 'PNG', margin, 8, 34, 24); } catch (e) {} }
+    doc.setTextColor(96, 96, 106); doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.text('EMITIDO EM ' + emitido, pageW - margin, 12, { align: 'right' });
+    doc.setTextColor(20, 20, 26); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text('ORÇAMENTO N° ' + String(order.codigo_cliente || order.id || ''), pageW / 2, 20, { align: 'center' });
+    doc.setDrawColor(226, 120, 210); doc.setLineWidth(0.4); doc.line(pageW / 2 - 42, 24.5, pageW / 2 + 42, 24.5);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(96, 96, 106); doc.text('Java Distribuidora', pageW / 2, 30, { align: 'center' }); doc.setLineWidth(0.2);
+    y = Hd + 12;
+
+    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('DADOS DO CLIENTE', margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
+    doc.setTextColor(30, 30, 40); doc.setFontSize(10);
+    const razao = order.razao_social || (_client && _client.razao) || '';
+    const cnpj = order.cnpj ? formatCnpjSite(order.cnpj) : '';
+    const tel = order.telefone || '';
+    const email = order.email || (_client && _client.email) || '';
+    if (order.codigo_retirada) { doc.setFont('helvetica', 'bold'); doc.setTextColor(light); doc.setFontSize(8); doc.text('CÓD. RETIRADA', margin, y); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(10); doc.text(String(order.codigo_retirada), margin, y + 6); y += 12; }
+    const colHalf = pageW / 2; let colIdx = 0;
+    [['Razão Social', razao], ['CNPJ', cnpj], ['Email', email], ['Telefone', tel]].filter(r => r[1]).forEach(row => {
+        const cx = colIdx % 2 === 0 ? margin : colHalf; const cy = y + Math.floor(colIdx / 2) * 12;
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(light); doc.setFontSize(8); doc.text(row[0].toUpperCase(), cx, cy);
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(10);
+        let val = String(row[1]); if (doc.getTextWidth(val) > colHalf - margin - 4) val = doc.splitTextToSize(val, colHalf - margin - 4)[0];
+        doc.text(val, cx, cy + 6); colIdx++;
+    });
+    y += Math.ceil(colIdx / 2) * 12 + 4;
+
+    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('ITENS DO ORÇAMENTO', margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
+    const codeX = margin, descX = margin + 26, qtyX = subX - 84, unitX = subX - 58;
+    doc.setFillColor(247, 243, 255); doc.rect(margin, y, width, 9, 'F');
+    doc.setTextColor(brand); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.text('CÓDIGO', codeX, y + 6); doc.text('PRODUTO', descX, y + 6); doc.text('QTDE', qtyX, y + 6, { align: 'right' }); doc.text('UNIT', unitX, y + 6, { align: 'right' }); doc.text('SUBTOTAL', subX, y + 6, { align: 'right' }); y += 15;
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(9.5);
+    const items = (Array.isArray(order.itens) && order.itens.length) ? order.itens : null;
+    if (items) {
+        items.forEach(it => {
+            if (y > 272) { doc.addPage(); y = margin; }
+            const name = it.nome || '', code = it.codigo || '', qty = it.quantidade || 0, unit = it.preco || 0, sub = it.subtotal || (unit * qty);
+            doc.setFillColor(245, 245, 248); doc.setDrawColor(235, 230, 242); doc.rect(margin, y - 5.5, width, 14, 'FD');
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(130, 130, 140); doc.text(String(code), codeX, y);
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 40);
+            let descTxt = name; if (doc.getTextWidth(descTxt) > qtyX - descX - 6) descTxt = doc.splitTextToSize(descTxt, qtyX - descX - 6)[0];
+            doc.text(descTxt, descX, y);
+            doc.setFont('helvetica', 'normal'); doc.text(String(qty), qtyX, y, { align: 'right' }); doc.text(formatPrice(unit), unitX, y, { align: 'right' });
+            doc.setFont('helvetica', 'bold'); doc.text(formatPrice(sub), subX, y, { align: 'right' });
+            y += 16;
+        });
+    }
+    y += 4; if (y > 275) { doc.addPage(); y = margin; }
+    doc.setDrawColor(216, 180, 254); doc.line(margin, y, pageW - margin, y); y += 7;
+    const totalTabela = Number(order.total) || 0;
+    const tRowH = 9;
+    if (y + tRowH > 278) { doc.addPage(); y = margin; }
+    doc.setDrawColor(216, 180, 254); doc.setLineWidth(0.4); doc.rect(margin, y, width, tRowH, 'D');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(brand);
+    doc.text('TOTAL', margin + 4, y + 6.2); doc.text(formatPrice(totalTabela), subX - 4, y + 6.2, { align: 'right' });
+    y += tRowH + 6;
+    if (order.pagamento) {
+        const payLines = buildPaymentLinesSite(order.pagamento, order.created_at, order.total);
+        doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y);
+        doc.setFont('helvetica', 'normal'); doc.text(String(order.pagamento), margin + 50, y); y += 7;
+        payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; });
+    }
+    for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) {
+        doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal');
+        doc.text('Java Distribuidora • (12) 99778-0047 • Frete CIF acima de R$300,00', pageW / 2, 289, { align: 'center' });
+        doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' });
+    }
+    const fileName = 'orcamento-' + (order.codigo_cliente || order.id) + '-' + (razao ? razao.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
+    doc.save(fileName);
+    showToast('PDF do pedido baixado.');
 }
 
 // ---------- Init & UI ----------

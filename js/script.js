@@ -132,9 +132,11 @@ function refreshClientAuthUI() {
     document.body.classList.toggle('isAuth', isClientLoggedIn());
     const loginBtn = document.getElementById('navLoginBtn');
     const chip = document.getElementById('navUserChip');
+    const ordersBtn = document.getElementById('navOrdersBtn');
     const name = document.getElementById('navUserName');
     if (loginBtn) loginBtn.style.display = isClientLoggedIn() ? 'none' : '';
     if (chip) chip.style.display = isClientLoggedIn() ? '' : 'none';
+    if (ordersBtn) ordersBtn.style.display = isClientLoggedIn() ? '' : 'none';
     if (name) name.textContent = isClientLoggedIn() ? (_client.razao || 'Cliente') : 'Cliente';
 }
 
@@ -830,6 +832,68 @@ async function submitClientPwdChange(e) {
     showToast('Senha alterada com sucesso.');
 }
 
+// ---------- Meus pedidos (area do lojista) ----------
+const ORDER_STATUS_LABEL = {
+    em_andamento: 'Em andamento',
+    recebido: 'Recebido',
+    analise: 'Em análise',
+    aprovado: 'Aprovado',
+    concluido: 'Concluído',
+    entregue: 'Entregue',
+    cancelado: 'Cancelado'
+};
+
+async function openClientOrders() {
+    if (!isClientLoggedIn()) { openClientLoginModal(); return; }
+    const ov = document.getElementById('ordersOverlay');
+    const list = document.getElementById('ordersList');
+    if (!ov || !list) return;
+    ov.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    list.innerHTML = '<div class="orders-empty"><i class="fas fa-spinner fa-spin"></i><p>Carregando seus pedidos...</p></div>';
+    try {
+        const { data, error } = await db.rpc('listar_pedidos_cliente', { _email: getClientEmail(), _limite: 20 });
+        if (error) throw error;
+        renderClientOrders(Array.isArray(data) ? data : []);
+    } catch (e) {
+        console.error('Erro ao carregar pedidos:', e);
+        list.innerHTML = '<div class="orders-empty"><i class="fas fa-triangle-exclamation"></i><p>Não foi possível carregar seus pedidos agora. Tente novamente.</p></div>';
+    }
+}
+
+function renderClientOrders(orders) {
+    const list = document.getElementById('ordersList');
+    if (!list) return;
+    if (!orders.length) {
+        list.innerHTML = '<div class="orders-empty"><i class="fas fa-receipt"></i><p>Você ainda não fez nenhum pedido.</p></div>';
+        return;
+    }
+    list.innerHTML = orders.map(o => {
+        const st = o.status || 'recebido';
+        const dt = new Date(o.created_at);
+        const date = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const time = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const items = Array.isArray(o.itens) ? o.itens : [];
+        return `<div class="order-card">
+            <div class="order-card-head">
+                <div><span class="order-code">#${escapeHtml(o.codigo_cliente || o.id)}</span><span class="order-date">${date} ${time}</span></div>
+                <span class="order-status st-${escapeHtml(st)}">${escapeHtml(ORDER_STATUS_LABEL[st] || st)}</span>
+            </div>
+            ${items.length ? `<div class="order-items">${items.map(it => `<div class="order-item"><span>${escapeHtml(it.nome || '')} ${it.codigo ? `<small>(${escapeHtml(it.codigo)})</small>` : ''}</span><span>${it.quantidade || 0}x ${formatPrice(it.preco || 0)}</span></div>`).join('')}</div>` : ''}
+            <div class="order-card-foot">
+                <span class="order-pay">${o.pagamento ? 'Prazo: ' + escapeHtml(o.pagamento) : ''}</span>
+                <span class="order-total">${formatPrice(o.total)}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function closeClientOrders() {
+    const ov = document.getElementById('ordersOverlay');
+    if (ov) ov.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
 // ---------- Init & UI ----------
 document.addEventListener('DOMContentLoaded', function () {
     loadClientSession();
@@ -869,6 +933,16 @@ function setupUI() {
 
     const loginBtn = document.getElementById('navLoginBtn');
     if (loginBtn) loginBtn.addEventListener('click', openClientLoginModal);
+
+    const ordersBtn = document.getElementById('navOrdersBtn');
+    if (ordersBtn) ordersBtn.addEventListener('click', openClientOrders);
+
+    const ordersClose = document.getElementById('ordersClose');
+    const ordersOverlay = document.getElementById('ordersOverlay');
+    if (ordersClose) ordersClose.addEventListener('click', closeClientOrders);
+    if (ordersOverlay) ordersOverlay.addEventListener('click', (e) => {
+        if (e.target === ordersOverlay) closeClientOrders();
+    });
 
     const chip = document.getElementById('navUserChip');
     if (chip) chip.addEventListener('click', () => {

@@ -439,6 +439,41 @@ body.isAuth .price-lock { display: none; }
 .checkout-success p { color: var(--text-secondary); font-size: 14px; line-height: 1.55; margin: 0 0 20px; }
 .checkout-success p b { color: var(--accent); }
 
+/* ---------- Botao "Meus pedidos" (menu) ---------- */
+.nav-orders-btn {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    background: rgba(168,85,247,.10); color: var(--neon-purple);
+    border: 1.5px solid rgba(168,85,247,.35); border-radius: 12px;
+    padding: 9px 14px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px;
+    transition: background .18s, border-color .18s, transform .18s;
+}
+.nav-orders-btn:hover { background: rgba(168,85,247,.18); border-color: var(--neon-purple); transform: translateY(-1px); }
+.nav-orders-btn i { font-size: 15px; }
+@media (max-width: 640px) { .nav-orders-btn span { display: none; } .nav-orders-btn { padding: 9px 11px; } }
+
+/* ---------- Meus pedidos (modal do lojista) ---------- */
+.orders-modal { width: min(640px, 94%); }
+.orders-body { padding: 18px 22px 24px; display: flex; flex-direction: column; gap: 12px; }
+.orders-empty { text-align: center; color: var(--text-muted); padding: 44px 0; }
+.orders-empty i { font-size: 40px; color: var(--border); display: block; margin-bottom: 12px; }
+.order-card { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: #fff; }
+.order-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.order-code { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13px; color: var(--neon-purple); }
+.order-date { font-size: 12px; color: var(--text-muted); margin-left: 8px; }
+.order-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.order-status.st-recebido { background: rgba(168,85,247,.12); color: #7c3aed; }
+.order-status.st-analise { background: rgba(255,165,2,.16); color: #b45309; }
+.order-status.st-aprovado { background: rgba(59,130,246,.14); color: #2563eb; }
+.order-status.st-concluido, .order-status.st-entregue { background: rgba(34,197,94,.14); color: #15803d; }
+.order-status.st-cancelado { background: rgba(239,68,68,.14); color: #dc2626; }
+.order-status.st-em_andamento { background: rgba(148,163,184,.20); color: #475569; }
+.order-items { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+.order-item { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--text-secondary); }
+.order-item small { color: var(--text-muted); }
+.order-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.order-pay { font-size: 12px; color: var(--text-muted); }
+.order-total { font-weight: 800; font-size: 16px; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
 /* ---------- Auth ---------- */
 .auth-modal { padding-bottom: 24px; }
 #clientLoginView, #clientPwdView { padding: 22px; }

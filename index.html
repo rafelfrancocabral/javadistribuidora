@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=12">
+    <link rel="stylesheet" href="css/style.css?v=13">
 </head>
 <body>
 
@@ -31,6 +31,7 @@
                 <span class="cart-badge" id="cartBadge">0</span>
             </button>
             <button class="btn btn-login" id="navLoginBtn"><i class="fas fa-user"></i> Entrar</button>
+            <button class="nav-orders-btn" id="navOrdersBtn" style="display:none;" title="Ver meus últimos pedidos"><i class="fas fa-receipt"></i> <span>Meus pedidos</span></button>
             <button class="btn btn-login user-chip" id="navUserChip" style="display:none;"><i class="fas fa-user-check"></i> <span id="navUserName">Cliente</span></button>
             <button class="nav-toggle" id="navToggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
             <a href="login.html" class="nav-lock-btn" id="navLockBtn" title="Acesso administrativo" aria-label="Abrir login do painel">
@@ -286,6 +287,17 @@
     </div>
 </div>
 
+<!-- ===== MEUS PEDIDOS (area do lojista) ===== -->
+<div class="auth-overlay" id="ordersOverlay">
+    <div class="auth-modal orders-modal">
+        <div class="auth-header">
+            <h3><i class="fas fa-receipt"></i> Meus Pedidos</h3>
+            <button class="auth-close" id="ordersClose"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="orders-body" id="ordersList"></div>
+    </div>
+</div>
+
 <!-- ===== PRODUCT MODAL (detalhe) ===== -->
 <div class="product-overlay" id="productOverlay">
     <div class="product-modal" id="productModalBody"></div>
@@ -310,6 +322,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-config.js?v=2"></script>
-<script src="js/script.js?v=16"></script>
+<script src="js/script.js?v=17"></script>
 </body>
 </html>

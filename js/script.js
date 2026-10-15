@@ -939,9 +939,14 @@ function buildPaymentLinesSite(pagamento, baseDate, total) {
 async function downloadOrderPDF(id) {
     const order = _clientOrders.find(o => String(o.id) === String(id));
     if (!order) return;
+    // Abre a aba ja no gesto do clique para evitar bloqueio de pop-up,
+    // ja que a biblioteca de PDF pode ser carregada de forma assincrona.
+    let win = null;
+    try { win = window.open('', '_blank'); } catch (e) { win = null; }
+    if (win) { try { win.document.write('<title>Gerando PDF…</title><p style="font-family:sans-serif;padding:24px;color:#5b5466;">Gerando o PDF do pedido…</p>'); } catch (e) {} }
     try { await ensureJsPDF(); }
-    catch (e) { showToast('Não foi possível gerar o PDF. Verifique a conexão.', true); return; }
-    if (!window.jspdf || !window.jspdf.jsPDF) { showToast('Biblioteca de PDF não carregada.', true); return; }
+    catch (e) { if (win && !win.closed) win.close(); showToast('Não foi possível gerar o PDF. Verifique a conexão.', true); return; }
+    if (!window.jspdf || !window.jspdf.jsPDF) { if (win && !win.closed) win.close(); showToast('Biblioteca de PDF não carregada.', true); return; }
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -1020,8 +1025,15 @@ async function downloadOrderPDF(id) {
         doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' });
     }
     const fileName = 'orcamento-' + (order.codigo_cliente || order.id) + '-' + (razao ? razao.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
-    doc.save(fileName);
-    showToast('PDF do pedido baixado.');
+    const url = URL.createObjectURL(doc.output('blob'));
+    if (win && !win.closed) {
+        win.location.href = url;
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        showToast('PDF do pedido aberto no navegador.');
+    } else {
+        doc.save(fileName);
+        showToast('PDF do pedido baixado.');
+    }
 }
 
 // ---------- Init & UI ----------

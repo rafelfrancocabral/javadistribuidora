@@ -689,8 +689,6 @@ function quoteCardHtml(q) {
                     <span class="quote-code-badge">#${escapeHtml(q.codigo_cliente || q.id)}</span>
                     <span class="quote-card-name">${escapeHtml(getQuoteClientName(q))}</span>
                     <span class="quote-meta-icons">
-                        ${q.email ? `<span title="Email"><i class="fas fa-envelope"></i>${escapeHtml(q.email)}</span>` : ''}
-                        ${q.telefone ? `<span title="Telefone"><i class="fas fa-phone"></i>${escapeHtml(q.telefone)}</span>` : ''}
                         <span class="quote-meta-date" title="Data"><i class="fas fa-clock"></i>${formatDate(q.created_at)}</span>
                         ${q.pagamento ? `<span title="Prazo"><i class="fas fa-calendar-alt"></i>${escapeHtml(q.pagamento)}</span>` : ''}
                     </span>
@@ -722,8 +720,6 @@ function openQuoteDetail(id) {
 
     document.getElementById('quoteDetailBody').innerHTML = `
         <div class="qd-row"><span>Cliente</span><span>${escapeHtml(getQuoteClientName(q))}</span></div>
-        <div class="qd-row"><span>Email</span><span>${escapeHtml(q.email || '')}</span></div>
-        <div class="qd-row"><span>Telefone</span><span>${escapeHtml(q.telefone || '')}</span></div>
         <div class="qd-row"><span>Código Cliente</span><span>${escapeHtml(q.codigo_cliente || '')}</span></div>
         
         <div class="qd-row"><span>Data</span><span>${formatDate(q.created_at)}</span></div>

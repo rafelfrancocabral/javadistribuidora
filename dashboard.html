@@ -428,19 +428,11 @@
                 <div class="quote-items-empty" id="mqItemsEmpty">Nenhum item. Clique em "Adicionar Produto".</div>
                 <div class="quote-items-total"><span>Total</span><span id="mqTotalDisplay">R$ 0,00</span></div>
                 <div class="form-field">
-                    <label>Forma de Pagamento</label>
-                    <select id="mqPayment" class="dash-input">
-                        <option value="">Selecione...</option>
-                        <option value="A vista">À vista</option>
-                        <option value="7 dias">7 dias</option>
-                        <option value="15 dias">15 dias</option>
-                        <option value="30 dias">30 dias</option>
-                        <option value="30 60">30/60 dias</option>
-                        <option value="30 60 90">30/60/90 dias</option>
-                        <option value="45 dias">45 dias</option>
-                        <option value="60 dias">60 dias</option>
-                        <option value="a combinar">A combinar</option>
+                    <label>Forma de Pagamento *</label>
+                    <select id="mqPayment" class="dash-input" required>
+                        <option value="">Selecione o prazo...</option>
                     </select>
+                    <small class="mq-line-hint">As opções de prazo mudam conforme o valor do orçamento.</small>
                 </div>
                 <div class="form-field"><label>Observações</label><textarea id="mqObs" rows="2" placeholder="Observações adicionais"></textarea></div>
                 <div class="modal-footer">
@@ -537,6 +529,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=2"></script>
-    <script src="js/dashboard.js?v=62"></script>
+    <script src="js/dashboard.js?v=63"></script>
 </body>
 </html>

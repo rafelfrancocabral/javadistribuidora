@@ -356,7 +356,8 @@ function buildPaymentChart() {
                 const prod = products.find(p => (p.codigo && p.codigo === i.codigo) || (p.nome && p.nome === i.nome));
                 cat = prod?.categoria || 'Sem categoria';
             }
-            map[cat] = (map[cat] || 0) + (Number(i.quantidade) || 0);
+            const sub = (i.subtotal != null && i.subtotal !== '') ? Number(i.subtotal) : (Number(i.preco) || 0) * (Number(i.quantidade) || 0);
+            map[cat] = (map[cat] || 0) + (sub || 0);
         });
     });
     const labels = Object.keys(map);
@@ -365,7 +366,7 @@ function buildPaymentChart() {
     if (chartPaymentsInstance) { chartPaymentsInstance.destroy(); chartPaymentsInstance = null; }
     if (!el || !labels.length) return;
 
-    const colors = ['#a855f7', '#00e5ff', '#ff2fe6', '#00ffa3', '#4f6bff', '#ffa502', '#ff5c8a', '#22d3ee', '#a3e635', '#f43f5e'];
+    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#10b981', '#f97316', '#ec4899', '#64748b'];
     const total = data.reduce((a, b) => a + b, 0);
 
     chartPaymentsInstance = new Chart(el, {
@@ -417,7 +418,7 @@ function buildPaymentChart() {
                                     const value = data.datasets[0].data[i];
                                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                     return {
-                                        text: `${shortLabel} — ${percentage}%`,
+                                        text: `${shortLabel} — ${formatPrice(value)} — ${percentage}%`,
                                         fillStyle: chart.data.datasets[0].backgroundColor[i],
                                         strokeStyle: 'transparent',
                                         lineWidth: 0,
@@ -442,13 +443,13 @@ function buildPaymentChart() {
                     cornerRadius: 12,
                     displayColors: true,
                     boxPadding: 6,
-                    borderColor: 'rgba(255,47,230,0.4)',
+                    borderColor: 'rgba(255,95,109,0.4)',
                     borderWidth: 1.5,
                     callbacks: {
                         label: (ctx) => {
                             const value = ctx.parsed;
                             const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return ` ${ctx.label}: ${value} unid. (${percentage}%)`;
+                            return ` ${ctx.label}: ${formatPrice(value)} (${percentage}%)`;
                         }
                     }
                 }

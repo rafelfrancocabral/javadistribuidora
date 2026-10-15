@@ -1813,6 +1813,23 @@ function clienteSalesInMonth(clienteId, ym) {
         return s;
     }, 0);
 }
+function categoriaSalesInMonth(line, categoria, ym) {
+    const target = String(categoria || '').trim().toLowerCase();
+    if (!target) return 0;
+    return quotes.reduce((s, q) => {
+        if (q.linha !== line || q.status !== 'concluido') return s;
+        if (monthSafe(saleDate(q)) !== ym) return s;
+        if (!Array.isArray(q.itens)) return s;
+        q.itens.forEach(i => {
+            const p = products.find(x => x && x.codigo && String(x.codigo) === String(i.codigo));
+            const cat = String(i.categoria || (p && p.categoria) || '').trim().toLowerCase();
+            if (cat !== target) return;
+            const sub = (i.subtotal != null && i.subtotal !== '') ? Number(i.subtotal) : (Number(i.preco) || 0) * (Number(i.quantidade) || 0);
+            s += sub || 0;
+        });
+        return s;
+    }, 0);
+}
 
 async function loadGoals() { try { goals = (await adminCall('admin_listar_metas', {})) || []; } catch (e) { console.error('loadGoals', e); goals = []; } }
 
@@ -1901,13 +1918,33 @@ function renderClienteGoals() {
     }).join('');
 }
 
+function renderCategoriaGoals() {
+    const el = document.getElementById('pbCategoria');
+    if (!el) return;
+    const listo = goals.filter(g => g && g.tipo === 'categoria').sort((a, b) => String(a.mes).localeCompare(String(b.mes))).reverse();
+    if (!listo.length) { el.innerHTML = '<div class="pb-empty"><i class="fas fa-layer-group"></i> Nenhuma meta de categoria.</div>'; return; }
+    el.innerHTML = listo.map(g => {
+        const nome = g.categoria || 'Categoria';
+        const gv = Number(g.valor) || 0;
+        const gd = categoriaSalesInMonth(g.linha, g.categoria, String(g.mes).slice(0, 7));
+        const pct = gv > 0 ? Math.min(100, Math.round((gd / gv) * 100)) : 0;
+        const ok = gv > 0 && gd >= gv;
+        const chip = '<span class="dash-code-badge" style="background:' + (g.linha === 'dymar' ? 'rgba(157,107,255,.35)' : 'rgba(255,122,47,.35)') + ';color:#fff;border-radius:999px;padding:2px 10px;font-size:.7rem;">' + (g.linha === 'dymar' ? 'DYMAR' : 'JAVA') + '</span>';
+        return '<div class="pb-meta-row" style="flex-wrap:wrap;">' +
+            '<span style="flex:1 1 55%;font-size:.85rem;"><b>' + escapeHtml(nome) + '</b><br><span style="color:var(--text-secondary);font-size:.72rem;">' + pbMonthLabel(g.mes) + ' ' + chip + '</span></span>' +
+            '<span class="pb-val" style="font-size:.9rem;">' + formatPrice(gd) + ' <span style="color:var(--text-secondary);font-size:.72rem;">de ' + formatPrice(gv) + '</span></span>' +
+            '<span style="flex:0 0 28%;min-width:120px;"><span class="pb-bar" style="margin:4px 0 0;"><span style="display:block;width:' + pct + '%"></span></span><span style="font-size:.68rem;color:' + (ok ? '#2ed573' : 'var(--text-secondary)') + ';">' + pct + '%' + (ok ? ' — cumprida' : '') + '</span></span>' +
+            '<span class="pb-actions"><button class="btn btn-ghost btn-sm" title="Editar" onclick="openMetaModal(' + g.id + ')"><i class="fas fa-pen"></i></button><button class="btn btn-ghost btn-sm" title="Excluir" onclick="deleteGoal(' + g.id + ')"><i class="fas fa-trash"></i></button></span></div>';
+    }).join('');
+}
+
 // ---------- Acompanhamento de Metas (Visão Geral) ----------
 function renderGoalsCharts() {
     const grid = document.getElementById('goalsGrid');
     const section = document.getElementById('goalsCharts');
     if (!grid) return;
     const ym = currentYm();
-    const listo = goals.filter(g => g && g.linha === currentChartGroup && (g.tipo === 'produto' || g.tipo === 'cliente') && String(g.mes).slice(0, 7) === ym);
+    const listo = goals.filter(g => g && g.linha === currentChartGroup && (g.tipo === 'produto' || g.tipo === 'cliente' || g.tipo === 'categoria') && String(g.mes).slice(0, 7) === ym);
     if (!listo.length) { if (section) section.style.display = 'none'; grid.innerHTML = ''; return; }
     if (section) section.style.display = '';
     const now = new Date();
@@ -1928,6 +1965,15 @@ function renderGoalsCharts() {
             metaTxt = meta + ' unid.';
             porDia = Math.ceil(Math.max(0, meta - done) / diasRestantes);
             restoTxt = Math.max(0, meta - done) + ' unid.';
+        } else if (g.tipo === 'categoria') {
+            titulo = g.categoria || 'Categoria';
+            meta = Number(g.valor) || 0;
+            done = categoriaSalesInMonth(g.linha, g.categoria, ym);
+            icon = 'fa-layer-group';
+            doneTxt = formatPrice(done);
+            metaTxt = formatPrice(meta);
+            porDia = Math.max(0, meta - done) / diasRestantes;
+            restoTxt = formatPrice(Math.max(0, meta - done));
         } else {
             const c = clients.find(x => x && x.id != null && String(x.id) === String(g.cliente_id));
             titulo = c ? c.razao_social : 'Cliente #' + g.cliente_id;
@@ -1959,7 +2005,7 @@ function renderGoalsCharts() {
                 '<span style="width:34px;height:34px;flex:0 0 34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:' + stSoft + ';color:' + stColor + ';font-size:.95rem;"><i class="fas ' + icon + '"></i></span>' +
                 '<div style="min-width:0;flex:1;">' +
                     '<div style="font-family:\'Chakra Petch\',sans-serif;font-weight:600;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(titulo) + '">' + escapeHtml(titulo) + '</div>' +
-                    '<div style="color:var(--text-muted);font-size:.7rem;">' + (g.tipo === 'produto' ? 'Meta de produto' : 'Meta de cliente') + ' · ' + pbMonthLabel(g.mes) + ' · ' + (g.linha === 'dymar' ? 'Dymar' : 'Java') + '</div>' +
+                    '<div style="color:var(--text-muted);font-size:.7rem;">' + (g.tipo === 'produto' ? 'Meta de produto' : (g.tipo === 'categoria' ? 'Meta de categoria' : 'Meta de cliente')) + ' · ' + pbMonthLabel(g.mes) + ' · ' + (g.linha === 'dymar' ? 'Dymar' : 'Java') + '</div>' +
                 '</div>' +
             '</div>' +
             '<div style="display:flex;align-items:center;gap:16px;">' +
@@ -1984,21 +2030,25 @@ function renderPlaybook() {
     renderPlaybookLine('pbDymar', 'dymar');
     renderProdutoGoals();
     renderClienteGoals();
+    renderCategoriaGoals();
 }
 
 let metaLine = 'java';
 let metaTipo = 'mensal';
 let metaProdutoId = null;
 let metaClienteId = null;
+let metaCategoria = null;
 
 function syncMetaModalFields() {
     const isProd = metaTipo === 'produto';
     const isCli = metaTipo === 'cliente';
+    const isCat = metaTipo === 'categoria';
     document.getElementById('metaProdutoField').style.display = isProd ? '' : 'none';
     document.getElementById('metaClienteField').style.display = isCli ? '' : 'none';
+    document.getElementById('metaCategoriaField').style.display = isCat ? '' : 'none';
     document.getElementById('metaUnidadesField').style.display = isProd ? '' : 'none';
     document.getElementById('metaValorField').style.display = (isProd) ? 'none' : '';
-    document.getElementById('metaValorLabel').textContent = isCli ? 'Meta de venda do cliente (R$) *' : 'Meta de venda (R$) *';
+    document.getElementById('metaValorLabel').textContent = isCli ? 'Meta de venda do cliente (R$) *' : (isCat ? 'Meta de venda da categoria (R$) *' : 'Meta de venda (R$) *');
     document.getElementById('metaValor').required = !isProd;
 }
 
@@ -2010,13 +2060,23 @@ function metaClienteFill() {
     const el = document.getElementById('metaClienteList');
     if (el) el.innerHTML = clients.map(c => '<option value="' + escapeHtml(c.razao_social + (c.email ? ' (' + c.email + ')' : '')) + '" data-id="' + c.id + '"></option>').join('');
 }
+function metaCategoriaFill() {
+    const el = document.getElementById('metaCategoriaList');
+    if (!el) return;
+    const set = new Set();
+    (categories || []).forEach(c => { if (c && c.nome) set.add(c.nome); });
+    products.filter(p => p.linha === metaLine && p.categoria).forEach(p => set.add(p.categoria));
+    const names = Array.from(set).sort((a, b) => String(a).localeCompare(String(b)));
+    el.innerHTML = names.map(n => '<option value="' + escapeHtml(n) + '"></option>').join('');
+}
 
 function openMetaModal(id, line, tipo) {
     const g = id != null ? goals.find(x => String(x.id) === String(id)) : null;
-    metaLine = line || (g ? g.linha : (metaTipo === 'mensal' ? currentChartGroup : 'java'));
     metaTipo = tipo || (g ? (g.tipo || 'mensal') : 'mensal');
+    metaLine = line || (g ? g.linha : currentChartGroup);
     metaProdutoId = g ? g.produto_id : null;
     metaClienteId = g ? g.cliente_id : null;
+    metaCategoria = g ? (g.categoria || null) : null;
     const tpSel = document.getElementById('metaTipo');
     tpSel.value = metaTipo;
     document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.mline === metaLine));
@@ -2032,6 +2092,8 @@ function openMetaModal(id, line, tipo) {
     document.getElementById('metaClienteSearch').value = '';
     const cSel = g && g.cliente_id != null ? clients.find(c => c.id != null && String(c.id) === String(g.cliente_id)) : null;
     if (cSel) document.getElementById('metaClienteSearch').value = cSel.razao_social + (cSel.email ? ' (' + cSel.email + ')' : '');
+    metaCategoriaFill();
+    document.getElementById('metaCategoriaSearch').value = g && g.categoria ? g.categoria : '';
     document.getElementById('metaModalTitle').textContent = g ? 'Editar Meta' : 'Nova Meta';
     syncMetaModalFields();
     document.getElementById('metaModal').classList.add('open');
@@ -2056,11 +2118,14 @@ async function saveGoal(e) {
         if (metaTipo === 'cliente') {
             if (!metaClienteId) { toast('Selecione o cliente', true); return; }
         }
+        if (metaTipo === 'categoria') {
+            if (!metaCategoria) { toast('Selecione a categoria', true); return; }
+        }
         if (valor <= 0) { toast('Informe um valor de meta maior que zero', true); return; }
     }
     let error;
     try {
-        await adminCall('admin_salvar_meta', { _linha: metaLine, _mes: mes, _valor: valor, _id: id ? id : null, _tipo: metaTipo, _produto_id: metaProdutoId, _cliente_id: metaClienteId, _unidades: unidades });
+        await adminCall('admin_salvar_meta', { _linha: metaLine, _mes: mes, _valor: valor, _id: id ? id : null, _tipo: metaTipo, _produto_id: metaProdutoId, _cliente_id: metaClienteId, _unidades: unidades, _categoria: metaTipo === 'categoria' ? metaCategoria : null });
     } catch (r) { error = r; }
     if (error) { toast('Erro: ' + error.message, true); return; }
     closeMetaModal();
@@ -2068,6 +2133,7 @@ async function saveGoal(e) {
     renderPlaybook();
     if (metaTipo === 'produto') { const p = products.find(x => x.id != null && String(x.id) === String(metaProdutoId)); trackAction('Meta de produto atualizada: ' + (p ? p.nome : '') + ' — ' + unidades + ' unid. em ' + pbMonthLabel(mes)); }
     else if (metaTipo === 'cliente') { const c = clients.find(x => x.id != null && String(x.id) === String(metaClienteId)); trackAction('Meta de cliente atualizada: ' + (c ? c.razao_social : '') + ' — ' + formatPrice(valor) + ' em ' + pbMonthLabel(mes)); }
+    else if (metaTipo === 'categoria') { trackAction('Meta de categoria atualizada: ' + (metaCategoria || '') + ' — ' + formatPrice(valor) + ' em ' + pbMonthLabel(mes)); }
     else trackAction('Meta mensal de venda atualizada: ' + formatPrice(valor) + ' (' + metaLine.toUpperCase() + ', ' + pbMonthLabel(mes) + ')');
     toast(id ? 'Meta atualizada' : 'Meta salva');
 }
@@ -2137,9 +2203,9 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     document.getElementById('metaModalClose').addEventListener('click', closeMetaModal);
     document.getElementById('metaCancel').addEventListener('click', closeMetaModal);
     document.getElementById('metaForm').addEventListener('submit', saveGoal);
-    document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(btn => btn.addEventListener('click', () => { metaLine = btn.dataset.mline; document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(b => b.classList.toggle('active', b.dataset.mline === metaLine)); metaProdutoFill(); }));
+    document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(btn => btn.addEventListener('click', () => { metaLine = btn.dataset.mline; document.querySelectorAll('#metaLineTabs .mq-line-tab').forEach(b => b.classList.toggle('active', b.dataset.mline === metaLine)); metaProdutoFill(); metaCategoriaFill(); }));
     const mtSel = document.getElementById('metaTipo');
-    if (mtSel) mtSel.addEventListener('change', () => { metaTipo = mtSel.value; syncMetaModalFields(); if (metaTipo === 'produto') metaProdutoFill(); if (metaTipo === 'cliente') metaClienteFill(); });
+    if (mtSel) mtSel.addEventListener('change', () => { metaTipo = mtSel.value; syncMetaModalFields(); if (metaTipo === 'produto') metaProdutoFill(); if (metaTipo === 'cliente') metaClienteFill(); if (metaTipo === 'categoria') metaCategoriaFill(); });
     const mpSearch = document.getElementById('metaProdutoSearch');
     if (mpSearch) mpSearch.addEventListener('change', () => {
         const v = mpSearch.value.trim().toLowerCase();
@@ -2153,6 +2219,11 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
         const c = clients.find(x => x && ((x.razao_social && x.razao_social.toLowerCase() === v) || (x.razao_social && x.email && (x.razao_social + ' (' + x.email + ')').toLowerCase() === v)));
         metaClienteId = c ? c.id : (mcSearch.value ? metaClienteId : null);
         if (!c) { toast('Cliente não encontrado', true); }
+    });
+    const mcatSearch = document.getElementById('metaCategoriaSearch');
+    if (mcatSearch) mcatSearch.addEventListener('change', () => {
+        const v = mcatSearch.value.trim();
+        metaCategoria = v || null;
     });
     const mvInput = document.getElementById('metaValor');
     if (mvInput) mvInput.addEventListener('input', () => { const raw = mvInput.value.replace(/\D/g, ''); const v = raw ? Number(raw) / 100 : 0; mvInput.value = v ? v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''; });

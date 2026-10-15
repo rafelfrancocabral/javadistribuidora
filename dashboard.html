@@ -281,6 +281,11 @@
                         <button class="btn btn-ghost btn-sm" style="margin-bottom:10px;" onclick="openMetaModal(null,'','cliente')"><i class="fas fa-plus"></i> Nova Meta de Cliente</button>
                         <div id="pbCliente"></div>
                     </div>
+                    <div class="dash-panel">
+                        <h3><i class="fas fa-layer-group"></i> Metas de Categoria <small class="dash-panel-sub">vendas em R$ no mês</small></h3>
+                        <button class="btn btn-ghost btn-sm" style="margin-bottom:10px;" onclick="openMetaModal(null,'','categoria')"><i class="fas fa-plus"></i> Nova Meta de Categoria</button>
+                        <div id="pbCategoria"></div>
+                    </div>
                 </div>
                 <div class="dash-panel" style="margin-top:20px;">
                     <h3><i class="fas fa-lightbulb"></i> Estratégia <small class="dash-panel-sub">Metas e direcionamento comercial</small></h3>
@@ -483,6 +488,7 @@
                         <option value="mensal">Venda mensal (R$)</option>
                         <option value="produto">Produto específico (unidades)</option>
                         <option value="cliente">Cliente específico (R$)</option>
+                        <option value="categoria">Categoria (R$)</option>
                     </select>
                 </div>
                 <div class="form-field">
@@ -504,6 +510,11 @@
                     <label>Cliente *</label>
                     <input type="text" id="metaClienteSearch" class="dash-input" list="metaClienteList" autocomplete="off" placeholder="Busque o cliente (razão social)...">
                     <datalist id="metaClienteList"></datalist>
+                </div>
+                <div class="form-field" id="metaCategoriaField" style="display:none;">
+                    <label>Categoria *</label>
+                    <input type="text" id="metaCategoriaSearch" class="dash-input" list="metaCategoriaList" autocomplete="off" placeholder="Busque a categoria...">
+                    <datalist id="metaCategoriaList"></datalist>
                 </div>
                 <div class="form-field" id="metaUnidadesField" style="display:none;">
                     <label>Meta em unidades *</label>
@@ -529,6 +540,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=2"></script>
-    <script src="js/dashboard.js?v=64"></script>
+    <script src="js/dashboard.js?v=65"></script>
 </body>
 </html>

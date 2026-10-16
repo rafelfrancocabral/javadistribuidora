@@ -207,6 +207,15 @@ h1, h2, h3, h4 { font-family: 'Inter', sans-serif; line-height: 1.25; }
 .hero-card-line div { display:flex; align-items:center; gap:10px; color: rgba(255,255,255,.6); font-size:14px; }
 .hero-card-line div i { color: #fff; font-size: 16px; width: 18px; text-align: center; }
 .hero-card-line strong { font-family:'Inter', sans-serif; font-size:15px; }
+/* Steps do Programa de Pontos (cliente logado) */
+.hero-steps { padding: 18px 0 4px; display:flex; flex-direction:column; gap:16px; }
+.hero-step { display:flex; align-items:flex-start; gap:14px; }
+.hero-step-num { flex:none; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'Inter', sans-serif; font-weight:800; font-size:15px; color:#0d0620;
+    background: linear-gradient(140deg, var(--neon-cyan), var(--neon-green)); box-shadow: 0 0 18px rgba(0,255,163,.35); }
+.hero-step-txt { display:flex; flex-direction:column; gap:3px; padding-top:3px; }
+.hero-step-txt strong { font-family:'Inter', sans-serif; font-size:15.5px; color:#fff; line-height:1.25; }
+.hero-step-txt small { font-size:12.5px; color: rgba(255,255,255,.62); line-height:1.45; }
 .hero-card-foot { margin-top: 6px; padding: 12px 14px; border-radius: 12px;
     background: rgba(0,255,163,.1); color: var(--neon-green); display:flex; gap:8px; align-items:center;
     font-family:'Inter', sans-serif; font-weight:600; font-size:14px; }
@@ -585,3 +594,42 @@ body.isAuth .pm-price-msg { display:none; }
 .pp-benefit { font-size:10.5px; color:var(--text-secondary); line-height:1.3; }
 .point-prize-clear { background:none; border:none; color:var(--accent); font-weight:600; font-size:12px; cursor:pointer; text-decoration:underline; padding:4px 0; }
 .checkout-discount { display:flex; justify-content:space-between; align-items:center; background:#e8f7ee; border:1px solid #b7e4c9; border-radius:12px; padding:10px 14px; margin-top:12px; font-size:13.5px; font-weight:700; color:#1f9d55; }
+
+/* ===== AJUSTES MOBILE (telas novas) ===== */
+@media (max-width: 560px) {
+    /* Checkout: painel de pontos e prêmios */
+    .checkout-overlay .checkout-modal, .auth-overlay .auth-modal { width: 100%; border-radius: 18px; max-height: 94vh; }
+    .checkout-body { padding: 16px; }
+    .checkout-total-value { font-size: 24px; }
+    .checkout-points { padding: 12px; margin: 12px 0; }
+    .points-title { font-size: 13px; }
+    .points-stats { gap: 8px; }
+    .points-stat { padding: 10px 6px; }
+    .points-num { font-size: 20px; }
+    .points-lbl { font-size: 10.5px; }
+    .points-prizes-list { gap: 6px; }
+    .point-prize-btn { min-width: 0; flex: 1 1 calc(50% - 3px); padding: 8px 10px; }
+    .pp-name { font-size: 12px; }
+    .checkout-discount { font-size: 12.5px; padding: 9px 12px; }
+    .checkout-total-value { font-size: 24px; }
+}
+@media (max-width: 380px) {
+    .points-num { font-size: 19px; }
+    .pp-name { font-size: 11.5px; }
+    .pp-benefit { font-size: 10px; }
+}
+@media (max-width: 560px) {
+    /* Meus Pedidos */
+    .orders-modal { width: 100%; }
+    .orders-body { padding: 14px 14px 20px; }
+    .order-card { padding: 12px 13px; }
+    .order-item { font-size: 12px; }
+    .order-card-foot { flex-direction: column; align-items: flex-start; gap: 6px; }
+}
+/* Corrige overflow horizontal dos modais em telas estreitas */
+.checkout-modal, .auth-modal, .orders-modal, .product-modal { max-width: 100%; box-sizing: border-box; }
+@media (max-width: 480px) {
+    .hero-card { padding: 22px 20px; }
+    .hero-step-num { width: 30px; height: 30px; font-size: 14px; }
+    .hero-step-txt strong { font-size: 14.5px; }
+}

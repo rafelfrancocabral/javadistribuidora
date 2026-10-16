@@ -715,5 +715,25 @@ input, select, textarea { font-family: inherit; }
     #productTable .prod-name { font-size: 0.85rem; }
     #productTable .price-cell { font-size: 0.85rem; }
 }
+
+/* ===== Tabela de importação: mantém formato de tabela no mobile (rolagem horizontal) ===== */
+@media (max-width: 768px) {
+    .import-table-wrap { overflow-x: auto; }
+    #importTable { display: table; min-width: 900px; border-collapse: collapse; }
+    #importTable thead { display: table-header-group; }
+    #importTable tbody { display: table-row-group; }
+    #importTable tr { display: table-row; border: none; border-radius: 0; padding: 0; margin: 0; background: none; }
+    #importTable th, #importTable td { display: table-cell; vertical-align: middle; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    #importTable td::before { content: none; }
+}
+
+/* ===== Tabelas Prize / Rules / League em cards no mobile ===== */
+@media (max-width: 768px) {
+    .table-wrap { overflow-x: visible; }
+    .table-wrap .dash-table tr { padding: 12px 14px; }
+    .table-wrap .dash-table td { font-size: 0.8rem; }
+    .table-wrap .dash-table td[data-label="Ações"] { flex-wrap: wrap; gap: 8px; padding-top: 12px; margin-top: 4px; border-top: 1px dashed var(--border); }
+    .table-wrap .dash-table td[data-label="Ações"] .btn-sm { flex: 1 1 auto; justify-content: center; }
+}
 /* Precos e totais com digitos alinhados */
 .quote-card-total, .top-client-total, .low-seller-price, .top-seller-qty, .dash-table .price-cell, .quote-total-amount { font-variant-numeric: tabular-nums; }

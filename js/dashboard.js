@@ -1831,12 +1831,12 @@ function renderPremios() {
             ? `<span style="color:#2ed573;font-weight:700;">Desconto ${desc.toFixed(2)}%</span>`
             : `<span style="color:#ffd93b;font-weight:700;">Brinde / Bônus</span>`;
         return `<tr>
-            <td>${escapeHtml(p.nome || '')}</td>
-            <td class="right">${Number(p.pontos_necessarios||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-            <td>${beneficio}</td>
-            <td>${validade}</td>
-            <td>${p.ativo ? '<span style="color:#2ed573;">Ativo</span>' : '<span style="color:#ff5c5c;">Inativo</span>'}</td>
-            <td><button class="btn btn-ghost btn-sm" onclick="openPremioModal(${p.id})"><i class="fas fa-pen"></i> Editar</button> <button class="btn btn-ghost btn-sm" onclick="removerPremio(${p.id})"><i class="fas fa-trash"></i> Excluir</button></td>
+            <td data-label="Nome do Prêmio">${escapeHtml(p.nome || '')}</td>
+            <td data-label="Pontos necessários" class="right">${Number(p.pontos_necessarios||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+            <td data-label="Tipo / Benefício">${beneficio}</td>
+            <td data-label="Data do término">${validade}</td>
+            <td data-label="Status">${p.ativo ? '<span style="color:#2ed573;">Ativo</span>' : '<span style="color:#ff5c5c;">Inativo</span>'}</td>
+            <td data-label="Ações"><button class="btn btn-ghost btn-sm" onclick="openPremioModal(${p.id})"><i class="fas fa-pen"></i> Editar</button> <button class="btn btn-ghost btn-sm" onclick="removerPremio(${p.id})"><i class="fas fa-trash"></i> Excluir</button></td>
         </tr>`;
     }).join('');
 }
@@ -1906,12 +1906,12 @@ function renderLeague() {
         const pts = Number(c.pontos || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
         const resg = Number(c.resgates || 0).toLocaleString('pt-BR');
         return `<tr>
-            <td>${medal}${escapeHtml(c.razao_social || '-')}</td>
-            <td>${escapeHtml(c.email || '-')}</td>
-            <td>${escapeHtml(c.telefone || '-')}</td>
-            <td class="right"><b style="color:#ffd93b;">${pts}</b></td>
-            <td class="right">${resg}</td>
-            <td><button class="btn btn-ghost btn-sm" onclick="openLeagueEditModal(${c.id})"><i class="fas fa-pen"></i> Editar</button></td>
+            <td data-label="Cliente">${medal}${escapeHtml(c.razao_social || '-')}</td>
+            <td data-label="E-mail">${escapeHtml(c.email || '-')}</td>
+            <td data-label="Telefone">${escapeHtml(c.telefone || '-')}</td>
+            <td data-label="Pontos" class="right"><b style="color:#ffd93b;">${pts}</b></td>
+            <td data-label="Resgates" class="right">${resg}</td>
+            <td data-label="Ações"><button class="btn btn-ghost btn-sm" onclick="openLeagueEditModal(${c.id})"><i class="fas fa-pen"></i> Editar</button></td>
         </tr>`;
     }).join('');
 }
@@ -1958,12 +1958,12 @@ function renderRegrasPontuacao() {
         const pts = Number(r.pontos||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});
         const validade = r.validade ? new Date(String(r.validade).slice(0,10) + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
         return `<tr>
-            <td>${escapeHtml(r.nome || '-')}</td>
-            <td><b style="color:#ffd93b;">${conv} = ${pts} ${Number(r.pontos) === 1 ? 'ponto' : 'pontos'}</b></td>
-            <td class="right">${pts}</td>
-            <td>${validade}</td>
-            <td>${r.ativo ? '<span style="color:#2ed573;">Ativo</span>' : '<span style="color:#ff5c5c;">Inativo</span>'}</td>
-            <td><button class="btn btn-ghost btn-sm" onclick="openRegraPontuacaoModal(${r.id})"><i class="fas fa-pen"></i> Editar</button> <button class="btn btn-ghost btn-sm" onclick="removerRegraPontuacao(${r.id})"><i class="fas fa-trash"></i> Excluir</button></td>
+            <td data-label="Nome da Regra">${escapeHtml(r.nome || '-')}</td>
+            <td data-label="Conversão (R$ → pontos)"><b style="color:#ffd93b;">${conv} = ${pts} ${Number(r.pontos) === 1 ? 'ponto' : 'pontos'}</b></td>
+            <td data-label="Pontos" class="right">${pts}</td>
+            <td data-label="Data do término">${validade}</td>
+            <td data-label="Status">${r.ativo ? '<span style="color:#2ed573;">Ativo</span>' : '<span style="color:#ff5c5c;">Inativo</span>'}</td>
+            <td data-label="Ações"><button class="btn btn-ghost btn-sm" onclick="openRegraPontuacaoModal(${r.id})"><i class="fas fa-pen"></i> Editar</button> <button class="btn btn-ghost btn-sm" onclick="removerRegraPontuacao(${r.id})"><i class="fas fa-trash"></i> Excluir</button></td>
         </tr>`;
     }).join('');
 }

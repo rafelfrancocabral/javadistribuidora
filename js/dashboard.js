@@ -1828,7 +1828,7 @@ function renderPremios() {
         const tipo = (p.tipo === 'desconto') ? 'desconto' : 'brinde';
         const desc = Number(p.valor_desconto || 0);
         const beneficio = (tipo === 'desconto')
-            ? `<span style="color:#2ed573;font-weight:700;">Desconto R$ ${desc.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`
+            ? `<span style="color:#2ed573;font-weight:700;">Desconto ${desc.toFixed(2)}%</span>`
             : `<span style="color:#ffd93b;font-weight:700;">Brinde / Bônus</span>`;
         return `<tr>
             <td>${escapeHtml(p.nome || '')}</td>

@@ -662,7 +662,7 @@ async function loadCheckoutPoints(total) {
         const desc = Number(p.valor_desconto || 0);
         let benefit;
         if (tipo === 'desconto' && desc > 0) {
-            benefit = 'Desconto de ' + formatPrice(desc) + ' no total';
+            benefit = 'Desconto de ' + desc.toFixed(2) + '% no total';
         } else {
             benefit = 'Brinde entregue junto com o pedido';
         }
@@ -691,7 +691,7 @@ function refreshCheckoutTotal(baseTotal) {
     const prevPay = sel ? sel.value : '';
     let total = baseTotal;
     if (_selectedPrize && _selectedPrize.tipo === 'desconto' && Number(_selectedPrize.valor_desconto) > 0) {
-        total = Math.max(0, baseTotal - Number(_selectedPrize.valor_desconto));
+        total = Math.max(0, baseTotal * (1 - Number(_selectedPrize.valor_desconto) / 100));
         if (subEl) subEl.innerHTML = `<s style="color:var(--text-secondary);font-weight:500;font-size:.8em;">${formatPrice(baseTotal)}</s> ${formatPrice(total)}`;
         if (!discountEl && subEl) {
             const row = document.createElement('div');
@@ -701,7 +701,7 @@ function refreshCheckoutTotal(baseTotal) {
             subEl.closest('.checkout-total').after(row);
         }
         const dv = document.getElementById('checkoutDiscountVal');
-        if (dv) dv.textContent = '-' + formatPrice(Number(_selectedPrize.valor_desconto));
+        if (dv) dv.textContent = '-' + Number(_selectedPrize.valor_desconto).toFixed(2) + '%';
     } else {
         if (subEl) subEl.textContent = formatPrice(baseTotal);
         if (discountEl) discountEl.remove();
@@ -720,7 +720,7 @@ function selectPrize(p, btn, baseTotal) {
     _selectedPrize = p;
     refreshCheckoutTotal(baseTotal);
     if (p.tipo === 'desconto' && Number(p.valor_desconto) > 0) {
-        showToast('Desconto de ' + formatPrice(Number(p.valor_desconto)) + ' aplicado!');
+        showToast('Desconto de ' + Number(p.valor_desconto).toFixed(2) + '% aplicado!');
     } else {
         showToast('Prêmio "' + p.nome + '" anotado no pedido.');
     }
@@ -818,7 +818,8 @@ async function submitQuote(e) {
     let totalFinal = total;
     let premioDesconto = 0;
     if (_selectedPrize && _selectedPrize.tipo === 'desconto' && Number(_selectedPrize.valor_desconto) > 0) {
-        premioDesconto = Math.min(Number(_selectedPrize.valor_desconto), total);
+        const pct = Math.max(0, Math.min(100, Number(_selectedPrize.valor_desconto)));
+        premioDesconto = (pct / 100) * total;
         totalFinal = Math.max(0, total - premioDesconto);
     }
 

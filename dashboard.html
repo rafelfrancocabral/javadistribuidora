@@ -700,12 +700,12 @@
                     <label>Tipo do prêmio *</label>
                     <select id="premioTipo" class="dash-input" required>
                         <option value="brinde">Brinde / Bônus (entregue no pedido)</option>
-                        <option value="desconto">Desconto em R$ (aplicado no total)</option>
+                        <option value="desconto">Desconto em % (aplicado no total)</option>
                     </select>
                 </div>
                 <div class="form-field" id="premioDescontoField" style="display:none;">
-                    <label>Valor do desconto (R$) *</label>
-                    <input type="number" id="premioDesconto" class="dash-input" min="0" step="0.01" placeholder="Ex: 50.00">
+                    <label>Valor do desconto (%) *</label>
+                    <input type="number" id="premioDesconto" class="dash-input" min="0" max="100" step="0.01" placeholder="Ex: 10.00">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-ghost" id="premioCancel">Cancelar</button>

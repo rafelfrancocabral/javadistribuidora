@@ -138,6 +138,10 @@ function refreshClientAuthUI() {
     if (chip) chip.style.display = isClientLoggedIn() ? '' : 'none';
     if (ordersBtn) ordersBtn.style.display = isClientLoggedIn() ? '' : 'none';
     if (name) name.textContent = isClientLoggedIn() ? (_client.razao || 'Cliente') : 'Cliente';
+    const heroDesc = document.getElementById('heroDesc');
+    const heroCardFoot = document.getElementById('heroCardFoot');
+    if (heroDesc) heroDesc.textContent = isClientLoggedIn() ? 'Acumule pontos com suas compras e resgate brindes ou desconto no checkout. Acompanhe seu ranking no League.' : 'Catálogo exclusivo para revenda. Aproveite condições especiais para o seu comércio e faça o orçamento rápido, com confirmação na hora.';
+    if (heroCardFoot) heroCardFoot.innerHTML = isClientLoggedIn() ? '<i class="fas fa-star"></i> Você tem acesso ao Programa de Pontos. Veja seus prêmios e o League ao finalizar seu orçamento.' : '<i class="fas fa-shield-halved"></i> Preços e condições liberados após o login do lojista.';
 }
 
 // ============ Produtos ============

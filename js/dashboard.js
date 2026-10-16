@@ -1905,11 +1905,15 @@ function renderLeague() {
         const medal = pos === 1 ? '🥇 ' : pos === 2 ? '🥈 ' : pos === 3 ? '🥉 ' : '';
         const pts = Number(c.pontos || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
         const resg = Number(c.resgates || 0).toLocaleString('pt-BR');
+        // Ranking = pontos conquistados (saldo + pontos gastos). Fallback para saldo se a RPC antiga responder.
+        const total = (c.pontos_conquistados != null) ? Number(c.pontos_conquistados) : Number(c.pontos || 0);
+        const tot = total.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
         return `<tr>
             <td data-label="Cliente">${medal}${escapeHtml(c.razao_social || '-')}</td>
             <td data-label="E-mail">${escapeHtml(c.email || '-')}</td>
             <td data-label="Telefone">${escapeHtml(c.telefone || '-')}</td>
-            <td data-label="Pontos" class="right"><b style="color:#ffd93b;">${pts}</b></td>
+            <td data-label="Pontos conquistados" class="right"><b style="color:#2563eb;">${tot}</b></td>
+            <td data-label="Saldo" class="right">${pts}</td>
             <td data-label="Resgates" class="right">${resg}</td>
             <td data-label="Ações"><button class="btn btn-ghost btn-sm" onclick="openLeagueEditModal(${c.id})"><i class="fas fa-pen"></i> Editar</button></td>
         </tr>`;

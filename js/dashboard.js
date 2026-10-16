@@ -1959,7 +1959,7 @@ function renderRegrasPontuacao() {
         const validade = r.validade ? new Date(String(r.validade).slice(0,10) + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
         return `<tr>
             <td data-label="Nome da Regra">${escapeHtml(r.nome || '-')}</td>
-            <td data-label="Conversão (R$ → pontos)"><b style="color:#ffd93b;">${conv} = ${pts} ${Number(r.pontos) === 1 ? 'ponto' : 'pontos'}</b></td>
+            <td data-label="Conversão (R$ → pontos)"><b style="color:#2563eb;">${conv} = ${pts} ${Number(r.pontos) === 1 ? 'ponto' : 'pontos'}</b></td>
             <td data-label="Pontos" class="right">${pts}</td>
             <td data-label="Data do término">${validade}</td>
             <td data-label="Status">${r.ativo ? '<span style="color:#2ed573;">Ativo</span>' : '<span style="color:#ff5c5c;">Inativo</span>'}</td>

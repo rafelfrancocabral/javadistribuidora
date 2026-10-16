@@ -388,7 +388,6 @@
                         </table>
                     </div>
                     <div id="regrasPontEmpty" class="empty-state" style="display:none;"><i class="fas fa-scale-balanced"></i><p>Nenhuma regra de pontuação cadastrada.</p></div>
-                    <p style="color:var(--text-secondary);font-size:.85rem;margin-top:10px;">Ex.: <b style="color:#ffd93b;">R$ 350,00 = 2 pontos</b> — informe o valor em R$ e a quantidade de pontos. A conversão é aplicada por faixa de compra (de o valor mínimo em diante).</p>
                 </div>
             </section>
 
@@ -743,13 +742,13 @@
                             <small style="color:var(--text-secondary);display:block;margin-bottom:4px;">Valor em R$</small>
                             <input type="text" id="regraPontValor" class="dash-input" required inputmode="decimal" placeholder="350,00">
                         </div>
-                        <div style="flex:0 0 auto;padding-bottom:8px;font-size:1.15rem;color:#ffd93b;font-weight:700;">=</div>
+                        <div style="flex:0 0 auto;padding-bottom:8px;font-size:1.15rem;color:#2563eb;font-weight:700;">=</div>
                         <div style="flex:1;">
                             <small style="color:var(--text-secondary);display:block;margin-bottom:4px;">Pontos</small>
                             <input type="number" id="regraPontPontos" class="dash-input" required min="0" step="0.5" placeholder="2">
                         </div>
                     </div>
-                    <div id="regraPontPreview" style="margin-top:8px;font-size:.85rem;color:#ffd93b;background:rgba(255,217,59,.08);border:1px solid rgba(255,217,59,.25);border-radius:8px;padding:8px 10px;display:none;"><i class="fas fa-arrows-rotate"></i> <span></span></div>
+                    <div id="regraPontPreview" style="margin-top:8px;font-size:.85rem;color:#2563eb;background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.25);border-radius:8px;padding:8px 10px;display:none;"><i class="fas fa-arrows-rotate"></i> <span></span></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-ghost" id="regraPontCancel">Cancelar</button>
@@ -767,7 +766,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=2"></script>
-    <script src="js/dashboard.js?v=73"></script>
+    <script src="js/dashboard.js?v=74"></script>
 </body>
 </html><!-- redeploy:20261016104944 prize/rules/league -->
 <!-- pub:20261016105831 -->

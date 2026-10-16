@@ -1220,9 +1220,13 @@ async function downloadCatalogPDF() {
             const imgX = x + (cellW - imgSize) / 2;
             const imgY = y;
             if (dataUrl) {
-                try { doc.addImage(dataUrl, 'JPEG', imgX, imgY, imgSize, imgSize); }
-                catch (e) { try { doc.addImage(dataUrl, 'PNG', imgX, imgY, imgSize, imgSize); } catch (e2) {} }
+                let added = false;
+                for (const fmt of ['WEBP', 'PNG', 'JPEG']) {
+                    try { doc.addImage(dataUrl, fmt, imgX, imgY, imgSize, imgSize); added = true; break; } catch (e) { /* try next */ }
+                }
+                if (!added) { console.warn('addImage failed for', imgUrl); }
             } else {
+                console.warn('image fetch failed:', imgUrl);
                 doc.setFillColor(245, 245, 248); doc.setDrawColor(220, 210, 232); doc.rect(imgX, imgY, imgSize, imgSize, 'FD');
                 doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal');
                 doc.text('sem foto', imgX + imgSize / 2, imgY + imgSize / 2, { align: 'center' });

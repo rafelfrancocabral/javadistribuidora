@@ -84,7 +84,7 @@ function saleDate(q) { if (q && q.concluido_em) { const d = new Date(q.concluido
 function toast(msg, isError) { const t = document.getElementById('toast'); if (!t) return; t.className = 'toast show' + (isError ? ' error' : ''); t.innerHTML = (isError ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>') + '<span>' + escapeHtml(msg) + '</span>'; clearTimeout(t._timer); t._timer = setTimeout(() => { t.className = 'toast'; }, 2600); }
 
 // ---------- Navigation ----------
-const VIEW_TITLES = { 'dashboard': 'Painel do Lojista', 'orcamentos': 'Gerenciar Orçamentos', 'produtos': 'Gerenciar Produtos', 'categorias': 'Gerenciar Categorias', 'clientes': 'Gerenciar Clientes', 'agendar': 'Agendar Visita', 'playbook': 'Playbook — Metas e Estratégias', 'tracker': 'Tracker — Atividades', 'log': 'Log — Buscas', 'prize': 'Prize — Regras de Prêmios', 'rules': 'Rules — Regras do Programa', 'league': 'League — Pontos e Resgates' };
+const VIEW_TITLES = { 'dashboard': 'Painel do Lojista', 'orcamentos': 'Gerenciar Orçamentos', 'produtos': 'Gerenciar Produtos', 'categorias': 'Gerenciar Categorias', 'clientes': 'Gerenciar Clientes', 'agendar': 'Agendar Visita', 'playbook': 'Playbook — Metas e Estratégias', 'tracker': 'Tracker — Atividades', 'log': 'Log — Buscas', 'prize': 'Prize — Regras de Prêmios', 'rules': 'Rules — Regras de Pontuação', 'league': 'League — Pontos e Resgates' };
 
 function setCurrentGroup(group) {
     currentChartGroup = group;
@@ -1877,12 +1877,17 @@ function renderRegrasPontuacao() {
     if (empty) empty.style.display = 'none';
     tb.innerHTML = regrasPont.map(r => {
         const min = Number(r.valor_compra_min||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-        const max = r.valor_compra_max != null ? Number(r.valor_compra_max).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '∞';
+        const max = (r.valor_compra_max != null && r.valor_compra_max !== '') ? Number(r.valor_compra_max).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : null;
+        const conv = max ? `R$ ${min} até R$ ${max}` : `R$ ${min}`;
+        const pts = Number(r.pontos||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});
+        const validade = r.validade ? new Date(String(r.validade).slice(0,10) + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
         return `<tr>
-            <td>R$ ${min} até R$ ${max}</td>
-            <td class="right">${Number(r.pontos||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-            <td>${r.ativo ? 'Sim':'Não'}</td>
-            <td><button class="btn btn-ghost btn-sm" onclick="removerRegraPontuacao(${r.id})"><i class="fas fa-trash"></i> Excluir</button></td>
+            <td>${escapeHtml(r.nome || '-')}</td>
+            <td><b style="color:#ffd93b;">${conv} = ${pts} ${Number(r.pontos) === 1 ? 'ponto' : 'pontos'}</b></td>
+            <td class="right">${pts}</td>
+            <td>${validade}</td>
+            <td>${r.ativo ? '<span style="color:#2ed573;">Ativo</span>' : '<span style="color:#ff5c5c;">Inativo</span>'}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openRegraPontuacaoModal(${r.id})"><i class="fas fa-pen"></i> Editar</button> <button class="btn btn-ghost btn-sm" onclick="removerRegraPontuacao(${r.id})"><i class="fas fa-trash"></i> Excluir</button></td>
         </tr>`;
     }).join('');
 }
@@ -1890,17 +1895,58 @@ async function removerRegraPontuacao(id) {
     if (!confirm('Excluir regra de pontuação?')) return;
     try { await adminCall('admin_remover_regra_pontuacao', {_id:id}); toast('Regra excluída'); loadRegrasPontuacao(); } catch(e){ toast(e.message,true); }
 }
-function openRegraPontuacaoModal() {
-    const minStr = prompt('Valor mínimo (R$):', '200,00');
-    if (minStr === null) return;
-    const maxStr = prompt('Valor máximo (R$) — deixe vazio se sem limite:', '');
-    if (maxStr === null) return;
-    const ptsStr = prompt('Pontos:', '1');
-    if (ptsStr === null) return;
-    const min = parseFloat(minStr.replace(',', '.')) || 0;
-    const max = maxStr.trim() === '' ? null : (parseFloat(maxStr.replace(',', '.')) || null);
-    const pts = parseFloat(ptsStr.replace(',', '.')) || 0;
-    adminCall('admin_salvar_regra_pontuacao', {_valor_compra_min:min, _valor_compra_max:max, _pontos:pts, _ativo:true}).then(()=>{toast('Regra salva'); loadRegrasPontuacao();}).catch(e=>toast(e.message,true));
+function parseMoneyToNumber(str) {
+    let s = String(str || '').trim().replace(/[^\d.,-]/g, '');
+    if (!s) return 0;
+    if (s.indexOf(',') > -1) s = s.replace(/\./g, '').replace(',', '.');
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+}
+function updateRegraPontPreview() {
+    const box = document.getElementById('regraPontPreview');
+    if (!box) return;
+    const v = parseMoneyToNumber(document.getElementById('regraPontValor').value);
+    const p = parseFloat(document.getElementById('regraPontPontos').value) || 0;
+    if (v > 0 && p > 0) {
+        box.style.display = '';
+        box.querySelector('span').textContent = `R$ ${v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} = ${p.toLocaleString('pt-BR',{maximumFractionDigits:2})} ${p === 1 ? 'ponto' : 'pontos'}`;
+    } else {
+        box.style.display = 'none';
+    }
+}
+function openRegraPontuacaoModal(id) {
+    const r = id ? regrasPont.find(x => String(x.id) === String(id)) : null;
+    document.getElementById('regraPontModalTitle').textContent = r ? 'Editar Regra' : 'Adicionar Regra';
+    document.getElementById('regraPontId').value = r ? r.id : '';
+    document.getElementById('regraPontNome').value = r ? (r.nome || '') : '';
+    document.getElementById('regraPontValidade').value = r && r.validade ? String(r.validade).slice(0, 10) : '';
+    document.getElementById('regraPontAtivo').value = r ? (r.ativo ? '1' : '0') : '1';
+    document.getElementById('regraPontValor').value = r ? Number(r.valor_compra_min || 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+    document.getElementById('regraPontPontos').value = r ? Number(r.pontos || 0) : '';
+    updateRegraPontPreview();
+    document.getElementById('regraPontModal').classList.add('open');
+}
+function closeRegraPontModal() {
+    document.getElementById('regraPontModal').classList.remove('open');
+}
+async function submitRegraPontForm(e) {
+    e.preventDefault();
+    const id = document.getElementById('regraPontId').value || null;
+    const nome = document.getElementById('regraPontNome').value.trim();
+    const validade = document.getElementById('regraPontValidade').value || null;
+    const ativo = document.getElementById('regraPontAtivo').value === '1';
+    const valor = parseMoneyToNumber(document.getElementById('regraPontValor').value);
+    const pontos = parseFloat(document.getElementById('regraPontPontos').value) || 0;
+    if (!nome) { toast('Informe o nome da regra', true); return; }
+    if (!validade) { toast('Informe a data do término', true); return; }
+    if (valor <= 0) { toast('Informe o valor em R$', true); return; }
+    if (pontos <= 0) { toast('Informe a quantidade de pontos', true); return; }
+    try {
+        await adminCall('admin_salvar_regra_pontuacao', { _id: id, _nome: nome, _valor_compra_min: valor, _valor_compra_max: null, _pontos: pontos, _ativo: ativo, _validade: validade });
+        toast('Regra salva');
+        closeRegraPontModal();
+        loadRegrasPontuacao();
+    } catch (err) { toast('Erro: ' + err.message, true); }
 }
 
 // ---------- Playbook (Metas) ----------
@@ -2409,7 +2455,19 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     const premioOverlay = document.getElementById('premioModal');
     if (premioOverlay) premioOverlay.addEventListener('click', (e) => { if (e.target === premioOverlay) closePremioModal(); });
     const btnAddRegraPontuacao = document.getElementById('btnAddRegraPontuacao');
-    if (btnAddRegraPontuacao) btnAddRegraPontuacao.addEventListener('click', openRegraPontuacaoModal);
+    if (btnAddRegraPontuacao) btnAddRegraPontuacao.addEventListener('click', () => openRegraPontuacaoModal(null));
+    const regraPontClose = document.getElementById('regraPontModalClose');
+    if (regraPontClose) regraPontClose.addEventListener('click', closeRegraPontModal);
+    const regraPontCancel = document.getElementById('regraPontCancel');
+    if (regraPontCancel) regraPontCancel.addEventListener('click', closeRegraPontModal);
+    const regraPontForm = document.getElementById('regraPontForm');
+    if (regraPontForm) regraPontForm.addEventListener('submit', submitRegraPontForm);
+    const regraPontValor = document.getElementById('regraPontValor');
+    if (regraPontValor) regraPontValor.addEventListener('input', updateRegraPontPreview);
+    const regraPontPontos = document.getElementById('regraPontPontos');
+    if (regraPontPontos) regraPontPontos.addEventListener('input', updateRegraPontPreview);
+    const regraPontOverlay = document.getElementById('regraPontModal');
+    if (regraPontOverlay) regraPontOverlay.addEventListener('click', (e) => { if (e.target === regraPontOverlay) closeRegraPontModal(); });
 
     init();
 });

@@ -1134,7 +1134,7 @@ async function downloadCatalogPDF() {
     const catOrder = [...catNames].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
 
     // Load image as dataURL (best-effort)
-    async function imgDataUrl(url) {
+        async function imgDataUrl(url) {
         if (!url) return null;
         if (String(url).startsWith('data:')) return url;
         const tryFetch = async (u) => {
@@ -1152,18 +1152,24 @@ async function downloadCatalogPDF() {
         };
         let r = await tryFetch(url);
         if (r) return r;
-        // Fallback: proxy via Worker (CORS habilitado)
+        console.warn('image fetch failed (direct):', url);
         try {
             const base = (typeof R2_PUBLIC_BASE_URL === 'string') ? R2_PUBLIC_BASE_URL : '';
             const worker = (typeof R2_WORKER_URL === 'string') ? R2_WORKER_URL : '';
-            if (base && worker && String(url).startsWith(base)) {
-                const key = String(url).slice(base.length).replace(/^\/+/, '');
-                const proxyUrl = worker.replace(/\/+$/, '') + '/image?key=' + encodeURIComponent(key);
+            if (worker) {
+                let proxyUrl = null;
+                if (base && String(url).startsWith(base)) {
+                    const key = String(url).slice(base.length).replace(/^\/+/, '');
+                    proxyUrl = worker.replace(/\/+$/, '') + '/image?key=' + encodeURIComponent(key);
+                } else {
+                    proxyUrl = worker.replace(/\/+$/, '') + '/image?url=' + encodeURIComponent(url);
+                }
                 console.log('trying proxy:', proxyUrl);
                 r = await tryFetch(proxyUrl);
                 if (r) return r;
+                console.warn('image fetch failed (proxy):', proxyUrl);
             } else {
-                console.warn('proxy skipped: base/worker mismatch', base, worker, url);
+                console.warn('proxy skipped: R2_WORKER_URL ausente');
             }
         } catch (e) { console.error('proxy error:', e); }
         return null;

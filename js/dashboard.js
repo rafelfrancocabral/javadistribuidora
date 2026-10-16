@@ -1894,9 +1894,50 @@ async function loadLeague() {
     try { leagueList = (await adminCall('admin_listar_league_filtrada', { _limite: 500 })) || []; } catch (e) { leagueList = []; }
     renderLeague();
 }
+function leagueInitials(nome) {
+    const parts = String(nome || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+function leagueTotal(c) {
+    return (c && c.pontos_conquistados != null) ? Number(c.pontos_conquistados) : Number((c && c.pontos) || 0);
+}
+function renderLeaguePodium(list) {
+    const el = document.getElementById('leaguePodium');
+    if (!el) return;
+    const top = (list || []).slice(0, 3);
+    if (!top.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    const medals = ['🥇', '🥈', '🥉'];
+    const places = ['1º Lugar', '2º Lugar', '3º Lugar'];
+    // ordem visual do pódio: 2º, 1º, 3º
+    const order = [1, 0, 2];
+    el.innerHTML = order.map(pos => {
+        const c = top[pos];
+        if (!c) {
+            return `<div class="lp-item lp-empty lp-${pos + 1}">
+                <div class="lp-medal">${medals[pos]}</div>
+                <div class="lp-avatar">—</div>
+                <div class="lp-name">Sem cliente</div>
+                <div class="lp-points">0 <small>pontos</small></div>
+                <div class="lp-base">${places[pos]}</div>
+            </div>`;
+        }
+        const tot = leagueTotal(c).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        return `<div class="lp-item lp-${pos + 1}">
+            <div class="lp-medal">${medals[pos]}</div>
+            <div class="lp-avatar" title="${escapeHtml(c.razao_social || '')}">${escapeHtml(leagueInitials(c.razao_social || c.email))}</div>
+            <div class="lp-name">${escapeHtml(c.razao_social || c.email || '-')}</div>
+            <div class="lp-points">${tot}<small>pontos conquistados</small></div>
+            <div class="lp-base">${places[pos]}</div>
+        </div>`;
+    }).join('');
+    el.style.display = '';
+}
 function renderLeague() {
     const tb = document.getElementById('leagueTableBody');
     const empty = document.getElementById('leagueEmpty');
+    renderLeaguePodium(leagueList);
     if (!tb) return;
     if (!leagueList.length) { tb.innerHTML = ''; if (empty) empty.style.display = ''; return; }
     if (empty) empty.style.display = 'none';

@@ -367,6 +367,7 @@ function buildPaymentChart() {
     if (!el || !labels.length) return;
 
     const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#10b981', '#f97316', '#ec4899', '#64748b'];
+
     const total = data.reduce((a, b) => a + b, 0);
 
     chartPaymentsInstance = new Chart(el, {
@@ -443,7 +444,7 @@ function buildPaymentChart() {
                     cornerRadius: 12,
                     displayColors: true,
                     boxPadding: 6,
-                    borderColor: 'rgba(255,95,109,0.4)',
+                    borderColor: 'rgba(239,68,68,0.4)',
                     borderWidth: 1.5,
                     callbacks: {
                         label: (ctx) => {

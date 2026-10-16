@@ -814,9 +814,7 @@ input, select, textarea { font-family: inherit; }
     0%, 100% { opacity: 0; transform: scale(.5) rotate(0deg); }
     50%      { opacity: 1; transform: scale(1.15) rotate(20deg); }
 }
-@media (prefers-reduced-motion: reduce) {
-    .lp-trophy, .lp-1 .lp-medal::before, .lp-1 .lp-medal::after { animation: none; }
-}
+/* Animacoes do podio sempre ativas (efeito comemorativo solicitado) */
 
 @media (max-width: 768px) {
     .league-podium { grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 18px 10px 0; }

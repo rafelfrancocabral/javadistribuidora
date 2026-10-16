@@ -1898,7 +1898,6 @@ async function loadLeague() {
 let _podiumConfettiPending = false;
 function launchConfetti(duration) {
     try {
-        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         const canvas = document.createElement('canvas');
         canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;';
         document.body.appendChild(canvas);

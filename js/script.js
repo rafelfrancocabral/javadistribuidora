@@ -140,8 +140,11 @@ function refreshClientAuthUI() {
     if (name) name.textContent = isClientLoggedIn() ? (_client.razao || 'Cliente') : 'Cliente';
     const heroDesc = document.getElementById('heroDesc');
     const heroCardFoot = document.getElementById('heroCardFoot');
-    if (heroDesc) heroDesc.textContent = isClientLoggedIn() ? 'Acumule pontos com suas compras e resgate brindes ou desconto no checkout. Acompanhe seu ranking no League.' : 'Catálogo exclusivo para revenda. Aproveite condições especiais para o seu comércio e faça o orçamento rápido, com confirmação na hora.';
-    if (heroCardFoot) heroCardFoot.innerHTML = isClientLoggedIn() ? '<i class="fas fa-star"></i> Você tem acesso ao Programa de Pontos. Veja seus prêmios e o League ao finalizar seu orçamento.' : '<i class="fas fa-shield-halved"></i> Preços e condições liberados após o login do lojista.';
+    if (heroDesc) heroDesc.textContent = isClientLoggedIn() ? 'Seu programa de pontos está ativo. Veja os 3 passos para ganhar e resgatar:' : 'Catálogo exclusivo para revenda. Aproveite condições especiais para o seu comércio e faça o orçamento rápido, com confirmação na hora.';
+    const heroGuest = document.getElementById('heroGuestCard');
+    const heroLogged = document.getElementById('heroLoggedCard');
+    if (heroGuest) heroGuest.style.display = isClientLoggedIn() ? 'none' : '';
+    if (heroLogged) heroLogged.style.display = isClientLoggedIn() ? '' : 'none';
 }
 
 // ============ Produtos ============

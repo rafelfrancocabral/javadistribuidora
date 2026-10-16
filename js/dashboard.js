@@ -110,7 +110,7 @@ function switchView(view) {
     if (view === 'log') { loadSiteSearches(); renderSiteSearches(); }
     if (view === 'prize') { loadPremios(); }
     if (view === 'rules') { loadRegrasPontuacao(); }
-    if (view === 'league') { loadLeague(); }
+    if (view === 'league') { _podiumConfettiPending = true; loadLeague(); }
     if (view === 'dashboard') renderOverview();
     document.getElementById('dashSidebar').classList.remove('open');
 }
@@ -1894,6 +1894,64 @@ async function loadLeague() {
     try { leagueList = (await adminCall('admin_listar_league_filtrada', { _limite: 500 })) || []; } catch (e) { leagueList = []; }
     renderLeague();
 }
+// Confete comemorativo do podio (canvas, sem dependencias externas)
+let _podiumConfettiPending = false;
+function launchConfetti(duration) {
+    try {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const canvas = document.createElement('canvas');
+        canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;';
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        let W = canvas.clientWidth, H = canvas.clientHeight;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const colors = ['#f5c518', '#ffe066', '#a855f7', '#2563eb', '#00e5ff', '#2ed573', '#ff2fe6'];
+        const cx = W / 2;
+        const parts = [];
+        for (let i = 0; i < 150; i++) {
+            parts.push({
+                x: cx + (Math.random() - 0.5) * W * 0.7,
+                y: -20 - Math.random() * H * 0.35,
+                vx: (Math.random() - 0.5) * 3.2,
+                vy: 2 + Math.random() * 3.6,
+                w: 6 + Math.random() * 6,
+                h: 8 + Math.random() * 9,
+                rot: Math.random() * Math.PI,
+                vr: (Math.random() - 0.5) * 0.28,
+                color: colors[(Math.random() * colors.length) | 0],
+                shape: Math.random() < 0.25 ? 'circle' : 'rect'
+            });
+        }
+        const start = performance.now();
+        const total = duration || 3200;
+        (function frame(now) {
+            const t = now - start;
+            ctx.clearRect(0, 0, W, H);
+            for (const p of parts) {
+                p.vy += 0.045;
+                p.vx *= 0.995;
+                p.x += p.vx + Math.sin((p.y + t) / 60) * 0.4; // leve balanço
+                p.y += p.vy;
+                p.rot += p.vr;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot);
+                ctx.globalAlpha = Math.max(0, 1 - t / total);
+                ctx.fillStyle = p.color;
+                if (p.shape === 'circle') {
+                    ctx.beginPath(); ctx.arc(0, 0, p.w * 0.5, 0, Math.PI * 2); ctx.fill();
+                } else {
+                    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                }
+                ctx.restore();
+            }
+            if (t < total) requestAnimationFrame(frame);
+            else canvas.remove();
+        })(start);
+    } catch (e) { /* silencioso */ }
+}
 function leagueInitials(nome) {
     const parts = String(nome || '').trim().split(/\s+/).filter(Boolean);
     if (!parts.length) return '?';
@@ -1933,6 +1991,7 @@ function renderLeaguePodium(list) {
         </div>`;
     }).join('');
     el.style.display = '';
+    if (_podiumConfettiPending) { _podiumConfettiPending = false; if (top.length) launchConfetti(); }
 }
 function renderLeague() {
     const tb = document.getElementById('leagueTableBody');

@@ -65,7 +65,7 @@ export default {
         // Servir imagens do R2 com CORS (usado pelo catalogo PDF para embutir fotos)
         if (url.pathname === '/image' && request.method === 'GET') {
             const key = url.searchParams.get('key');
-            if (!key || !/^produtos\/[a-f0-9]{64}(_thumb)?\.webp$/.test(key)) {
+            if (!key || !/^produtos\/[A-Za-z0-9._-]+\.(webp|jpg|jpeg|png|gif)$/i.test(key)) {
                 return json({ error: 'chave invalida' }, 400);
             }
             const obj = await env.IMAGES.get(key);

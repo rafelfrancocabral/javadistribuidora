@@ -1137,17 +1137,36 @@ async function downloadCatalogPDF() {
     async function imgDataUrl(url) {
         if (!url) return null;
         if (String(url).startsWith('data:')) return url;
+        const tryFetch = async (u) => {
+            try {
+                const resp = await fetch(u, { mode: 'cors' });
+                if (!resp.ok) { console.warn('fetch not ok', resp.status, u); return null; }
+                const blob = await resp.blob();
+                return await new Promise((resolve) => {
+                    const fr = new FileReader();
+                    fr.onload = () => resolve(fr.result);
+                    fr.onerror = () => resolve(null);
+                    fr.readAsDataURL(blob);
+                });
+            } catch (e) { console.warn('fetch error', u, e && e.message); return null; }
+        };
+        let r = await tryFetch(url);
+        if (r) return r;
+        // Fallback: proxy via Worker (CORS habilitado)
         try {
-            const resp = await fetch(url, { mode: 'cors' });
-            if (!resp.ok) return null;
-            const blob = await resp.blob();
-            return await new Promise((resolve) => {
-                const fr = new FileReader();
-                fr.onload = () => resolve(fr.result);
-                fr.onerror = () => resolve(null);
-                fr.readAsDataURL(blob);
-            });
-        } catch (e) { return null; }
+            const base = (typeof R2_PUBLIC_BASE_URL === 'string') ? R2_PUBLIC_BASE_URL : '';
+            const worker = (typeof R2_WORKER_URL === 'string') ? R2_WORKER_URL : '';
+            if (base && worker && String(url).startsWith(base)) {
+                const key = String(url).slice(base.length).replace(/^\/+/, '');
+                const proxyUrl = worker.replace(/\/+$/, '') + '/image?key=' + encodeURIComponent(key);
+                console.log('trying proxy:', proxyUrl);
+                r = await tryFetch(proxyUrl);
+                if (r) return r;
+            } else {
+                console.warn('proxy skipped: base/worker mismatch', base, worker, url);
+            }
+        } catch (e) { console.error('proxy error:', e); }
+        return null;
     }
 
     // Preload images

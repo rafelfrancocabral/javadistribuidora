@@ -139,7 +139,6 @@ function refreshClientAuthUI() {
     if (ordersBtn) ordersBtn.style.display = isClientLoggedIn() ? '' : 'none';
     if (name) name.textContent = isClientLoggedIn() ? (_client.razao || 'Cliente') : 'Cliente';
     const heroDesc = document.getElementById('heroDesc');
-    const heroCardFoot = document.getElementById('heroCardFoot');
     if (heroDesc) heroDesc.textContent = isClientLoggedIn() ? 'Seu programa de pontos está ativo. Veja os 3 passos para ganhar e resgatar:' : 'Catálogo exclusivo para revenda. Aproveite condições especiais para o seu comércio e faça o orçamento rápido, com confirmação na hora.';
     const heroGuest = document.getElementById('heroGuestCard');
     const heroLogged = document.getElementById('heroLoggedCard');

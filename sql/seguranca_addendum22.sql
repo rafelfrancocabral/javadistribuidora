@@ -35,9 +35,9 @@ ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS ja_comprou_site boolean DEF
 UPDATE public.clientes SET ja_comprou_site = true
 WHERE email IS NOT NULL AND email != ''
   AND EXISTS (
-    SELECT 1 FROM public.pedidos p 
-    WHERE lower(trim(p.email)) = lower(trim(clientes.email)) 
-    AND p.status = 'recebido'
+    SELECT 1 FROM public.orcamentos o
+    WHERE lower(trim(o.email)) = lower(trim(clientes.email))
+      AND o.status IN ('recebido', 'concluido')
   );
 
 -- RPCs

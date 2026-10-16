@@ -90,7 +90,7 @@ function setCurrentGroup(group) {
     currentChartGroup = group;
     document.querySelectorAll('[data-group]').forEach(btn => btn.classList.toggle('active', btn.dataset.group === group));
     // Re-render current view with new group filter
-    const activeView = document.querySelector('.dash-view:not([style*="display: none"])')?.id?.replace('view-', '') || 'dashboard';
+    const activeView = document.querySelector('.dash-nav-item.active[data-view]')?.dataset.view || 'dashboard';
     switchView(activeView);
 }
 
@@ -642,7 +642,7 @@ async function renderOverview() {
 function statusLabel(s) { const map = { em_andamento: 'Em andamento', recebido: 'Recebido', analise: 'Em análise', aprovado: 'Aprovado', entregue: 'Entregue', concluido: 'Concluído', cancelado: 'Cancelado' }; return map[s] || s; }
 
 async function loadQuotes() {
-    try { const data = await adminCall('admin_listar_orcamentos', {}); quotes = (Array.isArray(data) ? data : []).map(q => { q.linha = q.linha || 'java'; return q; }); } catch (e) { console.error('Erro ao carregar orçamentos:', e); quotes = []; }
+    try { const data = await adminCall('admin_listar_orcamentos', {}); quotes = (Array.isArray(data) ? data : []).map(q => { q.linha = q.linha || 'java'; return q; }); } catch (e) { console.error('Erro ao carregar orçamentos:', e); quotes = []; toast('Erro ao carregar orçamentos: ' + ((e && e.message) || e), true); }
     updatePendingBadge();
 }
 

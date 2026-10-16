@@ -1125,10 +1125,11 @@ async function downloadCatalogPDF() {
     const brand = '#581c87'; const light = '#5b5466'; const pink = [255, 47, 230];
     const line = (currentChartGroup === 'dymar') ? 'Dymar' : 'Java';
     const visibleProducts = products.filter(p => p.linha === currentChartGroup && p.visivel !== false);
-    if (!visibleProducts.length) { toast('Nenhum produto visível para o catálogo.', true); return; }
+    const catalogProducts = visibleProducts.length ? visibleProducts : products.filter(p => p.linha === currentChartGroup);
+    if (!catalogProducts.length) { toast('Nenhum produto para gerar catálogo.', true); return; }
 
     // Category order = site order (alphabetical by nome)
-    const catNames = [...new Set(visibleProducts.map(p => p.categoria || 'Sem categoria'))];
+    const catNames = [...new Set(catalogProducts.map(p => p.categoria || 'Sem categoria'))];
     const catOrder = [...catNames].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
 
     // Load image as dataURL (best-effort)
@@ -1150,7 +1151,7 @@ async function downloadCatalogPDF() {
 
     // Preload images
     const imgCache = new Map();
-    const urls = [...new Set(visibleProducts.map(p => (p.imagens && p.imagens.length) ? p.imagens[0] : null).filter(Boolean))];
+    const urls = [...new Set(catalogProducts.map(p => (p.imagens && p.imagens.length) ? p.imagens[0] : null).filter(Boolean))];
     await Promise.all(urls.map(async (u) => { imgCache.set(u, await imgDataUrl(u)); }));
 
     function drawHeader(title) {
@@ -1189,7 +1190,7 @@ async function downloadCatalogPDF() {
     }
 
     catOrder.forEach((cat) => {
-        const catProducts = visibleProducts
+        const catProducts = catalogProducts
             .filter(p => (p.categoria || 'Sem categoria') === cat)
             .sort((a, b) => {
                 const wa = (a.isdestaque ? 2 : 0) + (a.ispromocao ? 1 : 0);
@@ -1257,7 +1258,7 @@ async function downloadCatalogPDF() {
     if (!url) throw new Error('Falha ao gerar blob do PDF');
     const win = window.open(url, '_blank');
     if (!win) toast('Permita pop-ups para ver o PDF.', true);
-    toast('Catálogo gerado com ' + visibleProducts.length + ' produtos.');
+    toast('Catálogo gerado com ' + catalogProducts.length + ' produtos.');
     } catch (e) { console.error('Catalog PDF error:', e); toast('Erro ao gerar catálogo: ' + (e && e.message ? e.message : e), true); }
 }
 

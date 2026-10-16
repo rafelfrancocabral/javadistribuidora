@@ -1908,7 +1908,7 @@ function renderLeaguePodium(list) {
     if (!el) return;
     const top = (list || []).slice(0, 3);
     if (!top.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
-    const medals = ['🥇', '🥈', '🥉'];
+    const medals = ['<i class="fas fa-trophy lp-trophy" aria-hidden="true"></i>', '🥈', '🥉'];
     const places = ['1º Lugar', '2º Lugar', '3º Lugar'];
     // ordem visual do pódio: 2º, 1º, 3º
     const order = [1, 0, 2];

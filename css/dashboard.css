@@ -419,7 +419,7 @@ input, select, textarea { font-family: inherit; }
 .quote-items-head span { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
 .quote-items-empty { font-size: 0.8rem; color: var(--text-muted); padding: 10px; border: 1px dashed var(--border); border-radius: 8px; text-align: center; margin-bottom: 10px; }
 .quote-items-empty.hidden { display: none; }
-.quote-item { display: grid; grid-template-columns: 1fr 1.4fr 70px 80px auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+.quote-item { display: grid; grid-template-columns: 1fr 1.4fr 62px 68px 84px auto; gap: 8px; align-items: center; margin-bottom: 8px; }
 .quote-item .qi-product { position: relative; }
 .quote-item .qi-list, .quote-item .qi-code-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 50; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; max-height: 180px; overflow-y: auto; display: none; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
 .quote-item .qi-list.open, .quote-item .qi-code-list.open { display: block; }

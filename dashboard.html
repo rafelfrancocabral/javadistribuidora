@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=25">
+    <link rel="stylesheet" href="css/dashboard.css?v=26">
 </head>
 <body>
     <script>
@@ -569,6 +569,7 @@
                     <small class="mq-line-hint">Após selecionar a linha, apenas produtos dela poderão ser adicionados.</small>
                 </div>
                 <div class="quote-items-head"><span>Itens do Orçamento</span><button type="button" class="btn btn-ghost btn-sm" id="mqAddItem"><i class="fas fa-plus"></i> Adicionar Produto</button></div>
+                <small class="mq-line-hint" style="margin:-4px 0 8px;display:block;">Colunas: Código · Produto · Qtde · <strong>% Desc.</strong> (desconto manual por produto) · Subtotal já com o desconto aplicado.</small>
                 <div id="mqItems" class="quote-items"></div>
                 <div class="quote-items-empty" id="mqItemsEmpty">Nenhum item. Clique em "Adicionar Produto".</div>
                 <div class="quote-items-total"><span>Total</span><span id="mqTotalDisplay">R$ 0,00</span></div>
@@ -768,7 +769,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=2"></script>
-    <script src="js/dashboard.js?v=80"></script>
+    <script src="js/dashboard.js?v=81"></script>
 </body>
 </html><!-- redeploy:20261016104944 prize/rules/league -->
 <!-- pub:20261016105831 -->

@@ -110,7 +110,7 @@ function switchView(view) {
     if (view === 'log') { loadSiteSearches(); renderSiteSearches(); }
     if (view === 'prize') { loadPremios(); }
     if (view === 'rules') { loadRegrasPontuacao(); }
-    if (view === 'league') { loadLeague(); renderLeague(); }
+    if (view === 'league') { loadLeague(); }
     if (view === 'dashboard') renderOverview();
     document.getElementById('dashSidebar').classList.remove('open');
 }
@@ -732,6 +732,7 @@ function openQuoteDetail(id) {
         <div class="qd-row"><span>Status</span><span><span class="status-pill status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span></span></div>
         ${itemsHtml}
         ${q.pagamento ? `<div class="qd-row"><span>Prazo</span><span>${escapeHtml(q.pagamento)}</span></div>` : ''}
+        ${q.obs ? `<div class="qd-row" style="align-items:flex-start"><span>Observações</span><span style="text-align:right;color:#1f9d55;font-weight:600;white-space:pre-wrap">${escapeHtml(q.obs)}</span></div>` : ''}
         <div class="qd-row"><span>Total</span><span style="font-weight:700;color:var(--accent)">${formatPrice(q.total)}</span></div>
         <div class="qd-actions">
             <button class="btn btn-whatsapp-outline" onclick="downloadQuotePDF('${q.id}')"><i class="fas fa-file-pdf"></i> Ver PDF</button>
@@ -757,7 +758,7 @@ async function advanceQuote(id) { const q = quotes.find(x => String(x.id) === St
 
 async function deleteQuote(id) { if (!confirm('Excluir este orçamento?')) return; const qq = quotes.find(x => String(x.id) === String(id)); try { await adminCall('admin_excluir_orcamento', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } quotes = quotes.filter(x => String(x.id) !== String(id)); trackAction('Orçamento excluído: ' + (qq ? (qq.codigo_cliente || qq.nome_cliente || qq.id) : id)); updatePendingBadge(); renderQuotes(); toast('Orçamento excluído'); }
 
-function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA*', '']; const quoteName = getQuoteClientName(q); if (q.codigo_cliente) lines.push('Cliente: ' + quoteName + ' (#' + q.codigo_cliente + ')'); else lines.push('Cliente: ' + quoteName); if (q.codigo_retirada) lines.push('Cód. Retirada: ' + q.codigo_retirada); lines.push('Data: ' + formatDate(q.created_at)); lines.push(''); if (Array.isArray(q.itens) && q.itens.length) { q.itens.forEach(it => { lines.push('• ' + it.nome + ' (' + (it.codigo||'') + ')'); lines.push('  ' + it.quantidade + 'x ' + formatPrice(it.preco) + ' = ' + formatPrice(it.subtotal || (it.preco * it.quantidade))); }); } else { lines.push(String(q.itens || '')); } lines.push(''); lines.push('Total: ' + formatPrice(q.total)); if (q.pagamento) lines.push('Prazo de pagamento: ' + q.pagamento); lines.push(''); lines.push('WhatsApp: (12) 99778-0047'); return lines.join('\n'); }
+function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA*', '']; const quoteName = getQuoteClientName(q); if (q.codigo_cliente) lines.push('Cliente: ' + quoteName + ' (#' + q.codigo_cliente + ')'); else lines.push('Cliente: ' + quoteName); if (q.codigo_retirada) lines.push('Cód. Retirada: ' + q.codigo_retirada); lines.push('Data: ' + formatDate(q.created_at)); lines.push(''); if (Array.isArray(q.itens) && q.itens.length) { q.itens.forEach(it => { lines.push('• ' + it.nome + ' (' + (it.codigo||'') + ')'); lines.push('  ' + it.quantidade + 'x ' + formatPrice(it.preco) + ' = ' + formatPrice(it.subtotal || (it.preco * it.quantidade))); }); } else { lines.push(String(q.itens || '')); } lines.push(''); lines.push('Total: ' + formatPrice(q.total)); if (q.pagamento) lines.push('Prazo de pagamento: ' + q.pagamento); if (q.obs) { lines.push(''); lines.push('Observações: ' + q.obs); } lines.push(''); lines.push('WhatsApp: (12) 99778-0047'); return lines.join('\n'); }
 
 function buildPaymentLines(pagamento, baseDate, total) { if (!pagamento) return []; const p = String(pagamento).trim(); const pLower = p.toLowerCase(); const nums = p.match(/\d+/g) || []; let prazos = []; if (/^\d+x$/i.test(p)) { const n = parseInt(nums[0]); if (n > 1) for (let i = 1; i <= n; i++) prazos.push(30 * i); } else if (/boleto/.test(pLower)) { prazos.push(nums.length ? parseInt(nums[0]) : 30); } else if (nums.length) { prazos = nums.map(n => parseInt(n)).filter(n => n > 0); } if (!prazos.length) return []; const base = baseDate ? new Date(baseDate) : new Date(); const qtd = prazos.length; const valorParcela = Number(total) > 0 ? Number(total) / qtd : 0; return prazos.map((dias, i) => { const dt = new Date(base.getTime() + dias * 86400000); const dia = dt.toLocaleDateString('pt-BR'); const parcelaText = prazos.length === 1 ? 'Vencimento em ' + dia + ' (' + dias + ' dias)' : (i + 1) + 'ª parcela' + (dias ? ' (' + dias + ' dias)' : '') + ' — ' + dia; return valorParcela > 0 ? parcelaText + ' — ' + formatPrice(valorParcela) : parcelaText; }); }
 
@@ -821,6 +822,7 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     });
     y += tBoxH + 6;
     if (q.pagamento) { const payLines = buildPaymentLines(q.pagamento, q.created_at, q.total); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
+    if (q.obs) { if (y > 255) { doc.addPage(); y = margin; } y += 3; doc.setFontSize(10); doc.setTextColor(31, 157, 85); doc.setFont('helvetica', 'bold'); doc.text('Prêmio / Observações:', margin, y); y += 6; doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); const obsLines = doc.splitTextToSize(String(q.obs), width); obsLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.text(l, margin, y); y += 5.5; }); }
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
     const fileName = 'orcamento-' + (q.codigo_cliente || q.id) + '-' + (getQuoteClientName(q) ? getQuoteClientName(q).replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
     const url = URL.createObjectURL(doc.output('blob'));
@@ -1823,9 +1825,15 @@ function renderPremios() {
     if (empty) empty.style.display = 'none';
     tb.innerHTML = premios.map(p => {
         const validade = p.validade ? new Date(String(p.validade).slice(0,10) + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+        const tipo = (p.tipo === 'desconto') ? 'desconto' : 'brinde';
+        const desc = Number(p.valor_desconto || 0);
+        const beneficio = (tipo === 'desconto')
+            ? `<span style="color:#2ed573;font-weight:700;">Desconto R$ ${desc.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`
+            : `<span style="color:#ffd93b;font-weight:700;">Brinde / Bônus</span>`;
         return `<tr>
             <td>${escapeHtml(p.nome || '')}</td>
             <td class="right">${Number(p.pontos_necessarios||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+            <td>${beneficio}</td>
             <td>${validade}</td>
             <td>${p.ativo ? '<span style="color:#2ed573;">Ativo</span>' : '<span style="color:#ff5c5c;">Inativo</span>'}</td>
             <td><button class="btn btn-ghost btn-sm" onclick="openPremioModal(${p.id})"><i class="fas fa-pen"></i> Editar</button> <button class="btn btn-ghost btn-sm" onclick="removerPremio(${p.id})"><i class="fas fa-trash"></i> Excluir</button></td>
@@ -1836,6 +1844,13 @@ async function removerPremio(id) {
     if (!confirm('Excluir prêmio?')) return;
     try { await adminCall('admin_remover_premio', { _id: id }); toast('Prêmio excluído'); loadPremios(); } catch (e) { toast(e.message,true); }
 }
+function togglePremioDescontoField() {
+    const tipo = document.getElementById('premioTipo')?.value || 'brinde';
+    const field = document.getElementById('premioDescontoField');
+    const input = document.getElementById('premioDesconto');
+    if (field) field.style.display = (tipo === 'desconto') ? '' : 'none';
+    if (input) input.required = (tipo === 'desconto');
+}
 function openPremioModal(id) {
     const p = id ? premios.find(x => String(x.id) === String(id)) : null;
     document.getElementById('premioModalTitle').textContent = p ? 'Editar Prêmio' : 'Adicionar Prêmio';
@@ -1844,6 +1859,9 @@ function openPremioModal(id) {
     document.getElementById('premioValidade').value = p && p.validade ? String(p.validade).slice(0, 10) : '';
     document.getElementById('premioAtivo').value = p ? (p.ativo ? '1' : '0') : '1';
     document.getElementById('premioPontos').value = p ? Number(p.pontos_necessarios || 0) : '';
+    document.getElementById('premioTipo').value = p && p.tipo === 'desconto' ? 'desconto' : 'brinde';
+    document.getElementById('premioDesconto').value = p && p.valor_desconto != null ? Number(p.valor_desconto) : '';
+    togglePremioDescontoField();
     document.getElementById('premioModal').classList.add('open');
 }
 function closePremioModal() {
@@ -1856,14 +1874,45 @@ async function submitPremioForm(e) {
     const validade = document.getElementById('premioValidade').value || null;
     const ativo = document.getElementById('premioAtivo').value === '1';
     const pontos = parseFloat(document.getElementById('premioPontos').value) || 0;
+    const tipo = document.getElementById('premioTipo').value || 'brinde';
+    const desconto = parseFloat(document.getElementById('premioDesconto').value) || 0;
     if (!nome) { toast('Informe o nome do prêmio', true); return; }
     if (!validade) { toast('Informe a data do término', true); return; }
+    if (tipo === 'desconto' && !(desconto > 0)) { toast('Informe o valor do desconto', true); return; }
     try {
-        await adminCall('admin_salvar_premio', { _id: id, _nome: nome, _pontos_necessarios: pontos, _quantidade: null, _ativo: ativo, _validade: validade });
+        await adminCall('admin_salvar_premio', {
+            _id: id, _nome: nome, _pontos_necessarios: pontos, _quantidade: null,
+            _ativo: ativo, _validade: validade, _tipo: tipo,
+            _valor_desconto: (tipo === 'desconto' ? desconto : null)
+        });
         toast('Prêmio salvo');
         closePremioModal();
         loadPremios();
     } catch (err) { toast('Erro: ' + err.message, true); }
+}
+async function loadLeague() {
+    try { leagueList = (await adminCall('admin_listar_league_filtrada', { _limite: 500 })) || []; } catch (e) { leagueList = []; }
+    renderLeague();
+}
+function renderLeague() {
+    const tb = document.getElementById('leagueTableBody');
+    const empty = document.getElementById('leagueEmpty');
+    if (!tb) return;
+    if (!leagueList.length) { tb.innerHTML = ''; if (empty) empty.style.display = ''; return; }
+    if (empty) empty.style.display = 'none';
+    tb.innerHTML = leagueList.map((c, i) => {
+        const pos = i + 1;
+        const medal = pos === 1 ? '🥇 ' : pos === 2 ? '🥈 ' : pos === 3 ? '🥉 ' : '';
+        const pts = Number(c.pontos || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        const resg = Number(c.resgates || 0).toLocaleString('pt-BR');
+        return `<tr>
+            <td>${medal}${escapeHtml(c.razao_social || '-')}</td>
+            <td>${escapeHtml(c.email || '-')}</td>
+            <td>${escapeHtml(c.telefone || '-')}</td>
+            <td class="right"><b style="color:#ffd93b;">${pts}</b></td>
+            <td class="right">${resg}</td>
+        </tr>`;
+    }).join('');
 }
 async function loadRegrasPontuacao() {
     try { regrasPont = (await adminCall('admin_listar_regras_pontuacao', {})) || []; } catch (e) { regrasPont = []; }
@@ -2452,6 +2501,8 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     if (premioCancel) premioCancel.addEventListener('click', closePremioModal);
     const premioForm = document.getElementById('premioForm');
     if (premioForm) premioForm.addEventListener('submit', submitPremioForm);
+    const premioTipo = document.getElementById('premioTipo');
+    if (premioTipo) premioTipo.addEventListener('change', togglePremioDescontoField);
     const premioOverlay = document.getElementById('premioModal');
     if (premioOverlay) premioOverlay.addEventListener('click', (e) => { if (e.target === premioOverlay) closePremioModal(); });
     const btnAddRegraPontuacao = document.getElementById('btnAddRegraPontuacao');

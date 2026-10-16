@@ -613,6 +613,119 @@ function renderPaymentOptions(total) {
     sel.value = '';
 }
 
+// ---------- Programa de pontos (checkout) ----------
+let _checkoutPoints = { ganhos: 0, acumulados: 0 };
+let _selectedPrize = null;
+
+async function loadCheckoutPoints(total) {
+    const box = document.getElementById('checkoutPoints');
+    const earnEl = document.getElementById('pointsEarn');
+    const totalEl = document.getElementById('pointsTotal');
+    const wrap = document.getElementById('pointsPrizesWrap');
+    const listEl = document.getElementById('pointsPrizesList');
+    if (!box) return;
+
+    _selectedPrize = null;
+    const email = getClientEmail();
+    if (!email) { box.style.display = 'none'; return; }
+
+    box.style.display = '';
+    if (earnEl) earnEl.textContent = '...';
+    if (totalEl) totalEl.textContent = '...';
+    if (wrap) wrap.style.display = 'none';
+    if (listEl) listEl.innerHTML = '';
+
+    try {
+        const resumo = await db.rpc('cliente_calcular_pontos_pedido', { _email: email, _total: total });
+        const d = (resumo && resumo.data) ? resumo.data : resumo;
+        _checkoutPoints.ganhos = Number((d && d.pontos_ganhos) || 0);
+        _checkoutPoints.acumulados = Number((d && d.pontos_acumulados) || 0);
+    } catch (e) {
+        console.error('pontos', e);
+        _checkoutPoints = { ganhos: 0, acumulados: 0 };
+    }
+
+    if (earnEl) earnEl.textContent = _checkoutPoints.ganhos.toLocaleString('pt-BR');
+    if (totalEl) totalEl.textContent = _checkoutPoints.acumulados.toLocaleString('pt-BR');
+
+    let premios = [];
+    try {
+        const r = await db.rpc('cliente_listar_premios_disponiveis', { _email: email });
+        premios = (r && Array.isArray(r.data)) ? r.data : [];
+    } catch (e) { console.error('premios', e); premios = []; }
+
+    if (!premios.length || !listEl || !wrap) return;
+    wrap.style.display = '';
+    listEl.innerHTML = premios.map(p => {
+        const pts = Number(p.pontos_necessarios || 0);
+        const tipo = (p.tipo === 'desconto') ? 'desconto' : 'brinde';
+        const desc = Number(p.valor_desconto || 0);
+        let benefit;
+        if (tipo === 'desconto' && desc > 0) {
+            benefit = 'Desconto de ' + formatPrice(desc) + ' no total';
+        } else {
+            benefit = 'Brinde entregue junto com o pedido';
+        }
+        return `<button type="button" class="point-prize-btn" data-premio='${escapeHtml(JSON.stringify({ id: p.id, nome: p.nome, tipo: tipo, valor_desconto: desc, pontos: pts }))}'>
+            <span class="pp-name">${escapeHtml(p.nome || '')}</span>
+            <span class="pp-cost"><i class="fas fa-star"></i> ${pts.toLocaleString('pt-BR')} ${pts === 1 ? 'ponto' : 'pontos'}</span>
+            <span class="pp-tag ${tipo}">${tipo === 'desconto' ? 'Desconto' : 'Brinde'}</span>
+            <span class="pp-benefit">${escapeHtml(benefit)}</span>
+        </button>`;
+    }).join('') + '<button type="button" class="point-prize-clear" id="prizeClearBtn">Não quero prêmio</button>';
+
+    listEl.querySelectorAll('.point-prize-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const p = JSON.parse(btn.getAttribute('data-premio'));
+            selectPrize(p, btn, total);
+        });
+    });
+    const clr = document.getElementById('prizeClearBtn');
+    if (clr) clr.addEventListener('click', () => { _selectedPrize = null; refreshCheckoutTotal(total); });
+}
+
+function refreshCheckoutTotal(baseTotal) {
+    const subEl = document.getElementById('checkoutSubtotal');
+    const discountEl = document.getElementById('checkoutDiscountRow');
+    const sel = document.getElementById('checkoutPayment');
+    const prevPay = sel ? sel.value : '';
+    let total = baseTotal;
+    if (_selectedPrize && _selectedPrize.tipo === 'desconto' && Number(_selectedPrize.valor_desconto) > 0) {
+        total = Math.max(0, baseTotal - Number(_selectedPrize.valor_desconto));
+        if (subEl) subEl.innerHTML = `<s style="color:var(--text-secondary);font-weight:500;font-size:.8em;">${formatPrice(baseTotal)}</s> ${formatPrice(total)}`;
+        if (!discountEl && subEl) {
+            const row = document.createElement('div');
+            row.id = 'checkoutDiscountRow';
+            row.className = 'checkout-discount';
+            row.innerHTML = `<span><i class="fas fa-tag"></i> Desconto do prêmio</span><span id="checkoutDiscountVal"></span>`;
+            subEl.closest('.checkout-total').after(row);
+        }
+        const dv = document.getElementById('checkoutDiscountVal');
+        if (dv) dv.textContent = '-' + formatPrice(Number(_selectedPrize.valor_desconto));
+    } else {
+        if (subEl) subEl.textContent = formatPrice(baseTotal);
+        if (discountEl) discountEl.remove();
+    }
+    renderPaymentOptions(total);
+    // Preserva o prazo escolhido quando ele ainda for válido
+    if (sel && prevPay) {
+        const opt = Array.from(sel.options).find(o => o.value === prevPay);
+        if (opt) sel.value = prevPay;
+    }
+}
+
+function selectPrize(p, btn, baseTotal) {
+    document.querySelectorAll('.point-prize-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    _selectedPrize = p;
+    refreshCheckoutTotal(baseTotal);
+    if (p.tipo === 'desconto' && Number(p.valor_desconto) > 0) {
+        showToast('Desconto de ' + formatPrice(Number(p.valor_desconto)) + ' aplicado!');
+    } else {
+        showToast('Prêmio "' + p.nome + '" anotado no pedido.');
+    }
+}
+
 function openCheckout() {
     const cart = getCart();
     if (cart.length === 0) { showToast('Seu carrinho está vazio.', true); return; }
@@ -640,9 +753,12 @@ function openCheckout() {
 
     const total = cart.reduce((s, i) => s + i.qty * i.preco, 0);
     document.getElementById('checkoutSubtotal').textContent = formatPrice(total);
+    const oldDisc = document.getElementById('checkoutDiscountRow');
+    if (oldDisc) oldDisc.remove();
     renderPaymentOptions(total);
     document.getElementById('checkoutOverlay').classList.add('active');
     document.body.style.overflow = 'hidden';
+    loadCheckoutPoints(total);
 }
 function closeCheckout() {
     document.getElementById('checkoutOverlay').classList.remove('active');
@@ -698,27 +814,53 @@ async function submitQuote(e) {
     const code = generateClientCode(email);
     const pickupCode = generatePickupCode();
 
+    // Prêmio de desconto: aplica no total do orçamento
+    let totalFinal = total;
+    let premioDesconto = 0;
+    if (_selectedPrize && _selectedPrize.tipo === 'desconto' && Number(_selectedPrize.valor_desconto) > 0) {
+        premioDesconto = Math.min(Number(_selectedPrize.valor_desconto), total);
+        totalFinal = Math.max(0, total - premioDesconto);
+    }
+
     clearTimeout(_pedidoSyncTimer);
 
+    let orcamentoId = null;
     try {
-        await db.rpc('salvar_pedido', { _payload: {
+        const res = await db.rpc('salvar_pedido', { _payload: {
             nome_cliente: (_client && _client.razao) || email,
             email: email,
             telefone: '',
             codigo_cliente: code,
             codigo_retirada: pickupCode,
             itens: itens,
-            total: total,
+            total: totalFinal,
             pagamento: pagamento,
             status_entrega: 'pendente',
             linha: 'java'
         }, _finalizar: true });
+        if (res && res.error) throw res.error;
+        if (res && res.data != null) orcamentoId = res.data;
     } catch (err) {
         console.error('Erro ao salvar orçamento:', err);
         if (errBox) { errText.textContent = 'Não foi possível registrar o orçamento. Tente novamente em instantes.'; errBox.style.display = ''; }
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Concluir Orçamento'; }
         return;
     }
+
+    // Soma pontos do pedido (base = total sem desconto) e registra o resgate do prêmio
+    try {
+        await db.rpc('cliente_finalizar_pedido_pontos', {
+            _email: email,
+            _total: total,
+            _premio_id: _selectedPrize ? _selectedPrize.id : null,
+            _orcamento_id: orcamentoId
+        });
+    } catch (err) {
+        console.error('Erro ao registrar pontos:', err);
+    }
+
+    _selectedPrize = null;
+    _checkoutPoints = { ganhos: 0, acumulados: 0 };
 
     const form = document.getElementById('checkoutForm');
     if (form) form.reset();
@@ -734,8 +876,10 @@ function showCheckoutSuccess(code) {
     const formEl = document.getElementById('checkoutForm');
     const successEl = document.getElementById('checkoutSuccess');
     const codeEl = document.getElementById('checkoutSuccessCode');
+    const discEl = document.getElementById('checkoutDiscountRow');
     if (itemsEl) itemsEl.style.display = 'none';
     if (totalEl) totalEl.style.display = 'none';
+    if (discEl) discEl.remove();
     if (formEl) formEl.style.display = 'none';
     if (codeEl) codeEl.textContent = '#' + code;
     if (successEl) successEl.style.display = '';
@@ -872,6 +1016,7 @@ function renderClientOrders(orders) {
                 <button type="button" class="order-pdf-btn" onclick="downloadOrderPDF('${o.id}')" title="Baixar este pedido em PDF"><i class="fas fa-file-pdf"></i> PDF</button>
             </div>
             ${items.length ? `<div class="order-items">${items.map(it => `<div class="order-item"><span>${escapeHtml(it.nome || '')} ${it.codigo ? `<small>(${escapeHtml(it.codigo)})</small>` : ''}</span><span>${it.quantidade || 0}x ${formatPrice(it.preco || 0)}</span></div>`).join('')}</div>` : ''}
+            ${o.obs ? `<div class="order-obs" style="margin:8px 0 0;padding:8px 10px;border-radius:8px;background:rgba(31,157,85,.10);color:#1f9d55;font-size:12.5px;font-weight:600;"><i class="fas fa-gift"></i> ${escapeHtml(o.obs)}</div>` : ''}
             <div class="order-card-foot">
                 <span class="order-pay">${o.pagamento ? 'Prazo: ' + escapeHtml(o.pagamento) : ''}</span>
                 <span class="order-total">${formatPrice(o.total)}</span>
@@ -1018,6 +1163,13 @@ async function downloadOrderPDF(id) {
         doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y);
         doc.setFont('helvetica', 'normal'); doc.text(String(order.pagamento), margin + 50, y); y += 7;
         payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; });
+    }
+    if (order.obs) {
+        if (y > 255) { doc.addPage(); y = margin; }
+        y += 3; doc.setFontSize(10); doc.setTextColor(31, 157, 85); doc.setFont('helvetica', 'bold');
+        doc.text('Prêmio / Observações:', margin, y); y += 6;
+        doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40);
+        doc.splitTextToSize(String(order.obs), width).forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.text(l, margin, y); y += 5.5; });
     }
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) {
         doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal');

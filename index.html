@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=14">
+    <link rel="stylesheet" href="css/style.css?v=15">
 </head>
 <body>
 
@@ -225,6 +225,28 @@
                     </select>
                     <p class="checkout-note"><i class="fas fa-truck"></i> Frete CIF acima de R$300,00 e Boleto mínimo R$250,00.</p>
                 </div>
+
+                <!-- ===== PONTOS E PRÊMIOS ===== -->
+                <div class="checkout-points" id="checkoutPoints" style="display:none;">
+                    <div class="points-header">
+                        <span class="points-title"><i class="fas fa-star"></i> Programa de Pontos</span>
+                    </div>
+                    <div class="points-stats">
+                        <div class="points-stat points-earn">
+                            <span class="points-num" id="pointsEarn">0</span>
+                            <span class="points-lbl">Pontos ganhos</span>
+                        </div>
+                        <div class="points-stat points-total">
+                            <span class="points-num" id="pointsTotal">0</span>
+                            <span class="points-lbl">Pontos acumulados</span>
+                        </div>
+                    </div>
+                    <div class="points-prizes" id="pointsPrizesWrap" style="display:none;">
+                        <span class="points-prizes-title"><i class="fas fa-gift"></i> Resgate um prêmio:</span>
+                        <div class="points-prizes-list" id="pointsPrizesList"></div>
+                    </div>
+                </div>
+
                 <div class="checkout-error" id="checkoutError" style="display:none;">
                     <i class="fas fa-exclamation-circle"></i>
                     <span id="checkoutErrorText">Faça login para finalizar.</span>
@@ -322,6 +344,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-config.js?v=2"></script>
-<script src="js/script.js?v=20"></script>
+<script src="js/script.js?v=21"></script>
 </body>
 </html>

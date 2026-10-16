@@ -1117,7 +1117,8 @@ function downloadXlsxFile(entries, filename) {
 
 async function downloadCatalogPDF() {
     try {
-        if (!products || !products.length) { toast('Nenhum produto para gerar catálogo', true); return; }
+        toast('Gerando catálogo...');
+        if (!products || !products.length) { toast('Nenhum produto carregado.', true); return; }
         if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada.', true); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });

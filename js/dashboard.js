@@ -770,7 +770,7 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     doc.setFillColor(247, 243, 255); doc.setDrawColor(216, 200, 236); doc.setLineWidth(0.3); doc.rect(margin, y, width, 9, 'FD');
     [descX, qtyX, tabX, dscX, liqX, icmsX].forEach(col => { doc.line(col, y, col, y + 9); });
     doc.setTextColor(brand); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7); doc.text('CÓDIGO', 27, y + 6, { align: 'center' }); doc.text('PRODUTO', 68, y + 6, { align: 'center' }); doc.text('QTDE', 109, y + 6, { align: 'center' }); doc.text('TABELA', 128, y + 6, { align: 'center' }); doc.text('DESCONTO', 147, y + 6, { align: 'center' }); doc.text('PREÇO LÍQUIDO', 167, y + 6, { align: 'center' }); doc.text('ICMS-ST', 172, y + 6, { align: 'center' }); doc.text('SUBTOTAL', 185, y + 6, { align: 'center' }); y += 15;
+    doc.setFontSize(7); doc.text('CÓDIGO', 27, y + 6, { align: 'center' }); doc.text('PRODUTO', 68, y + 6, { align: 'center' }); doc.text('QTDE', 109, y + 6, { align: 'center' }); doc.text('TABELA', 128, y + 6, { align: 'center' }); doc.text('DESCONTO', 147, y + 6, { align: 'center' }); doc.text('Preço Liq', 167, y + 6, { align: 'center' }); doc.text('ICMS-ST', 172, y + 6, { align: 'center' }); doc.text('SUBTOTAL', 185, y + 6, { align: 'center' }); y += 15;
     doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(9.5);
     const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null;
     const byCode = {};

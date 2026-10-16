@@ -107,6 +107,7 @@ function switchView(view) {
     if (view === 'agendar') { renderAgenda(); renderVisitLeads(); renderVisitFrequencia(); }
     if (view === 'playbook') renderPlaybook();
     if (view === 'tracker') renderTracker();
+    if (view === 'log') { loadSiteSearches(); renderSiteSearches(); }
     if (view === 'dashboard') renderOverview();
     document.getElementById('dashSidebar').classList.remove('open');
 }
@@ -1780,6 +1781,26 @@ async function addTracker() {
     await loadTracker();
     renderTracker();
     toast('Atividade registrada');
+}
+
+let siteSearches = [];
+async function loadSiteSearches() {
+    try { siteSearches = (await adminCall('admin_listar_site_searches', { _limite: 500 })) || []; } catch (e) { console.error('loadSiteSearches', e); siteSearches = []; }
+}
+function renderSiteSearches() {
+    const el = document.getElementById('searchLogList');
+    const empty = document.getElementById('searchLogEmpty');
+    if (!el) return;
+    if (!siteSearches.length) { el.innerHTML = ''; if (empty) empty.style.display = ''; return; }
+    if (empty) empty.style.display = 'none';
+    el.innerHTML = siteSearches.map(s => {
+        const d = s.created_at ? new Date(s.created_at) : null;
+        return `<div class="pb-meta-row" style="align-items:center;">
+            <span style="flex:0 0 28px;color:#4facfe;"><i class="fas fa-search"></i></span>
+            <span style="flex:1;font-size:.95rem;">${escapeHtml(s.termo)}${s.resultados != null ? ' <span style="color:var(--text-secondary);font-size:.75rem">(' + s.resultados + ' resultados)</span>' : ''}</span>
+            <span style="font-size:.72rem;color:var(--text-secondary);white-space:nowrap;">${d && !isNaN(d.getTime()) ? d.toLocaleString('pt-BR') : ''}</span>
+        </div>`;
+    }).join('');
 }
 
 // ---------- Playbook (Metas) ----------

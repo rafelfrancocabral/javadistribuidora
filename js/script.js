@@ -1127,7 +1127,16 @@ function setupUI() {
     let debounce;
     if (search) search.addEventListener('input', () => {
         clearTimeout(debounce);
-        debounce = setTimeout(() => { _searchTerm = search.value.trim(); renderCatalog(); }, 250);
+        debounce = setTimeout(() => {
+            const term = search.value.trim();
+            _searchTerm = term;
+            renderCatalog();
+            if (term && term.length > 1) {
+                try {
+                    Promise.resolve(db.rpc('registrar_site_search', { _termo: term, _email: (getClientEmail() || null), _user_agent: navigator.userAgent || null })).catch(() => {});
+                } catch (e) {}
+            }
+        }, 250);
     });
 
     const navCart = document.getElementById('navCartBtn');

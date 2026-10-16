@@ -33,6 +33,7 @@
             <a href="#" class="dash-nav-item" data-view="agendar"><span class="dash-nav-ico"><i class="fas fa-calendar-check"></i></span> Agendar Visita</a>
             <a href="#" class="dash-nav-item" data-view="playbook"><span class="dash-nav-ico"><i class="fas fa-bullseye"></i></span> Playbook</a>
             <a href="#" class="dash-nav-item" data-view="tracker"><span class="dash-nav-ico"><i class="fas fa-list-check"></i></span> Tracker</a>
+            <a href="#" class="dash-nav-item" data-view="log"><span class="dash-nav-ico"><i class="fas fa-file-lines"></i></span> Log</a>
         </nav>
         <div class="dash-sidebar-footer">
             <a href="index.html" class="dash-nav-item"><span class="dash-nav-ico"><i class="fas fa-store"></i></span> Ver Catálogo</a>
@@ -307,6 +308,20 @@
                 <div class="dash-panel">
                     <div id="trackerList" class="client-list"></div>
                     <div id="trackerEmpty" class="empty-state" style="display:none;"><i class="fas fa-clipboard-list"></i><p>Nenhuma atividade registrada ainda.</p></div>
+                </div>
+            </section>
+
+            <!-- ===== Log ===== -->
+            <section class="dash-view" id="view-log" style="display:none;">
+                <div class="dash-toolbar">
+                    <div class="dash-toolbar-left">
+                        <span class="dash-live"><i class="fas fa-file-lines"></i> Log de buscas do site</span>
+                    </div>
+                    <button class="btn btn-ghost" onclick="loadSiteSearches()"><i class="fas fa-rotate"></i> Atualizar</button>
+                </div>
+                <div class="dash-panel">
+                    <div id="searchLogList" class="client-list"></div>
+                    <div id="searchLogEmpty" class="empty-state" style="display:none;"><i class="fas fa-magnifying-glass"></i><p>Nenhuma busca registrada ainda.</p></div>
                 </div>
             </section>
 

@@ -1911,8 +1911,35 @@ function renderLeague() {
             <td>${escapeHtml(c.telefone || '-')}</td>
             <td class="right"><b style="color:#ffd93b;">${pts}</b></td>
             <td class="right">${resg}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openLeagueEditModal(${c.id})"><i class="fas fa-pen"></i> Editar</button></td>
         </tr>`;
     }).join('');
+}
+function openLeagueEditModal(id) {
+    const c = leagueList.find(x => String(x.id) === String(id));
+    if (!c) return;
+    document.getElementById('leagueEditId').value = c.id;
+    document.getElementById('leagueEditNome').value = c.razao_social || c.email || '';
+    document.getElementById('leagueEditPontos').value = Number(c.pontos || 0);
+    document.getElementById('leagueEditResgates').value = Number(c.resgates || 0);
+    document.getElementById('leagueEditModal').classList.add('open');
+}
+function closeLeagueEditModal() {
+    document.getElementById('leagueEditModal').classList.remove('open');
+}
+async function submitLeagueEditForm(e) {
+    e.preventDefault();
+    const id = document.getElementById('leagueEditId').value || null;
+    const pontos = parseFloat(document.getElementById('leagueEditPontos').value) || 0;
+    const resgates = parseInt(document.getElementById('leagueEditResgates').value, 10) || 0;
+    if (!id) { toast('Cliente inválido', true); return; }
+    try {
+        await adminCall('admin_ajustar_pontos_cliente', { _id: id, _pontos: pontos, _resgates: resgates });
+        toast('Pontos atualizados');
+        closeLeagueEditModal();
+        loadLeague();
+        trackAction('League: pontos/resgates ajustados manualmente (cliente #' + id + ')');
+    } catch (err) { toast('Erro: ' + err.message, true); }
 }
 async function loadRegrasPontuacao() {
     try { regrasPont = (await adminCall('admin_listar_regras_pontuacao', {})) || []; } catch (e) { regrasPont = []; }
@@ -2503,6 +2530,14 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     if (premioForm) premioForm.addEventListener('submit', submitPremioForm);
     const premioTipo = document.getElementById('premioTipo');
     if (premioTipo) premioTipo.addEventListener('change', togglePremioDescontoField);
+    const leagueEditForm = document.getElementById('leagueEditForm');
+    if (leagueEditForm) leagueEditForm.addEventListener('submit', submitLeagueEditForm);
+    const leagueEditClose = document.getElementById('leagueEditClose');
+    if (leagueEditClose) leagueEditClose.addEventListener('click', closeLeagueEditModal);
+    const leagueEditCancel = document.getElementById('leagueEditCancel');
+    if (leagueEditCancel) leagueEditCancel.addEventListener('click', closeLeagueEditModal);
+    const leagueEditOverlay = document.getElementById('leagueEditModal');
+    if (leagueEditOverlay) leagueEditOverlay.addEventListener('click', (e) => { if (e.target === leagueEditOverlay) closeLeagueEditModal(); });
     const premioOverlay = document.getElementById('premioModal');
     if (premioOverlay) premioOverlay.addEventListener('click', (e) => { if (e.target === premioOverlay) closePremioModal(); });
     const btnAddRegraPontuacao = document.getElementById('btnAddRegraPontuacao');

@@ -410,6 +410,7 @@
                                     <th>Telefone</th>
                                     <th class="right">Pontos</th>
                                     <th class="right">Resgates</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="leagueTableBody"></tbody>
@@ -418,6 +419,35 @@
                     <div id="leagueEmpty" class="empty-state" style="display:none;"><i class="fas fa-users"></i><p>Nenhum cliente que comprou pelo site com pontos/resgates.</p></div>
                 </div>
             </section>
+
+            <!-- ===== Modal Editar Pontos (League) ===== -->
+            <div class="modal-overlay" id="leagueEditModal">
+                <div class="modal">
+                    <div class="modal-header"><h3>Editar Pontos do Cliente</h3><button class="modal-close" id="leagueEditClose"><i class="fas fa-xmark"></i></button></div>
+                    <form id="leagueEditForm" class="modal-body">
+                        <input type="hidden" id="leagueEditId" value="">
+                        <div class="form-field">
+                            <label>Cliente</label>
+                            <input type="text" id="leagueEditNome" class="dash-input" readonly>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label>Pontos acumulados *</label>
+                                <input type="number" id="leagueEditPontos" class="dash-input" min="0" step="0.01" required placeholder="Ex: 90">
+                            </div>
+                            <div class="form-field">
+                                <label>Resgates *</label>
+                                <input type="number" id="leagueEditResgates" class="dash-input" min="0" step="1" required placeholder="Ex: 2">
+                            </div>
+                        </div>
+                        <p style="color:var(--text-secondary);font-size:.82rem;margin:2px 0 0;">Ajuste manual direto do saldo. Use com cuidado — substitui o valor atual do cliente.</p>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-ghost" id="leagueEditCancel">Cancelar</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
             <!-- ===== Modal Visita ===== -->
                 <div class="modal-overlay" id="visitModal">
@@ -737,7 +767,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=2"></script>
-    <script src="js/dashboard.js?v=69"></script>
+    <script src="js/dashboard.js?v=70"></script>
 </body>
 </html><!-- redeploy:20261016104944 prize/rules/league -->
 <!-- pub:20261016105831 -->

@@ -348,10 +348,9 @@
                             <thead>
                                 <tr>
                                     <th>Nome do Prêmio</th>
-                                    <th class="right">Pontos p/ Resgatar</th>
-                                    <th class="right">Quantidade</th>
-                                    <th>Validade</th>
-                                    <th>Ativo</th>
+                                    <th class="right">Pontos necessários</th>
+                                    <th>Data do término</th>
+                                    <th>Status</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
@@ -639,6 +638,39 @@
         </div>
     </div>
 
+    <!-- ===== Modal Prêmio ===== -->
+    <div class="modal-overlay" id="premioModal">
+        <div class="modal">
+            <div class="modal-header"><h3 id="premioModalTitle">Adicionar Prêmio</h3><button class="modal-close" id="premioModalClose"><i class="fas fa-xmark"></i></button></div>
+            <form id="premioForm" class="modal-body">
+                <input type="hidden" id="premioId" value="">
+                <div class="form-field">
+                    <label>Nome do prêmio *</label>
+                    <input type="text" id="premioNome" class="dash-input" required maxlength="150" placeholder="Ex: Kit de ferramentas, Voucher R$ 50...">
+                </div>
+                <div class="form-field">
+                    <label>Data do término *</label>
+                    <input type="date" id="premioValidade" class="dash-input" required>
+                </div>
+                <div class="form-field">
+                    <label>Status *</label>
+                    <select id="premioAtivo" class="dash-input" required>
+                        <option value="1">Ativo</option>
+                        <option value="0">Inativo</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Pontos necessários *</label>
+                    <input type="number" id="premioPontos" class="dash-input" min="0" step="1" required placeholder="Ex: 50">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="premioCancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Prêmio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script src="js/jspdf.umd.min.js"></script>
@@ -647,7 +679,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=2"></script>
-    <script src="js/dashboard.js?v=66"></script>
+    <script src="js/dashboard.js?v=67"></script>
 </body>
 </html><!-- redeploy:20261016104944 prize/rules/league -->
 <!-- pub:20261016105831 -->

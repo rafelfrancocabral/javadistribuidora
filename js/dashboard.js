@@ -1822,13 +1822,12 @@ function renderPremios() {
     if (!premios.length) { tb.innerHTML = ''; if (empty) empty.style.display = ''; return; }
     if (empty) empty.style.display = 'none';
     tb.innerHTML = premios.map(p => {
-        const validade = p.validade ? new Date(p.validade + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+        const validade = p.validade ? new Date(String(p.validade).slice(0,10) + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
         return `<tr>
             <td>${escapeHtml(p.nome || '')}</td>
             <td class="right">${Number(p.pontos_necessarios||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-            <td class="right">${p.quantidade != null ? Number(p.quantidade).toLocaleString('pt-BR') : '-'}</td>
             <td>${validade}</td>
-            <td>${p.ativo ? '<span style="color:#2ed573;">Sim</span>' : '<span style="color:#ff5c5c;">Não</span>'}</td>
+            <td>${p.ativo ? '<span style="color:#2ed573;">Ativo</span>' : '<span style="color:#ff5c5c;">Inativo</span>'}</td>
             <td><button class="btn btn-ghost btn-sm" onclick="openPremioModal(${p.id})"><i class="fas fa-pen"></i> Editar</button> <button class="btn btn-ghost btn-sm" onclick="removerPremio(${p.id})"><i class="fas fa-trash"></i> Excluir</button></td>
         </tr>`;
     }).join('');
@@ -1838,21 +1837,33 @@ async function removerPremio(id) {
     try { await adminCall('admin_remover_premio', { _id: id }); toast('Prêmio excluído'); loadPremios(); } catch (e) { toast(e.message,true); }
 }
 function openPremioModal(id) {
-    const p = id ? premios.find(x => x.id == id) : null;
-    const nome = prompt('Nome do prêmio:', p ? p.nome : '');
-    if (nome === null) return;
-    const ptsStr = prompt('Pontos necessários para resgatar:', p ? String(p.pontos_necessarios||0) : '0');
-    if (ptsStr === null) return;
-    const qtdStr = prompt('Quantidade (deixe vazio se ilimitado):', p && p.quantidade != null ? String(p.quantidade) : '');
-    if (qtdStr === null) return;
-    const valStr = prompt('Validade (AAAA-MM-DD) — opcional:', p && p.validade ? String(p.validade) : '');
-    if (valStr === null) return;
-    const ativoStr = confirm('Ativo? ' + (p ? (p.ativo?'[Atualmente SIM]':'[Atualmente NÃO]') : '[Padrão SIM]'));
-    const pts = parseFloat(ptsStr.replace(',', '.')) || 0;
-    const qtd = qtdStr.trim() === '' ? null : (parseInt(qtdStr)||0);
-    let validade = null;
-    if (valStr.trim()) { const d = valStr.trim(); if (/^\d{4}-\d{2}-\d{2}$/.test(d)) validade = d; }
-    adminCall('admin_salvar_premio', { _id: id || null, _nome: nome.trim(), _pontos_necessarios: pts, _quantidade: qtd, _ativo: ativoStr, _validade: validade }).then(()=>{ toast('Prêmio salvo'); loadPremios(); }).catch(e=>toast(e.message,true));
+    const p = id ? premios.find(x => String(x.id) === String(id)) : null;
+    document.getElementById('premioModalTitle').textContent = p ? 'Editar Prêmio' : 'Adicionar Prêmio';
+    document.getElementById('premioId').value = p ? p.id : '';
+    document.getElementById('premioNome').value = p ? (p.nome || '') : '';
+    document.getElementById('premioValidade').value = p && p.validade ? String(p.validade).slice(0, 10) : '';
+    document.getElementById('premioAtivo').value = p ? (p.ativo ? '1' : '0') : '1';
+    document.getElementById('premioPontos').value = p ? Number(p.pontos_necessarios || 0) : '';
+    document.getElementById('premioModal').classList.add('open');
+}
+function closePremioModal() {
+    document.getElementById('premioModal').classList.remove('open');
+}
+async function submitPremioForm(e) {
+    e.preventDefault();
+    const id = document.getElementById('premioId').value || null;
+    const nome = document.getElementById('premioNome').value.trim();
+    const validade = document.getElementById('premioValidade').value || null;
+    const ativo = document.getElementById('premioAtivo').value === '1';
+    const pontos = parseFloat(document.getElementById('premioPontos').value) || 0;
+    if (!nome) { toast('Informe o nome do prêmio', true); return; }
+    if (!validade) { toast('Informe a data do término', true); return; }
+    try {
+        await adminCall('admin_salvar_premio', { _id: id, _nome: nome, _pontos_necessarios: pontos, _quantidade: null, _ativo: ativo, _validade: validade });
+        toast('Prêmio salvo');
+        closePremioModal();
+        loadPremios();
+    } catch (err) { toast('Erro: ' + err.message, true); }
 }
 async function loadRegrasPontuacao() {
     try { regrasPont = (await adminCall('admin_listar_regras_pontuacao', {})) || []; } catch (e) { regrasPont = []; }
@@ -2388,7 +2399,15 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
 
     // Prize/Rules events
     const btnAddPremio = document.getElementById('btnAddPremio');
-    if (btnAddPremio) btnAddPremio.addEventListener('click', openPremioModal);
+    if (btnAddPremio) btnAddPremio.addEventListener('click', () => openPremioModal(null));
+    const premioClose = document.getElementById('premioModalClose');
+    if (premioClose) premioClose.addEventListener('click', closePremioModal);
+    const premioCancel = document.getElementById('premioCancel');
+    if (premioCancel) premioCancel.addEventListener('click', closePremioModal);
+    const premioForm = document.getElementById('premioForm');
+    if (premioForm) premioForm.addEventListener('submit', submitPremioForm);
+    const premioOverlay = document.getElementById('premioModal');
+    if (premioOverlay) premioOverlay.addEventListener('click', (e) => { if (e.target === premioOverlay) closePremioModal(); });
     const btnAddRegraPontuacao = document.getElementById('btnAddRegraPontuacao');
     if (btnAddRegraPontuacao) btnAddRegraPontuacao.addEventListener('click', openRegraPontuacaoModal);
 

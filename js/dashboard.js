@@ -119,27 +119,6 @@ function switchView(view) {
 window.setCurrentGroup = setCurrentGroup;
 
 // ---------- Charts ----------
-const centerDoughnutText = {
-    id: 'centerDoughnutText',
-    afterDraw(chart) {
-        if (chart.config.type !== 'doughnut') return;
-        const { ctx, chartArea } = chart;
-        const cx = (chartArea.left + chartArea.right) / 2;
-        const cy = (chartArea.top + chartArea.bottom) / 2;
-        const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-        ctx.save();
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = "700 22px 'Chakra Petch', sans-serif";
-        ctx.fillStyle = '#14121c';
-        ctx.fillText(String(total), cx, cy - 10);
-        ctx.font = "500 10px 'Inter', sans-serif";
-        ctx.fillStyle = '#9a93a8';
-        ctx.fillText('unidades vendidas', cx, cy + 12);
-        ctx.restore();
-    }
-};
-Chart.register(centerDoughnutText);
 
 function periodSince(period) {
     const now = new Date();

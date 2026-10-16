@@ -337,13 +337,28 @@
             <section class="dash-view" id="view-prize" style="display:none;">
                 <div class="dash-toolbar">
                     <div class="dash-toolbar-left">
-                        <span class="dash-live"><i class="fas fa-trophy"></i> Regras de Prêmios</span>
+                        <span class="dash-live"><i class="fas fa-trophy"></i> Prêmios</span>
                     </div>
-                    <button class="btn btn-primary" id="btnSavePrize"><i class="fas fa-save"></i> Salvar</button>
+                    <button class="btn btn-primary" id="btnAddPremio"><i class="fas fa-plus"></i> Adicionar Prêmio</button>
+                    <button class="btn btn-ghost" onclick="loadPremios()"><i class="fas fa-rotate"></i> Atualizar</button>
                 </div>
                 <div class="dash-panel">
-                    <label class="form-label">Regras de Prêmios</label>
-                    <textarea id="prizeEditor" class="dash-textarea" style="min-height:440px;line-height:1.8;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;" placeholder="Digite as regras de prêmios..."></textarea>
+                    <div class="table-wrap">
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome do Prêmio</th>
+                                    <th class="right">Pontos p/ Resgatar</th>
+                                    <th class="right">Quantidade</th>
+                                    <th>Validade</th>
+                                    <th>Ativo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="premiosTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="premiosEmpty" class="empty-state" style="display:none;"><i class="fas fa-gift"></i><p>Nenhum prêmio cadastrado.</p></div>
                 </div>
             </section>
 
@@ -351,13 +366,27 @@
             <section class="dash-view" id="view-rules" style="display:none;">
                 <div class="dash-toolbar">
                     <div class="dash-toolbar-left">
-                        <span class="dash-live"><i class="fas fa-scroll"></i> Regras do Programa</span>
+                        <span class="dash-live"><i class="fas fa-scroll"></i> Regras de Pontuação</span>
                     </div>
-                    <button class="btn btn-primary" id="btnSaveRules"><i class="fas fa-save"></i> Salvar</button>
+                    <button class="btn btn-primary" id="btnAddRegraPontuacao"><i class="fas fa-plus"></i> Adicionar Regra</button>
+                    <button class="btn btn-ghost" onclick="loadRegrasPontuacao()"><i class="fas fa-rotate"></i> Atualizar</button>
                 </div>
                 <div class="dash-panel">
-                    <label class="form-label">Regras do Programa</label>
-                    <textarea id="rulesEditor" class="dash-textarea" style="min-height:440px;line-height:1.8;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;" placeholder="Digite as regras do programa..."></textarea>
+                    <div class="table-wrap">
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>Valor de Compra (R$)</th>
+                                    <th class="right">Pontos</th>
+                                    <th>Ativo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="regrasPontTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="regrasPontEmpty" class="empty-state" style="display:none;"><i class="fas fa-scale-balanced"></i><p>Nenhuma regra de pontuação cadastrada.</p></div>
+                    <p style="color:var(--text-secondary);font-size:.85rem;margin-top:10px;">Ex.: R$ 200,00 = 1 ponto → defina Valor Mínimo R$ 200,00 e Valor Máximo R$ 299,99 (ou deixe vazio para faixa aberta) com Pontos 1.</p>
                 </div>
             </section>
 
@@ -365,7 +394,7 @@
             <section class="dash-view" id="view-league" style="display:none;">
                 <div class="dash-toolbar">
                     <div class="dash-toolbar-left">
-                        <span class="dash-live"><i class="fas fa-medal"></i> League — Clientes, Pontos e Resgates</span>
+                        <span class="dash-live"><i class="fas fa-medal"></i> League — Clientes que compraram pelo site (ordenados por pontos)</span>
                     </div>
                     <button class="btn btn-ghost" onclick="loadLeague()"><i class="fas fa-rotate"></i> Atualizar</button>
                 </div>
@@ -384,7 +413,7 @@
                             <tbody id="leagueTableBody"></tbody>
                         </table>
                     </div>
-                    <div id="leagueEmpty" class="empty-state" style="display:none;"><i class="fas fa-users"></i><p>Nenhum cliente com pontos/resgates.</p></div>
+                    <div id="leagueEmpty" class="empty-state" style="display:none;"><i class="fas fa-users"></i><p>Nenhum cliente que comprou pelo site com pontos/resgates.</p></div>
                 </div>
             </section>
 

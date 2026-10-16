@@ -108,8 +108,8 @@ function switchView(view) {
     if (view === 'playbook') renderPlaybook();
     if (view === 'tracker') renderTracker();
     if (view === 'log') { loadSiteSearches(); renderSiteSearches(); }
-    if (view === 'prize') { loadPrize(); }
-    if (view === 'rules') { loadRules(); }
+    if (view === 'prize') { loadPremios(); }
+    if (view === 'rules') { loadRegrasPontuacao(); }
     if (view === 'league') { loadLeague(); renderLeague(); }
     if (view === 'dashboard') renderOverview();
     document.getElementById('dashSidebar').classList.remove('open');
@@ -1806,57 +1806,90 @@ function renderSiteSearches() {
     }).join('');
 }
 
-// Prize / Rules / League
-let prizeContent = '', rulesContent = '';
+// Prize / Rules / League (v2)
+let premios = [];
+let regrasPont = [];
 let leagueList = [];
 
-async function loadPrize() {
-    try {
-        const r = await adminCall('admin_get_config', { _chave: 'prize' });
-        prizeContent = (r && r[0] && r[0].valor) ? r[0].valor : '';
-    } catch (e) { prizeContent = ''; }
-    const el = document.getElementById('prizeEditor');
-    if (el) el.value = prizeContent;
+async function loadPremios() {
+    try { premios = (await adminCall('admin_listar_premios', {})) || []; } catch (e) { premios = []; }
+    renderPremios();
 }
-async function savePrize() {
-    const el = document.getElementById('prizeEditor');
-    const v = el ? el.value : '';
-    try { await adminCall('admin_set_config', { _chave: 'prize', _valor: v }); toast('Regras de Prêmios salvas'); } catch (e) { toast('Erro ao salvar: ' + e.message, true); }
-}
-async function loadRules() {
-    try {
-        const r = await adminCall('admin_get_config', { _chave: 'rules' });
-        rulesContent = (r && r[0] && r[0].valor) ? r[0].valor : '';
-    } catch (e) { rulesContent = ''; }
-    const el = document.getElementById('rulesEditor');
-    if (el) el.value = rulesContent;
-}
-async function saveRules() {
-    const el = document.getElementById('rulesEditor');
-    const v = el ? el.value : '';
-    try { await adminCall('admin_set_config', { _chave: 'rules', _valor: v }); toast('Regras do Programa salvas'); } catch (e) { toast('Erro ao salvar: ' + e.message, true); }
-}
-async function loadLeague() {
-    try { leagueList = (await adminCall('admin_listar_league', { _limite: 500 })) || []; } catch (e) { leagueList = []; }
-    renderLeague();
-}
-function renderLeague() {
-    const tb = document.getElementById('leagueTableBody');
-    const empty = document.getElementById('leagueEmpty');
+function renderPremios() {
+    const tb = document.getElementById('premiosTableBody');
+    const empty = document.getElementById('premiosEmpty');
     if (!tb) return;
-    if (!leagueList.length) { tb.innerHTML = ''; if (empty) empty.style.display = ''; return; }
+    if (!premios.length) { tb.innerHTML = ''; if (empty) empty.style.display = ''; return; }
     if (empty) empty.style.display = 'none';
-    tb.innerHTML = leagueList.map(c => {
-        const pontos = Number(c.pontos || 0);
-        const resg = Number(c.resgates || 0);
+    tb.innerHTML = premios.map(p => {
+        const validade = p.validade ? new Date(p.validade + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
         return `<tr>
-            <td>${escapeHtml(c.razao_social || '-')}</td>
-            <td>${escapeHtml(c.email || '-')}</td>
-            <td>${escapeHtml(c.telefone || '-')}</td>
-            <td class="right">${pontos.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
-            <td class="right">${resg.toLocaleString('pt-BR')}</td>
+            <td>${escapeHtml(p.nome || '')}</td>
+            <td class="right">${Number(p.pontos_necessarios||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+            <td class="right">${p.quantidade != null ? Number(p.quantidade).toLocaleString('pt-BR') : '-'}</td>
+            <td>${validade}</td>
+            <td>${p.ativo ? '<span style="color:#2ed573;">Sim</span>' : '<span style="color:#ff5c5c;">Não</span>'}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openPremioModal(${p.id})"><i class="fas fa-pen"></i> Editar</button> <button class="btn btn-ghost btn-sm" onclick="removerPremio(${p.id})"><i class="fas fa-trash"></i> Excluir</button></td>
         </tr>`;
     }).join('');
+}
+async function removerPremio(id) {
+    if (!confirm('Excluir prêmio?')) return;
+    try { await adminCall('admin_remover_premio', { _id: id }); toast('Prêmio excluído'); loadPremios(); } catch (e) { toast(e.message,true); }
+}
+function openPremioModal(id) {
+    const p = id ? premios.find(x => x.id == id) : null;
+    const nome = prompt('Nome do prêmio:', p ? p.nome : '');
+    if (nome === null) return;
+    const ptsStr = prompt('Pontos necessários para resgatar:', p ? String(p.pontos_necessarios||0) : '0');
+    if (ptsStr === null) return;
+    const qtdStr = prompt('Quantidade (deixe vazio se ilimitado):', p && p.quantidade != null ? String(p.quantidade) : '');
+    if (qtdStr === null) return;
+    const valStr = prompt('Validade (AAAA-MM-DD) — opcional:', p && p.validade ? String(p.validade) : '');
+    if (valStr === null) return;
+    const ativoStr = confirm('Ativo? ' + (p ? (p.ativo?'[Atualmente SIM]':'[Atualmente NÃO]') : '[Padrão SIM]'));
+    const pts = parseFloat(ptsStr.replace(',', '.')) || 0;
+    const qtd = qtdStr.trim() === '' ? null : (parseInt(qtdStr)||0);
+    let validade = null;
+    if (valStr.trim()) { const d = valStr.trim(); if (/^\d{4}-\d{2}-\d{2}$/.test(d)) validade = d; }
+    adminCall('admin_salvar_premio', { _id: id || null, _nome: nome.trim(), _pontos_necessarios: pts, _quantidade: qtd, _ativo: ativoStr, _validade: validade }).then(()=>{ toast('Prêmio salvo'); loadPremios(); }).catch(e=>toast(e.message,true));
+}
+async function loadRegrasPontuacao() {
+    try { regrasPont = (await adminCall('admin_listar_regras_pontuacao', {})) || []; } catch (e) { regrasPont = []; }
+    renderRegrasPontuacao();
+}
+function renderRegrasPontuacao() {
+    const tb = document.getElementById('regrasPontTableBody');
+    const empty = document.getElementById('regrasPontEmpty');
+    if (!tb) return;
+    if (!regrasPont.length) { tb.innerHTML = ''; if (empty) empty.style.display = ''; return; }
+    if (empty) empty.style.display = 'none';
+    tb.innerHTML = regrasPont.map(r => {
+        const min = Number(r.valor_compra_min||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+        const max = r.valor_compra_max != null ? Number(r.valor_compra_max).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '∞';
+        return `<tr>
+            <td>R$ ${min} até R$ ${max}</td>
+            <td class="right">${Number(r.pontos||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+            <td>${r.ativo ? 'Sim':'Não'}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="removerRegraPontuacao(${r.id})"><i class="fas fa-trash"></i> Excluir</button></td>
+        </tr>`;
+    }).join('');
+}
+async function removerRegraPontuacao(id) {
+    if (!confirm('Excluir regra de pontuação?')) return;
+    try { await adminCall('admin_remover_regra_pontuacao', {_id:id}); toast('Regra excluída'); loadRegrasPontuacao(); } catch(e){ toast(e.message,true); }
+}
+function openRegraPontuacaoModal() {
+    const minStr = prompt('Valor mínimo (R$):', '200,00');
+    if (minStr === null) return;
+    const maxStr = prompt('Valor máximo (R$) — deixe vazio se sem limite:', '');
+    if (maxStr === null) return;
+    const ptsStr = prompt('Pontos:', '1');
+    if (ptsStr === null) return;
+    const min = parseFloat(minStr.replace(',', '.')) || 0;
+    const max = maxStr.trim() === '' ? null : (parseFloat(maxStr.replace(',', '.')) || null);
+    const pts = parseFloat(ptsStr.replace(',', '.')) || 0;
+    adminCall('admin_salvar_regra_pontuacao', {_valor_compra_min:min, _valor_compra_max:max, _pontos:pts, _ativo:true}).then(()=>{toast('Regra salva'); loadRegrasPontuacao();}).catch(e=>toast(e.message,true));
 }
 
 // ---------- Playbook (Metas) ----------
@@ -2354,10 +2387,10 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     // ============================================
 
     // Prize/Rules events
-    const btnSavePrize = document.getElementById('btnSavePrize');
-    if (btnSavePrize) btnSavePrize.addEventListener('click', savePrize);
-    const btnSaveRules = document.getElementById('btnSaveRules');
-    if (btnSaveRules) btnSaveRules.addEventListener('click', saveRules);
+    const btnAddPremio = document.getElementById('btnAddPremio');
+    if (btnAddPremio) btnAddPremio.addEventListener('click', openPremioModal);
+    const btnAddRegraPontuacao = document.getElementById('btnAddRegraPontuacao');
+    if (btnAddRegraPontuacao) btnAddRegraPontuacao.addEventListener('click', openRegraPontuacaoModal);
 
     init();
 });

@@ -84,7 +84,7 @@ function saleDate(q) { if (q && q.concluido_em) { const d = new Date(q.concluido
 function toast(msg, isError) { const t = document.getElementById('toast'); if (!t) return; t.className = 'toast show' + (isError ? ' error' : ''); t.innerHTML = (isError ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>') + '<span>' + escapeHtml(msg) + '</span>'; clearTimeout(t._timer); t._timer = setTimeout(() => { t.className = 'toast'; }, 2600); }
 
 // ---------- Navigation ----------
-const VIEW_TITLES = { 'dashboard': 'Painel do Lojista', 'orcamentos': 'Gerenciar Orçamentos', 'produtos': 'Gerenciar Produtos', 'categorias': 'Gerenciar Categorias', 'clientes': 'Gerenciar Clientes', 'agendar': 'Agendar Visita', 'playbook': 'Playbook — Metas e Estratégias', 'tracker': 'Tracker — Atividades' };
+const VIEW_TITLES = { 'dashboard': 'Painel do Lojista', 'orcamentos': 'Gerenciar Orçamentos', 'produtos': 'Gerenciar Produtos', 'categorias': 'Gerenciar Categorias', 'clientes': 'Gerenciar Clientes', 'agendar': 'Agendar Visita', 'playbook': 'Playbook — Metas e Estratégias', 'tracker': 'Tracker — Atividades', 'log': 'Log — Buscas', 'prize': 'Prize — Regras de Prêmios', 'rules': 'Rules — Regras do Programa', 'league': 'League — Pontos e Resgates' };
 
 function setCurrentGroup(group) {
     currentChartGroup = group;
@@ -108,6 +108,9 @@ function switchView(view) {
     if (view === 'playbook') renderPlaybook();
     if (view === 'tracker') renderTracker();
     if (view === 'log') { loadSiteSearches(); renderSiteSearches(); }
+    if (view === 'prize') { loadPrize(); }
+    if (view === 'rules') { loadRules(); }
+    if (view === 'league') { loadLeague(); renderLeague(); }
     if (view === 'dashboard') renderOverview();
     document.getElementById('dashSidebar').classList.remove('open');
 }
@@ -1803,6 +1806,59 @@ function renderSiteSearches() {
     }).join('');
 }
 
+// Prize / Rules / League
+let prizeContent = '', rulesContent = '';
+let leagueList = [];
+
+async function loadPrize() {
+    try {
+        const r = await adminCall('admin_get_config', { _chave: 'prize' });
+        prizeContent = (r && r[0] && r[0].valor) ? r[0].valor : '';
+    } catch (e) { prizeContent = ''; }
+    const el = document.getElementById('prizeEditor');
+    if (el) el.value = prizeContent;
+}
+async function savePrize() {
+    const el = document.getElementById('prizeEditor');
+    const v = el ? el.value : '';
+    try { await adminCall('admin_set_config', { _chave: 'prize', _valor: v }); toast('Regras de Prêmios salvas'); } catch (e) { toast('Erro ao salvar: ' + e.message, true); }
+}
+async function loadRules() {
+    try {
+        const r = await adminCall('admin_get_config', { _chave: 'rules' });
+        rulesContent = (r && r[0] && r[0].valor) ? r[0].valor : '';
+    } catch (e) { rulesContent = ''; }
+    const el = document.getElementById('rulesEditor');
+    if (el) el.value = rulesContent;
+}
+async function saveRules() {
+    const el = document.getElementById('rulesEditor');
+    const v = el ? el.value : '';
+    try { await adminCall('admin_set_config', { _chave: 'rules', _valor: v }); toast('Regras do Programa salvas'); } catch (e) { toast('Erro ao salvar: ' + e.message, true); }
+}
+async function loadLeague() {
+    try { leagueList = (await adminCall('admin_listar_league', { _limite: 500 })) || []; } catch (e) { leagueList = []; }
+    renderLeague();
+}
+function renderLeague() {
+    const tb = document.getElementById('leagueTableBody');
+    const empty = document.getElementById('leagueEmpty');
+    if (!tb) return;
+    if (!leagueList.length) { tb.innerHTML = ''; if (empty) empty.style.display = ''; return; }
+    if (empty) empty.style.display = 'none';
+    tb.innerHTML = leagueList.map(c => {
+        const pontos = Number(c.pontos || 0);
+        const resg = Number(c.resgates || 0);
+        return `<tr>
+            <td>${escapeHtml(c.razao_social || '-')}</td>
+            <td>${escapeHtml(c.email || '-')}</td>
+            <td>${escapeHtml(c.telefone || '-')}</td>
+            <td class="right">${pontos.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+            <td class="right">${resg.toLocaleString('pt-BR')}</td>
+        </tr>`;
+    }).join('');
+}
+
 // ---------- Playbook (Metas) ----------
 function monthSafe(d) { if (!d) return ''; const dt = new Date(d); if (isNaN(dt.getTime())) return ''; return dt.getUTCFullYear() + '-' + String(dt.getUTCMonth() + 1).padStart(2, '0'); }
 function currentYm() { return monthSafe(new Date()); }
@@ -2296,6 +2352,12 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     });
     resetInactivityTimer(); // inicia timer
     // ============================================
+
+    // Prize/Rules events
+    const btnSavePrize = document.getElementById('btnSavePrize');
+    if (btnSavePrize) btnSavePrize.addEventListener('click', savePrize);
+    const btnSaveRules = document.getElementById('btnSaveRules');
+    if (btnSaveRules) btnSaveRules.addEventListener('click', saveRules);
 
     init();
 });

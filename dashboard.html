@@ -325,6 +325,61 @@
                 </div>
             </section>
 
+            <!-- ===== Prize ===== -->
+            <section class="dash-view" id="view-prize" style="display:none;">
+                <div class="dash-toolbar">
+                    <div class="dash-toolbar-left">
+                        <span class="dash-live"><i class="fas fa-trophy"></i> Regras de Prêmios</span>
+                    </div>
+                    <button class="btn btn-primary" id="btnSavePrize"><i class="fas fa-save"></i> Salvar</button>
+                </div>
+                <div class="dash-panel">
+                    <label class="form-label">Regras de Prêmios</label>
+                    <textarea id="prizeEditor" class="dash-textarea" style="min-height:440px;line-height:1.8;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;" placeholder="Digite as regras de prêmios..."></textarea>
+                </div>
+            </section>
+
+            <!-- ===== Rules ===== -->
+            <section class="dash-view" id="view-rules" style="display:none;">
+                <div class="dash-toolbar">
+                    <div class="dash-toolbar-left">
+                        <span class="dash-live"><i class="fas fa-scroll"></i> Regras do Programa</span>
+                    </div>
+                    <button class="btn btn-primary" id="btnSaveRules"><i class="fas fa-save"></i> Salvar</button>
+                </div>
+                <div class="dash-panel">
+                    <label class="form-label">Regras do Programa</label>
+                    <textarea id="rulesEditor" class="dash-textarea" style="min-height:440px;line-height:1.8;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;" placeholder="Digite as regras do programa..."></textarea>
+                </div>
+            </section>
+
+            <!-- ===== League ===== -->
+            <section class="dash-view" id="view-league" style="display:none;">
+                <div class="dash-toolbar">
+                    <div class="dash-toolbar-left">
+                        <span class="dash-live"><i class="fas fa-medal"></i> League — Clientes, Pontos e Resgates</span>
+                    </div>
+                    <button class="btn btn-ghost" onclick="loadLeague()"><i class="fas fa-rotate"></i> Atualizar</button>
+                </div>
+                <div class="dash-panel">
+                    <div class="table-wrap">
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>E-mail</th>
+                                    <th>Telefone</th>
+                                    <th class="right">Pontos</th>
+                                    <th class="right">Resgates</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leagueTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="leagueEmpty" class="empty-state" style="display:none;"><i class="fas fa-users"></i><p>Nenhum cliente com pontos/resgates.</p></div>
+                </div>
+            </section>
+
             <!-- ===== Modal Visita ===== -->
                 <div class="modal-overlay" id="visitModal">
                     <div class="modal">

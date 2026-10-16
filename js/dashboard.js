@@ -1115,6 +1115,148 @@ function downloadXlsxFile(entries, filename) {
     URL.revokeObjectURL(a.href);
 }
 
+async function downloadCatalogPDF() {
+    if (!products || !products.length) { toast('Nenhum produto para gerar catálogo', true); return; }
+    if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada.', true); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = 210, pageH = 297, margin = 16, contentW = pageW - margin * 2;
+    const brand = '#581c87'; const light = '#5b5466'; const pink = [255, 47, 230];
+    const line = (currentChartGroup === 'dymar') ? 'Dymar' : 'Java';
+    const visibleProducts = products.filter(p => p.linha === currentChartGroup && p.visivel !== false);
+    if (!visibleProducts.length) { toast('Nenhum produto visível para o catálogo.', true); return; }
+
+    // Category order = site order (alphabetical by nome)
+    const catNames = [...new Set(visibleProducts.map(p => p.categoria || 'Sem categoria'))];
+    const catOrder = [...catNames].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
+
+    // Load image as dataURL (best-effort)
+    async function imgDataUrl(url) {
+        if (!url) return null;
+        if (String(url).startsWith('data:')) return url;
+        try {
+            const resp = await fetch(url, { mode: 'cors' });
+            if (!resp.ok) return null;
+            const blob = await resp.blob();
+            return await new Promise((resolve) => {
+                const fr = new FileReader();
+                fr.onload = () => resolve(fr.result);
+                fr.onerror = () => resolve(null);
+                fr.readAsDataURL(blob);
+            });
+        } catch (e) { return null; }
+    }
+
+    // Preload images
+    const imgCache = new Map();
+    const urls = [...new Set(visibleProducts.map(p => (p.imagens && p.imagens.length) ? p.imagens[0] : null).filter(Boolean))];
+    await Promise.all(urls.map(async (u) => { imgCache.set(u, await imgDataUrl(u)); }));
+
+    function drawHeader(title) {
+        const Hd = 34;
+        doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, Hd, 'F');
+        doc.setFillColor(pink[0], pink[1], pink[2]); doc.rect(0, Hd, pageW, 2.2, 'F');
+        if (typeof COMPANY_LOGO_DATA === 'string' && COMPANY_LOGO_DATA) {
+            try { doc.addImage(COMPANY_LOGO_DATA, 'PNG', margin, 6, 26, 18); } catch (e) {}
+        }
+        doc.setTextColor(20, 20, 26); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+        doc.text(title, pageW / 2, 16, { align: 'center' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(96, 96, 106);
+        doc.text('Linha ' + line + '  •  ' + new Date().toLocaleDateString('pt-BR'), pageW / 2, 24, { align: 'center' });
+    }
+
+    function drawFooter() {
+        const n = doc.internal.getNumberOfPages();
+        doc.setPage(n);
+        doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal');
+        doc.text('Java Distribuidora  •  (12) 99778-0047', pageW / 2, pageH - 8, { align: 'center' });
+        doc.text('Página ' + n + '/' + doc.internal.getNumberOfPages(), pageW - margin, pageH - 8, { align: 'right' });
+    }
+
+    drawHeader('CATÁLOGO DE PRODUTOS');
+    let y = 42;
+
+    const cols = 4;
+    const cellW = contentW / cols;
+    const imgSize = 34;
+    const cellH = 62;
+
+    function newPage() {
+        doc.addPage();
+        drawHeader('CATÁLOGO DE PRODUTOS');
+        y = 42;
+    }
+
+    catOrder.forEach((cat) => {
+        const catProducts = visibleProducts
+            .filter(p => (p.categoria || 'Sem categoria') === cat)
+            .sort((a, b) => {
+                const wa = (a.isdestaque ? 2 : 0) + (a.ispromocao ? 1 : 0);
+                const wb = (b.isdestaque ? 2 : 0) + (b.ispromocao ? 1 : 0);
+                if (wa !== wb) return wb - wa;
+                return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
+            });
+        if (!catProducts.length) return;
+
+        // Category band
+        if (y + 12 > pageH - margin) newPage();
+        doc.setFillColor(88, 28, 135); doc.rect(margin, y, contentW, 9, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+        doc.text(String(cat).toUpperCase(), margin + 4, y + 6.2);
+        y += 13;
+
+        // Grid
+        let col = 0;
+        catProducts.forEach((p) => {
+            if (y + cellH > pageH - margin) { newPage(); col = 0; }
+            const x = margin + col * cellW;
+            const imgUrl = (p.imagens && p.imagens.length) ? p.imagens[0] : null;
+            const dataUrl = imgUrl ? imgCache.get(imgUrl) : null;
+
+            // Photo
+            const imgX = x + (cellW - imgSize) / 2;
+            const imgY = y;
+            if (dataUrl) {
+                try { doc.addImage(dataUrl, 'JPEG', imgX, imgY, imgSize, imgSize); }
+                catch (e) { try { doc.addImage(dataUrl, 'PNG', imgX, imgY, imgSize, imgSize); } catch (e2) {} }
+            } else {
+                doc.setFillColor(245, 245, 248); doc.setDrawColor(220, 210, 232); doc.rect(imgX, imgY, imgSize, imgSize, 'FD');
+                doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal');
+                doc.text('sem foto', imgX + imgSize / 2, imgY + imgSize / 2, { align: 'center' });
+            }
+
+            // Code
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(88, 28, 135);
+            doc.text(String(p.codigo || '—'), x + cellW / 2, imgY + imgSize + 5, { align: 'center' });
+
+            // Description
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(30, 30, 40);
+            const desc = String(p.nome || '').trim();
+            const lines = doc.splitTextToSize(desc, cellW - 4).slice(0, 2);
+            let ly = imgY + imgSize + 9;
+            lines.forEach((ln) => { doc.text(ln, x + cellW / 2, ly, { align: 'center' }); ly += 3.6; });
+
+            col++;
+            if (col >= cols) { col = 0; y += cellH; }
+        });
+        if (col > 0) { y += cellH; col = 0; }
+        y += 4;
+    });
+
+    // Footer on all pages
+    const total = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= total; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal');
+        doc.text('Java Distribuidora  •  (12) 99778-0047  •  Catálogo de Produtos', pageW / 2, pageH - 8, { align: 'center' });
+        doc.text('Página ' + i + '/' + total, pageW - margin, pageH - 8, { align: 'right' });
+    }
+
+    const url = URL.createObjectURL(doc.output('blob'));
+    window.open(url, '_blank');
+    toast('Catálogo gerado com ' + visibleProducts.length + ' produtos.');
+}
+
 function exportProductsXlsx() {
     if (!products || !products.length) { toast('Nenhum produto para exportar', true); return; }
     const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -2512,6 +2654,7 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     document.getElementById('btnImportProducts').addEventListener('click', () => document.getElementById('productImportFile').click());
     document.getElementById('btnImportTemplate').addEventListener('click', downloadImportTemplate);
     document.getElementById('btnExportProducts').addEventListener('click', exportProductsXlsx);
+document.getElementById('btnCatalogPdf').addEventListener('click', downloadCatalogPDF);
     document.getElementById('btnClearFlags').addEventListener('click', clearAllFlags);
     document.getElementById('productImportFile').addEventListener('change', handleProductImport);
     document.getElementById('importModalClose').addEventListener('click', () => document.getElementById('importModal').classList.remove('open'));

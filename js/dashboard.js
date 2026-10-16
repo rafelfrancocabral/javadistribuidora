@@ -769,7 +769,7 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     const codeX = margin, descX = margin + 22, qtyX = subX - 96, tabX = subX - 74, dscX = subX - 58, liqX = subX - 36, icmsX = subX - 18;
     doc.setFillColor(247, 243, 255); doc.rect(margin, y, width, 9, 'F');
     doc.setTextColor(brand); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5); doc.text('CÓDIGO', codeX, y + 6); doc.text('PRODUTO', descX, y + 6); doc.text('QTDE', qtyX, y + 6, { align: 'right' }); doc.text('TABELA', tabX, y + 6, { align: 'right' }); doc.text('DESCONTO', dscX, y + 6, { align: 'right' }); doc.text('PREÇO LÍQUIDO', liqX, y + 6, { align: 'right' }); doc.text('ICMS-ST', icmsX, y + 6, { align: 'right' }); doc.text('SUBTOTAL', subX, y + 6, { align: 'right' }); y += 15;
+    doc.setFontSize(7); doc.text('CÓDIGO', codeX, y + 6); doc.text('PRODUTO', descX, y + 6); doc.text('QTDE', qtyX, y + 6, { align: 'right' }); doc.text('TABELA', tabX, y + 6, { align: 'right' }); doc.text('DESCONTO', dscX, y + 6, { align: 'right' }); doc.text('PREÇO LÍQUIDO', liqX, y + 6, { align: 'right' }); doc.text('ICMS-ST', icmsX, y + 6, { align: 'right' }); doc.text('SUBTOTAL', subX, y + 6, { align: 'right' }); y += 15;
     doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(9.5);
     const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null;
     const byCode = {};

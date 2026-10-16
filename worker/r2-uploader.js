@@ -18,6 +18,8 @@
 // qualquer origem sao aceitos (apenas como fallback de configuracao).
 const ALLOWED_ORIGINS = [
     'https://javadistribuidora.vercel.app',
+    'https://www.javadistribuidora.com.br',
+    'https://javadistribuidora.com.br',
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:5500',
@@ -32,7 +34,7 @@ const ALLOWED_ORIGINS = [
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 };
 
@@ -58,6 +60,22 @@ export default {
             return new Response(null, { status: 204, headers: CORS_HEADERS });
         }
 
+        const url = new URL(request.url);
+
+        // Servir imagens do R2 com CORS (usado pelo catalogo PDF para embutir fotos)
+        if (url.pathname === '/image' && request.method === 'GET') {
+            const key = url.searchParams.get('key');
+            if (!key || !/^produtos\/[a-f0-9]{64}(_thumb)?\.webp$/.test(key)) {
+                return json({ error: 'chave invalida' }, 400);
+            }
+            const obj = await env.IMAGES.get(key);
+            if (!obj) return json({ error: 'nao encontrado' }, 404);
+            const headers = new Headers(CORS_HEADERS);
+            headers.set('Content-Type', obj.httpMetadata?.contentType || 'image/webp');
+            headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+            return new Response(obj.body, { status: 200, headers });
+        }
+
         if (!originAllowed(request)) {
             return json({ error: 'origem nao permitida' }, 403);
         }
@@ -68,8 +86,6 @@ export default {
                 return json({ error: 'unauthorized' }, 401);
             }
         }
-
-        const url = new URL(request.url);
 
         try {
             if (url.pathname === '/health') {

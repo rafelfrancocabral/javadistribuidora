@@ -1116,8 +1116,9 @@ function downloadXlsxFile(entries, filename) {
 }
 
 async function downloadCatalogPDF() {
-    if (!products || !products.length) { toast('Nenhum produto para gerar catálogo', true); return; }
-    if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada.', true); return; }
+    try {
+        if (!products || !products.length) { toast('Nenhum produto para gerar catálogo', true); return; }
+        if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada.', true); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const pageW = 210, pageH = 297, margin = 16, contentW = pageW - margin * 2;
@@ -1252,9 +1253,12 @@ async function downloadCatalogPDF() {
         doc.text('Página ' + i + '/' + total, pageW - margin, pageH - 8, { align: 'right' });
     }
 
-    const url = URL.createObjectURL(doc.output('blob'));
-    window.open(url, '_blank');
+    const url = (typeof doc.output === 'function') ? (doc.output('bloburl') || URL.createObjectURL(doc.output('blob'))) : null;
+    if (!url) throw new Error('Falha ao gerar blob do PDF');
+    const win = window.open(url, '_blank');
+    if (!win) toast('Permita pop-ups para ver o PDF.', true);
     toast('Catálogo gerado com ' + visibleProducts.length + ' produtos.');
+    } catch (e) { console.error('Catalog PDF error:', e); toast('Erro ao gerar catálogo: ' + (e && e.message ? e.message : e), true); }
 }
 
 function exportProductsXlsx() {

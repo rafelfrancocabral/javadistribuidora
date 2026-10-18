@@ -1172,6 +1172,14 @@ async function downloadCatalogPDF() {
                 console.warn('proxy skipped: R2_WORKER_URL ausente');
             }
         } catch (e) { console.error('proxy error:', e); }
+        // Fallback 2: CORS proxy publico
+        try {
+            const cp = 'https://corsproxy.io/?' + encodeURIComponent(url);
+            console.log('trying corsproxy:', cp);
+            r = await tryFetch(cp);
+            if (r) return r;
+            console.warn('image fetch failed (corsproxy):', url);
+        } catch (e) { console.error('corsproxy error:', e); }
         return null;
     }
 

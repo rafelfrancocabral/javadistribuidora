@@ -65,15 +65,43 @@ export default {
         // Servir imagens do R2 com CORS (usado pelo catalogo PDF para embutir fotos)
         if (url.pathname === '/image' && request.method === 'GET') {
             const key = url.searchParams.get('key');
-            if (!key || !/^produtos\/[A-Za-z0-9._-]+\.(webp|jpg|jpeg|png|gif)$/i.test(key)) {
-                return json({ error: 'chave invalida' }, 400);
+            const remoteUrl = url.searchParams.get('url');
+            // Modo 1: ler do bucket R2
+            if (key) {
+                if (!/^produtos\/[A-Za-z0-9._-]+\.(webp|jpg|jpeg|png|gif)$/i.test(key)) {
+                    return json({ error: 'chave invalida' }, 400);
+                }
+                const obj = await env.IMAGES.get(key);
+                if (!obj) return json({ error: 'nao encontrado' }, 404);
+                const headers = new Headers(CORS_HEADERS);
+                headers.set('Content-Type', obj.httpMetadata?.contentType || 'image/webp');
+                headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+                return new Response(obj.body, { status: 200, headers });
             }
-            const obj = await env.IMAGES.get(key);
-            if (!obj) return json({ error: 'nao encontrado' }, 404);
-            const headers = new Headers(CORS_HEADERS);
-            headers.set('Content-Type', obj.httpMetadata?.contentType || 'image/webp');
-            headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-            return new Response(obj.body, { status: 200, headers });
+            // Modo 2: proxy de imagem externa (qualquer host, mas apenas imagens)
+            if (remoteUrl) {
+                let parsed;
+                try { parsed = new URL(remoteUrl); } catch (e) { return json({ error: 'url invalida' }, 400); }
+                if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+                    return json({ error: 'protocolo invalido' }, 400);
+                }
+                let r;
+                try {
+                    r = await fetch(remoteUrl);
+                } catch (e) {
+                    return json({ error: 'falha de rede: ' + (e && e.message ? e.message : e) }, 502);
+                }
+                if (!r.ok) return json({ error: 'origem retornou ' + r.status }, 502);
+                const ct = r.headers.get('Content-Type') || '';
+                if (!ct.toLowerCase().startsWith('image/')) {
+                    return json({ error: 'conteudo nao e imagem (' + ct + ')' }, 415);
+                }
+                const headers = new Headers(CORS_HEADERS);
+                headers.set('Content-Type', ct);
+                headers.set('Cache-Control', 'public, max-age=86400');
+                return new Response(r.body, { status: 200, headers });
+            }
+            return json({ error: 'parametros ausentes (key ou url)' }, 400);
         }
 
         if (!originAllowed(request)) {
@@ -102,7 +130,10 @@ export default {
     }
 };
 
-const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
+const ALLOWED_IMAGE_HOSTS = [
+    'spiritcdn.spiritshop.com.br',
+    'pub-3898e6d68e494c019d1a509264328a33.r2.dev'
+];
 
 async function handleUpload(request, env) {
     const form = await request.formData();

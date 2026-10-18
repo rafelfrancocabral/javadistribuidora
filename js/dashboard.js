@@ -2470,7 +2470,10 @@ function renderGoalsCharts() {
     const section = document.getElementById('goalsCharts');
     if (!grid) return;
     const ym = currentYm();
+    console.log('[RGC] group=', currentChartGroup, 'ym=', ym, 'goals=', goals.length);
+    console.log('[RGC] cat goals:', goals.filter(g => g && (g.tipo === 'categoria' || g.categoria)).map(g => ({tipo:g.tipo, linha:g.linha, mes:g.mes, cat:g.categoria})));
     const listo = goals.filter(g => g && g.linha === currentChartGroup && (g.tipo === 'produto' || g.tipo === 'cliente' || g.tipo === 'categoria' || g.categoria) && String(g.mes).slice(0, 7) === ym);
+    console.log('[RGC] listo=', listo.length, listo.map(g => g.tipo + ':' + g.categoria));
     if (!listo.length) { if (section) section.style.display = 'none'; grid.innerHTML = ''; return; }
     if (section) section.style.display = '';
     const now = new Date();

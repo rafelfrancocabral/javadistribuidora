@@ -667,7 +667,7 @@ function groupsHtml(list) {
 }
 
 function quoteCardHtml(q) {
-    const isSite = (q.origem === 'site') || (q.status_entrega != null && String(q.status_entrega).trim() !== '');
+    const isSite = (q.origem === 'site') || (q.origem == null && !(q.codigo_cliente && /^C-\d{4}$/.test(String(q.codigo_cliente))) && (q.status_entrega != null && String(q.status_entrega).trim() !== ''));
     return `
         <div class="quote-card">
             <div class="quote-card-row">

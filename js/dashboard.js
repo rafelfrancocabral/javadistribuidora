@@ -2470,7 +2470,7 @@ function renderGoalsCharts() {
     const section = document.getElementById('goalsCharts');
     if (!grid) return;
     const ym = currentYm();
-    const listo = goals.filter(g => g && g.linha === currentChartGroup && (g.tipo === 'produto' || g.tipo === 'cliente' || g.tipo === 'categoria') && String(g.mes).slice(0, 7) === ym);
+    const listo = goals.filter(g => g && g.linha === currentChartGroup && (g.tipo === 'produto' || g.tipo === 'cliente' || g.tipo === 'categoria' || g.categoria) && String(g.mes).slice(0, 7) === ym);
     if (!listo.length) { if (section) section.style.display = 'none'; grid.innerHTML = ''; return; }
     if (section) section.style.display = '';
     const now = new Date();
@@ -2491,7 +2491,7 @@ function renderGoalsCharts() {
             metaTxt = meta + ' unid.';
             porDia = Math.ceil(Math.max(0, meta - done) / diasRestantes);
             restoTxt = Math.max(0, meta - done) + ' unid.';
-        } else if (g.tipo === 'categoria') {
+        } else if (g.tipo === 'categoria' || g.categoria) {
             titulo = g.categoria || 'Categoria';
             meta = Number(g.valor) || 0;
             done = categoriaSalesInMonth(g.linha, g.categoria, ym);
@@ -2531,7 +2531,7 @@ function renderGoalsCharts() {
                 '<span style="width:34px;height:34px;flex:0 0 34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:' + stSoft + ';color:' + stColor + ';font-size:.95rem;"><i class="fas ' + icon + '"></i></span>' +
                 '<div style="min-width:0;flex:1;">' +
                     '<div style="font-family:\'Chakra Petch\',sans-serif;font-weight:600;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(titulo) + '">' + escapeHtml(titulo) + '</div>' +
-                    '<div style="color:var(--text-muted);font-size:.7rem;">' + (g.tipo === 'produto' ? 'Meta de produto' : (g.tipo === 'categoria' ? 'Meta de categoria' : 'Meta de cliente')) + ' · ' + pbMonthLabel(g.mes) + ' · ' + (g.linha === 'dymar' ? 'Dymar' : 'Java') + '</div>' +
+                    '<div style="color:var(--text-muted);font-size:.7rem;">' + (g.tipo === 'produto' ? 'Meta de produto' : (g.tipo === 'categoria' || g.categoria ? 'Meta de categoria' : 'Meta de cliente')) + ' · ' + pbMonthLabel(g.mes) + ' · ' + (g.linha === 'dymar' ? 'Dymar' : 'Java') + '</div>' +
                 '</div>' +
             '</div>' +
             '<div style="display:flex;align-items:center;gap:16px;">' +

@@ -63,7 +63,7 @@ const legendRightSpacer = {
         const originalFit = chart.legend.fit;
         chart.legend.fit = function fit() {
             originalFit.bind(chart.legend)();
-            this.width += 16;
+            this.width += 24;
         };
     }
 };
@@ -386,19 +386,19 @@ function buildPaymentChart() {
                     align: 'center',
                     maxWidth: 240,
                     labels: {
-                        font: { family: 'Inter', size: 13, weight: '600' },
-                        color: '#3a3146',
-                        padding: 18,
+                        font: { family: 'Inter', size: 15, weight: '700' },
+                        color: '#1a1028',
+                        padding: 22,
                         usePointStyle: true,
                         pointStyle: 'circle',
-                        boxWidth: 11,
-                        boxHeight: 11,
+                        boxWidth: 14,
+                        boxHeight: 14,
                         generateLabels: (chart) => {
                             const data = chart.data;
                             if (data.labels.length && data.datasets.length) {
                                 return data.labels.map((label, i) => {
                                     const raw = String(label || '');
-                                    const shortLabel = raw.length > 24 ? raw.slice(0, 23) + '…' : raw;
+                                    const shortLabel = raw.length > 30 ? raw.slice(0, 29) + '…' : raw;
                                     const value = data.datasets[0].data[i];
                                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                     return {

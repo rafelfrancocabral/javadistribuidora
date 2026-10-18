@@ -675,7 +675,7 @@ function quoteCardHtml(q) {
                     <span class="quote-code-badge">#${escapeHtml(q.codigo_cliente || q.id)}</span>
                     <span class="quote-card-name">${escapeHtml(getQuoteClientName(q))}</span>
                     <span class="quote-meta-icons">
-                        <span class="quote-origin-badge" title="${isSite ? 'Pedido feito pelo site' : 'Orçamento manual (painel)'}"><i class="fas ${isSite ? 'fa-globe' : 'fa-pen-to-square'}"></i>${isSite ? 'Site' : 'Manual'}</span>
+                        <span class="quote-origin-badge ${isSite ? 'site' : ''}" title="${isSite ? 'Pedido feito pelo site' : 'Orçamento manual (painel)'}"><i class="fas ${isSite ? 'fa-globe' : 'fa-pen-to-square'}"></i>${isSite ? 'Site' : 'Manual'}</span>
                         <span class="quote-meta-date" title="Data"><i class="fas fa-clock"></i>${formatDate(q.created_at)}</span>
                         ${q.pagamento ? `<span title="Prazo"><i class="fas fa-calendar-alt"></i>${escapeHtml(q.pagamento)}</span>` : ''}
                     </span>

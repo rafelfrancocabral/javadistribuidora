@@ -843,7 +843,8 @@ async function submitQuote(e) {
             total: totalFinal,
             pagamento: pagamento,
             status_entrega: 'pendente',
-            linha: 'java'
+            linha: 'java',
+            origem: 'site'
         }, _finalizar: true });
         if (res && res.error) throw res.error;
         if (res && res.data != null) orcamentoId = res.data;

@@ -2479,8 +2479,10 @@ function renderGoalsCharts() {
     const diasRestantes = Math.max(1, diasNoMes - dia + 1);
     const pctMes = Math.round((dia / diasNoMes) * 100);
     const R = 42, C = 2 * Math.PI * R;
-    grid.innerHTML = listo.map(g => {
+    grid.innerHTML = listo.map((g, i) => {
         let titulo, meta, done, porDia, doneTxt, metaTxt, restoTxt, icon;
+        const palette = ['#7c3aed', '#2563eb', '#059669', '#dc2626', '#d97706', '#0891b2', '#9333ea', '#db2777', '#4f46e5', '#0d9488', '#be123c', '#1d4ed8'];
+        const goalColor = palette[i % palette.length];
         if (g.tipo === 'produto') {
             const p = products.find(x => x && x.id != null && String(x.id) === String(g.produto_id));
             titulo = p ? ((p.codigo ? '[' + p.codigo + '] ' : '') + p.nome) : 'Produto #' + g.produto_id;
@@ -2521,14 +2523,14 @@ function renderGoalsCharts() {
         const dash = (pct / 100) * C;
         const ring = '<svg viewBox="0 0 100 100" width="112" height="112" style="flex:0 0 112px;">' +
             '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="9"/>' +
-            '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="' + stColor + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + dash.toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 50 50)"/>' +
-            '<text x="50" y="47" text-anchor="middle" font-family="\'Chakra Petch\',sans-serif" font-size="23" font-weight="700" fill="' + stColor + '">' + pct + '%</text>' +
+            '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="' + goalColor + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + dash.toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 50 50)"/>' +
+            '<text x="50" y="47" text-anchor="middle" font-family="\'Chakra Petch\',sans-serif" font-size="23" font-weight="700" fill="' + goalColor + '">' + pct + '%</text>' +
             '<text x="50" y="64" text-anchor="middle" font-size="9.5" fill="#8b8496">da meta</text>' +
             '</svg>';
         const statRow = (lbl, val, color) => '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;"><span style="color:var(--text-muted);font-size:.74rem;">' + lbl + '</span><b style="font-family:\'Chakra Petch\',sans-serif;font-size:.86rem;' + (color ? 'color:' + color + ';' : '') + '">' + val + '</b></div>';
-        return '<div class="dash-panel" style="display:flex;flex-direction:column;gap:14px;">' +
+        return '<div class="dash-panel" style="display:flex;flex-direction:column;gap:14px;border-top:3px solid ' + goalColor + ';">' +
             '<div style="display:flex;align-items:center;gap:10px;">' +
-                '<span style="width:34px;height:34px;flex:0 0 34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:' + stSoft + ';color:' + stColor + ';font-size:.95rem;"><i class="fas ' + icon + '"></i></span>' +
+                '<span style="width:34px;height:34px;flex:0 0 34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:' + goalColor + '22;color:' + goalColor + ';font-size:.95rem;"><i class="fas ' + icon + '"></i></span>' +
                 '<div style="min-width:0;flex:1;">' +
                     '<div style="font-family:\'Chakra Petch\',sans-serif;font-weight:600;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(titulo) + '">' + escapeHtml(titulo) + '</div>' +
                     '<div style="color:var(--text-muted);font-size:.7rem;">' + (g.tipo === 'produto' ? 'Meta de produto' : (g.tipo === 'categoria' || g.categoria ? 'Meta de categoria' : 'Meta de cliente')) + ' · ' + pbMonthLabel(g.mes) + ' · ' + (g.linha === 'dymar' ? 'Dymar' : 'Java') + '</div>' +

@@ -232,18 +232,12 @@ function getFilteredProducts() {
             return haystack.includes(t) || kw.includes(t);
         });
     }
-    // Dentro de uma categoria: destaques no início; o restante em ordem alfabética.
-    if (categorySelected) {
-        return list.sort((a, b) => {
-            if (a.isDestaque !== b.isDestaque) return a.isDestaque ? -1 : 1;
-            return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
-        });
-    }
-    // No "Todos": destaque e promoção no início; dentro de cada grupo ordem aleatória (estável por página).
+    // Ordem no index: 1) produtos com promoção, 2) produtos em destaque, 3) sem nenhuma tag.
+    // Dentro de cada grupo a ordem é aleatória (porém estável por carregamento de página).
+    const _rank = p => p.isPromocao ? 1 : (p.isDestaque ? 2 : 3);
     return list.sort((a, b) => {
-        const wa = (a.isDestaque ? 2 : 0) + (a.isPromocao ? 1 : 0);
-        const wb = (b.isDestaque ? 2 : 0) + (b.isPromocao ? 1 : 0);
-        if (wb !== wa) return wb - wa;
+        const ra = _rank(a), rb = _rank(b);
+        if (ra !== rb) return ra - rb;
         return (a._rnd == null ? 0 : a._rnd) - (b._rnd == null ? 0 : b._rnd);
     });
 }

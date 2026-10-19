@@ -770,18 +770,13 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('ITENS DO ORÇAMENTO', margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
     const isDymarPdf = (String(q.linha || '').toLowerCase() === 'dymar');
     let codeX, descX, qtyX, tabX, dscX, liqX, icmsX, codeC, prodC, qtyC, tabC, dscC, liqC, icmsC, subC, prodTrunc, seps;
-    if (isDymarPdf) {
-        codeX = 16; descX = 32; qtyX = 78; tabX = 96; dscX = 114; liqX = 134; icmsX = 152; 
-        codeC = (codeX + descX) / 2; prodC = (descX + qtyX) / 2; qtyC = (qtyX + tabX) / 2; tabC = (tabX + dscX) / 2; dscC = (tabX + dscX) / 2; liqC = (dscX + liqX) / 2; icmsC = (liqX + icmsX) / 2; subC = (icmsX + subX) / 2;
-        prodTrunc = qtyX - descX - 6;
-        seps = [descX, qtyX, tabX, dscX, liqX, icmsX];
-    } else {
-        codeX = 16; descX = 34; qtyX = 86; tabX = 104; dscX = 122; liqX = 142; 
-        codeC = (codeX + descX) / 2; prodC = (descX + qtyX) / 2; qtyC = (qtyX + tabX) / 2; tabC = (tabX + dscX) / 2; dscC = (tabX + dscX) / 2; liqC = (dscX + liqX) / 2; subC = (liqX + subX) / 2;
-        prodTrunc = qtyX - descX - 6;
-        seps = [descX, qtyX, tabX, dscX, liqX];
-    }
+    // Layout unificado de 8 colunas (ICMS-ST fica em branco na linha Java).
+    codeX = 16; descX = 32; qtyX = 78; tabX = 96; dscX = 114; liqX = 134; icmsX = 152;
+    codeC = (codeX + descX) / 2; prodC = (descX + qtyX) / 2; qtyC = (qtyX + tabX) / 2; tabC = (tabX + dscX) / 2; dscC = (dscX + liqX) / 2; liqC = (liqX + icmsX) / 2; icmsC = (icmsX + (icmsX + 16)) / 2; subC = ((icmsX + 16) + subX) / 2;
+    prodTrunc = qtyX - descX - 6;
+    seps = [descX, qtyX, tabX, dscX, liqX, icmsX, (icmsX + 16)];
     icmsX = isDymarPdf ? icmsX : subX;
+
     doc.setFillColor(247, 243, 255); doc.setDrawColor(216, 200, 236); doc.setLineWidth(0.3); doc.rect(margin, y, width, 9, 'FD');
     seps.forEach(col => { if (col !== subX) doc.line(col, y, col, y + 9); });
     doc.setTextColor(brand); doc.setFontSize(9); doc.setFont('helvetica', 'bold');

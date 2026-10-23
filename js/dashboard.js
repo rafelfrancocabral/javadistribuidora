@@ -839,7 +839,7 @@ async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) ==
         try {
             const file = new File([blob], fileName, { type: 'application/pdf' });
             if (navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: shareTitle, text: shareText });
+                await navigator.share({ files: [file] });
                 toast('PDF compartilhado.');
                 return;
             }

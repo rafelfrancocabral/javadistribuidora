@@ -1190,7 +1190,7 @@ async function downloadOrderPDF(id) {
         try {
             const file = new File([blob], fileName, { type: 'application/pdf' });
             if (navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: shareTitle, text: shareText });
+                await navigator.share({ files: [file] });
                 showToast('PDF compartilhado.');
                 return;
             }

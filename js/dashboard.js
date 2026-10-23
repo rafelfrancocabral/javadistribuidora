@@ -743,7 +743,7 @@ function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA
 
 function buildPaymentLines(pagamento, baseDate, total) { if (!pagamento) return []; const p = String(pagamento).trim(); const pLower = p.toLowerCase(); const nums = p.match(/\d+/g) || []; let prazos = []; if (/^\d+x$/i.test(p)) { const n = parseInt(nums[0]); if (n > 1) for (let i = 1; i <= n; i++) prazos.push(30 * i); } else if (/boleto/.test(pLower)) { prazos.push(nums.length ? parseInt(nums[0]) : 30); } else if (nums.length) { prazos = nums.map(n => parseInt(n)).filter(n => n > 0); } if (!prazos.length) return []; const base = baseDate ? new Date(baseDate) : new Date(); const qtd = prazos.length; const valorParcela = Number(total) > 0 ? Number(total) / qtd : 0; return prazos.map((dias, i) => { const dt = new Date(base.getTime() + dias * 86400000); const dia = dt.toLocaleDateString('pt-BR'); const parcelaText = prazos.length === 1 ? 'Vencimento em ' + dia + ' (' + dias + ' dias)' : (i + 1) + 'ª parcela' + (dias ? ' (' + dias + ' dias)' : '') + ' — ' + dia; return valorParcela > 0 ? parcelaText + ' — ' + formatPrice(valorParcela) : parcelaText; }); }
 
-function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada (verifique a conexão).', true); return; } const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const pageW = 210, margin = 16; const width = pageW - margin * 2; let y = margin; const brand = '#581c87'; const light = '#5b5466'; const subX = pageW - margin;
+async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada (verifique a conexão).', true); return; } const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const pageW = 210, margin = 16; const width = pageW - margin * 2; let y = margin; const brand = '#581c87'; const light = '#5b5466'; const subX = pageW - margin;
 
     const Hd = 40; const hStyle = PDF_HEADER_STYLE || 1; const pink = [255, 47, 230]; let bg, tc, sc, divC;
     if (hStyle === 3) { bg = [72, 72, 78]; tc = [255, 255, 255]; sc = [238, 214, 244]; divC = [255, 255, 255]; }
@@ -831,7 +831,23 @@ function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === Stri
     if (q.obs) { if (y > 255) { doc.addPage(); y = margin; } y += 3; doc.setFontSize(10); doc.setTextColor(31, 157, 85); doc.setFont('helvetica', 'bold'); doc.text('Prêmio / Observações:', margin, y); y += 6; doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); const obsLines = doc.splitTextToSize(String(q.obs), width); obsLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.text(l, margin, y); y += 5.5; }); }
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
     const fileName = 'orcamento-' + (q.codigo_cliente || q.id) + '-' + (getQuoteClientName(q) ? getQuoteClientName(q).replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
-    const url = URL.createObjectURL(doc.output('blob'));
+    const blob = doc.output('blob');
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || ''));
+    const shareTitle = 'Orçamento ' + String(q.codigo_cliente || q.id || '');
+    const shareText = shareTitle + (getQuoteClientName(q) ? ' - ' + getQuoteClientName(q) : '');
+    if (isMobile && navigator.share && navigator.canShare) {
+        try {
+            const file = new File([blob], fileName, { type: 'application/pdf' });
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: shareTitle, text: shareText });
+                toast('PDF compartilhado.');
+                return;
+            }
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+        }
+    }
+    const url = URL.createObjectURL(blob);
     const win = window.open(url, '_blank');
     if (win) { setTimeout(() => URL.revokeObjectURL(url), 60000); }
     else { doc.save(fileName); }

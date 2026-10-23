@@ -537,12 +537,13 @@ function closeProductModal() {
 }
 
 // ---------- Checkout ----------
-function generateClientCode(email) {
-    const e = String(email || '').trim().toLowerCase();
-    const ints = e.split('').map(c => c.charCodeAt(0)).filter(n => n % 2 === 0);
-    const sum = ints.reduce((s, n) => s + n % 10, 0);
-    const code = (sum * 7 + e.length * 3) % 9999;
-    return 'C-' + String(code).padStart(4, '0');
+// Numero unico por orcamento (a sequencia fica no banco; ver addendum37).
+async function novoCodigoOrcamento() {
+    try {
+        const res = await db.rpc('proximo_codigo_orcamento');
+        if (res && !res.error && res.data) return String(res.data);
+    } catch (e) { /* usa fallback abaixo */ }
+    return 'C-' + String(10000 + Math.floor(Math.random() * 90000));
 }
 function generatePickupCode() {
     return String(Math.floor(1000 + Math.random() * 9000));
@@ -579,7 +580,6 @@ async function syncPedido() {
             nome_cliente: (_client && _client.razao) || email,
             email: email,
             telefone: '',
-            codigo_cliente: generateClientCode(email),
             itens: itens,
             total: total,
             linha: 'java'
@@ -811,7 +811,7 @@ async function submitQuote(e) {
         };
     });
 
-    const code = generateClientCode(email);
+    const code = await novoCodigoOrcamento();
     const pickupCode = generatePickupCode();
 
     // Prêmio de desconto: aplica no total do orçamento

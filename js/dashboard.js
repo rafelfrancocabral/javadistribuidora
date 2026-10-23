@@ -1153,6 +1153,7 @@ async function downloadCatalogPDF() {
         if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada.', true); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    doc.setProperties({ title: String(q.codigo_cliente || q.id || '') });
     const pageW = 210, pageH = 297, margin = 16, contentW = pageW - margin * 2;
     const brand = '#581c87'; const light = '#5b5466'; const pink = [255, 47, 230];
     const line = (currentChartGroup === 'dymar') ? 'Dymar' : 'Java';

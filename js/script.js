@@ -1101,6 +1101,7 @@ async function downloadOrderPDF(id) {
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    doc.setProperties({ title: String(order.codigo_cliente || order.id || '') });
     const pageW = 210, margin = 16, width = pageW - margin * 2, subX = pageW - margin;
     const brand = '#581c87', light = '#5b5466';
     const dt = new Date(order.created_at);

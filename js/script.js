@@ -543,7 +543,7 @@ async function novoCodigoOrcamento() {
         const res = await db.rpc('proximo_codigo_orcamento');
         if (res && !res.error && res.data) return String(res.data);
     } catch (e) { /* usa fallback abaixo */ }
-    return 'C-' + String(10000 + Math.floor(Math.random() * 90000));
+    return 'C-' + String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 }
 function generatePickupCode() {
     return String(Math.floor(1000 + Math.random() * 9000));

@@ -1,5 +1,8 @@
 -- ============================================================================
 -- Addendum 37
+-- ATENCAO: SUBSTITUIDO pelo addendum38 (formato C-XXXX, 1 letra + 4 numeros).
+-- Rode o addendum38. Este arquivo gerava 5 digitos (C-10000...).
+--
 -- Numero unico por orcamento (codigo_cliente).
 --
 -- Problema: o site gerava o numero a partir do e-mail do cliente

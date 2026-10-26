@@ -970,7 +970,7 @@ function renderClientLoginChoose(accounts) {
     list.innerHTML = (accounts || []).map(a => {
         const nome = escapeHtml(a.razao_social || 'Cliente');
         const email = escapeHtml(a.email || '');
-        return `<button type="button" class="btn btn-ghost btn-block" data-cliente-id="${escapeHtml(String(a.id))}" style="text-align:left;justify-content:flex-start;gap:10px;padding:12px 14px;"><i class="fas fa-store"></i><span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.25;"><strong style="font-size:14px;">${nome}</strong><small style="color:#5b5466;font-size:12px;">${email}</small></span></button>`;
+        return `<button type="button" class="btn btn-ghost btn-block" data-cliente-id="${escapeHtml(String(a.id))}" style="text-align:left;justify-content:flex-start;gap:10px;padding:12px 14px;"><i class="fas fa-store"></i><span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.25;"><strong style="font-size:14px;">${nome}</strong><small style="color:#5b5466;font-size:12px;">#${escapeHtml(String(a.id))} - ${email}</small></span></button>`;
     }).join('');
     list.querySelectorAll('[data-cliente-id]').forEach(btn => {
         btn.addEventListener('click', async () => {

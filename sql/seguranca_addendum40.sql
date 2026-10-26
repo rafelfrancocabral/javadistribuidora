@@ -2,6 +2,7 @@
 -- A lista de cadastros só é retornada se a senha conferir em pelo menos um deles.
 BEGIN;
 
+-- Remove a assinatura antiga (3 argumentos) para não haver ambiguidade.
 DROP FUNCTION IF EXISTS public.verificar_login(text, text, text);
 
 CREATE OR REPLACE FUNCTION public.verificar_login(
@@ -33,7 +34,7 @@ BEGIN
 
     -- Etapa 2: cliente escolheu um cadastro específico
     IF _cliente_id IS NOT NULL THEN
-        SELECT * INTO _row FROM public.clientes WHERE id = _cliente_id;
+        SELECT * INTO _row FROM public.clientes c WHERE c.id = _cliente_id;
         IF NOT FOUND THEN
             PERFORM public.registrar_falha(_key);
             RETURN QUERY SELECT NULL::bigint, NULL::text, NULL::text, false, 'NAOCAD';
@@ -99,14 +100,14 @@ BEGIN
     END IF;
 
     -- Fluxo normal (um único cadastro com o e-mail, ou identificador por CNPJ)
-    SELECT * INTO _row FROM public.clientes
-     WHERE lower(trim(email)) = lower(trim(coalesce(_identificador, '')))
-     ORDER BY id LIMIT 1;
+    SELECT * INTO _row FROM public.clientes c
+     WHERE lower(trim(c.email)) = lower(trim(coalesce(_identificador, '')))
+     ORDER BY c.id LIMIT 1;
 
     IF NOT FOUND AND _digits <> '' THEN
-        SELECT * INTO _row FROM public.clientes
-         WHERE regexp_replace(coalesce(cnpj, ''), '\D', '', 'g') = _digits
-         ORDER BY id LIMIT 1;
+        SELECT * INTO _row FROM public.clientes c
+         WHERE regexp_replace(coalesce(c.cnpj, ''), '\D', '', 'g') = _digits
+         ORDER BY c.id LIMIT 1;
         IF FOUND THEN
             IF _row.senha IS DISTINCT FROM _senha_cnpj THEN
                 PERFORM public.registrar_falha(_key);
@@ -139,5 +140,8 @@ $$;
 
 REVOKE ALL ON FUNCTION public.verificar_login(text, text, text, bigint) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.verificar_login(text, text, text, bigint) TO anon;
+
+-- Força o PostgREST a enxergar a nova assinatura imediatamente.
+NOTIFY pgrst, 'reload schema';
 
 COMMIT;

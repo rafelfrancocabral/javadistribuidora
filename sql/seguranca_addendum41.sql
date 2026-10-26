@@ -358,4 +358,7 @@ $$;
 REVOKE ALL ON FUNCTION public.cliente_finalizar_pedido_pontos(text, numeric, bigint, bigint, bigint) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.cliente_finalizar_pedido_pontos(text, numeric, bigint, bigint, bigint) TO anon;
 
+-- Força o PostgREST a enxergar as novas assinaturas imediatamente.
+NOTIFY pgrst, 'reload schema';
+
 COMMIT;

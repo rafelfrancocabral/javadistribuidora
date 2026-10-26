@@ -47,6 +47,7 @@ function sha256Hex(str) {
 
 // ============ Sessao e login do cliente ============
 let _client = null;
+let _pendingLogin = null;
 
 function loadClientSession() {
     try { _client = JSON.parse(localStorage.getItem(CLIENT_SESSION_KEY) || 'null'); }
@@ -60,8 +61,9 @@ function saveClientSession(c) {
 }
 function isClientLoggedIn() { return !!(_client && _client.email); }
 function getClientEmail() { return isClientLoggedIn() ? _client.email : ''; }
+function getClientId() { return isClientLoggedIn() ? (_client.id || null) : null; }
 
-async function clientLogin(identifier, senha) {
+async function clientLogin(identifier, senha, clienteId) {
     identifier = String(identifier || '').trim();
     if (!identifier || !senha) return { ok: false, error: 'Informe email e senha.' };
     try {
@@ -71,9 +73,13 @@ async function clientLogin(identifier, senha) {
         const { data, error } = await db.rpc('verificar_login', {
             _identificador: identifier,
             _senha_email: emailHash,
-            _senha_cnpj: cnpjHash
+            _senha_cnpj: cnpjHash,
+            _cliente_id: clienteId || null
         });
         if (error || !data || !data.length) return { ok: false, error: 'Erro ao autenticar. Tente novamente.' };
+        if (data[0] && data[0].erro === 'CHOOSE') {
+            return { ok: false, choose: true, accounts: data.map(d => ({ id: d.id, razao_social: d.razao_social, email: d.email })) };
+        }
         const rec = data[0];
         if (rec.erro) {
             if (String(rec.erro).startsWith('LOCK:')) {
@@ -561,7 +567,7 @@ async function syncPedido() {
     const email = getClientEmail();
     if (!email) return;
     const cart = getCart();
-    if (cart.length === 0) { descartarPedido(email); return; }
+    if (cart.length === 0) { descartarPedido(email, getClientId()); return; }
     let total = 0;
     const itens = cart.map(item => {
         const subtotal = item.preco * item.qty;
@@ -579,6 +585,7 @@ async function syncPedido() {
         await db.rpc('salvar_pedido', { _payload: {
             nome_cliente: (_client && _client.razao) || email,
             email: email,
+            cliente_id: getClientId(),
             telefone: '',
             itens: itens,
             total: total,
@@ -588,8 +595,8 @@ async function syncPedido() {
         console.warn('Falha ao registrar pedido em andamento:', e);
     }
 }
-function descartarPedido(email) {
-    try { Promise.resolve(db.rpc('descartar_pedido', { _email: email })).catch(() => {}); } catch (e) {}
+function descartarPedido(email, clienteId) {
+    try { Promise.resolve(db.rpc('descartar_pedido', { _email: email, _cliente_id: clienteId || null })).catch(() => {}); } catch (e) {}
 }
 
 // ---------- Prazos de pagamento ----------
@@ -636,7 +643,7 @@ async function loadCheckoutPoints(total) {
     if (listEl) listEl.innerHTML = '';
 
     try {
-        const resumo = await db.rpc('cliente_calcular_pontos_pedido', { _email: email, _total: total });
+        const resumo = await db.rpc('cliente_calcular_pontos_pedido', { _email: email, _total: total, _cliente_id: getClientId() });
         const d = (resumo && resumo.data) ? resumo.data : resumo;
         _checkoutPoints.ganhos = Number((d && d.pontos_ganhos) || 0);
         _checkoutPoints.acumulados = Number((d && d.pontos_acumulados) || 0);
@@ -650,7 +657,7 @@ async function loadCheckoutPoints(total) {
 
     let premios = [];
     try {
-        const r = await db.rpc('cliente_listar_premios_disponiveis', { _email: email });
+        const r = await db.rpc('cliente_listar_premios_disponiveis', { _email: email, _cliente_id: getClientId() });
         premios = (r && Array.isArray(r.data)) ? r.data : [];
     } catch (e) { console.error('premios', e); premios = []; }
 
@@ -830,6 +837,7 @@ async function submitQuote(e) {
         const res = await db.rpc('salvar_pedido', { _payload: {
             nome_cliente: (_client && _client.razao) || email,
             email: email,
+            cliente_id: getClientId(),
             telefone: '',
             codigo_cliente: code,
             codigo_retirada: pickupCode,
@@ -855,7 +863,8 @@ async function submitQuote(e) {
             _email: email,
             _total: total,
             _premio_id: _selectedPrize ? _selectedPrize.id : null,
-            _orcamento_id: orcamentoId
+            _orcamento_id: orcamentoId,
+            _cliente_id: getClientId()
         });
     } catch (err) {
         console.error('Erro ao registrar pontos:', err);
@@ -891,8 +900,10 @@ function showCheckoutSuccess(code) {
 // ---------- Auth modals ----------
 function showClientAuthView(which) {
     const lv = document.getElementById('clientLoginView');
+    const cv = document.getElementById('clientLoginChooseView');
     const pv = document.getElementById('clientPwdView');
     if (lv) lv.style.display = (which === 'login') ? '' : 'none';
+    if (cv) cv.style.display = (which === 'choose') ? '' : 'none';
     if (pv) pv.style.display = (which === 'pwd') ? '' : 'none';
 }
 
@@ -903,6 +914,7 @@ function openClientLoginModal() {
     if (le) le.style.display = 'none';
     const pe = document.getElementById('clientPwdError');
     if (pe) pe.style.display = 'none';
+    _pendingLogin = null;
     showClientAuthView('login');
     ov.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -913,6 +925,7 @@ function closeClientLoginModal() {
     const ov = document.getElementById('clientLoginOverlay');
     if (ov) ov.classList.remove('active');
     document.body.style.overflow = '';
+    _pendingLogin = null;
 }
 
 async function submitClientLogin(e) {
@@ -926,7 +939,14 @@ async function submitClientLogin(e) {
     if (btn) btn.disabled = true;
     const r = await clientLogin(email, senha);
     if (btn) btn.disabled = false;
+    if (!r.ok && r.choose) {
+        _pendingLogin = { identifier: email, senha: senha, accounts: r.accounts || [] };
+        renderClientLoginChoose(r.accounts || []);
+        showClientAuthView('choose');
+        return;
+    }
     if (!r.ok) { if (err) { err.textContent = r.error; err.style.display = ''; } return; }
+    _pendingLogin = null;
     document.getElementById('clLoginEmail').value = '';
     document.getElementById('clLoginSenha').value = '';
     if (r.mustChange) {
@@ -942,6 +962,46 @@ async function submitClientLogin(e) {
         renderCartSidebar();
         showToast('Login realizado. Bem-vindo, ' + (_client.razao || '') + '!');
     }
+}
+
+function renderClientLoginChoose(accounts) {
+    const list = document.getElementById('clientLoginChooseList');
+    if (!list) return;
+    list.innerHTML = (accounts || []).map(a => {
+        const nome = escapeHtml(a.razao_social || 'Cliente');
+        const email = escapeHtml(a.email || '');
+        return `<button type="button" class="btn btn-ghost btn-block" data-cliente-id="${escapeHtml(String(a.id))}" style="text-align:left;justify-content:flex-start;gap:10px;padding:12px 14px;"><i class="fas fa-store"></i><span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.25;"><strong style="font-size:14px;">${nome}</strong><small style="color:#5b5466;font-size:12px;">${email}</small></span></button>`;
+    }).join('');
+    list.querySelectorAll('[data-cliente-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!_pendingLogin) return;
+            btn.disabled = true;
+            const r = await clientLogin(_pendingLogin.identifier, _pendingLogin.senha, btn.dataset.clienteId);
+            btn.disabled = false;
+            if (!r.ok) {
+                const err = document.getElementById('clientLoginError');
+                if (err) { err.textContent = r.error || 'Não foi possível entrar.'; err.style.display = ''; }
+                showClientAuthView('login');
+                return;
+            }
+            _pendingLogin = null;
+            document.getElementById('clLoginEmail').value = '';
+            document.getElementById('clLoginSenha').value = '';
+            if (r.mustChange) {
+                const pe = document.getElementById('clientPwdError');
+                if (pe) pe.style.display = 'none';
+                document.getElementById('clPwdOld').value = '';
+                document.getElementById('clPwdNew').value = '';
+                document.getElementById('clPwdConfirm').value = '';
+                showClientAuthView('pwd');
+            } else {
+                closeClientLoginModal();
+                renderCatalog();
+                renderCartSidebar();
+                showToast('Login realizado. Bem-vindo, ' + (_client.razao || '') + '!');
+            }
+        });
+    });
 }
 
 function openClientPwdModal() {
@@ -991,7 +1051,7 @@ async function openClientOrders() {
     ensureJsPDF().catch(() => {});
     list.innerHTML = '<div class="orders-empty"><i class="fas fa-spinner fa-spin"></i><p>Carregando seus pedidos...</p></div>';
     try {
-        const { data, error } = await db.rpc('listar_pedidos_cliente', { _email: getClientEmail(), _limite: 20 });
+        const { data, error } = await db.rpc('listar_pedidos_cliente', { _email: getClientEmail(), _limite: 20, _cliente_id: getClientId() });
         if (error) throw error;
         renderClientOrders(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -1277,6 +1337,8 @@ function setupUI() {
     });
     const clientLoginForm = document.getElementById('clientLoginForm');
     if (clientLoginForm) clientLoginForm.addEventListener('submit', submitClientLogin);
+    const clientLoginChooseBack = document.getElementById('clientLoginChooseBack');
+    if (clientLoginChooseBack) clientLoginChooseBack.addEventListener('click', () => showClientAuthView('login'));
 
     const clientPwdForm = document.getElementById('clientPwdForm');
     if (clientPwdForm) clientPwdForm.addEventListener('submit', submitClientPwdChange);

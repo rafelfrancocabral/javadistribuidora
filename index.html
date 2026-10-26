@@ -308,6 +308,11 @@
                 <button type="submit" class="btn btn-primary btn-block" id="clientLoginSubmit"><i class="fas fa-sign-in-alt"></i> Entrar</button>
             </form>
         </div>
+        <div id="clientLoginChooseView" style="display:none;">
+            <p style="margin:0 0 12px;color:#5b5466;font-size:14px;">Temos mais de um cadastro com este e-mail. Selecione qual deseja acessar:</p>
+            <div id="clientLoginChooseList" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <button type="button" class="btn btn-ghost btn-block" id="clientLoginChooseBack" style="margin-top:12px;"><i class="fas fa-arrow-left"></i> Voltar</button>
+        </div>
         <div id="clientPwdView" style="display:none;">
             <form id="clientPwdForm">
                 <div class="auth-field auth-field-pwd">
@@ -365,6 +370,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-config.js?v=2"></script>
-<script src="js/script.js?v=28"></script>
+<script src="js/script.js?v=29"></script>
 </body>
 </html>

@@ -3,6 +3,9 @@
 -- Pedidos antigos (cliente_id nulo) continuam visíveis pelo e-mail.
 BEGIN;
 
+-- Remove a função da versão anterior do addendum40, que expunha a lista de cadastros.
+DROP FUNCTION IF EXISTS public.cliente_listar_por_identificador(text);
+
 -- ---------------------------------------------------------------------------
 -- 1) Vínculo do orçamento com o cadastro
 -- ---------------------------------------------------------------------------

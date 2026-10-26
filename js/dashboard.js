@@ -1705,6 +1705,8 @@ function closeQuoteModal() { document.getElementById('quoteModal').classList.rem
 function setMqLine(line) {
     mqLine = line;
     document.querySelectorAll('#mqLineTabs .mq-line-tab').forEach(b => b.classList.toggle('active', b.dataset.mqline === line));
+    const pay = document.getElementById('mqPayment');
+    if (pay) pay.value = '';
     const container = document.getElementById('mqItems');
     const empty = document.getElementById('mqItemsEmpty');
     if (container) container.innerHTML = '';
@@ -1718,12 +1720,15 @@ function addQuoteItem() { const container = document.getElementById('mqItems'); 
 
 // Regras de prazo (mesmas do site): o valor do orçamento libera mais datas.
 // <= R$500 -> 1 data; > R$500 -> +2 datas; > R$750 -> +3 datas; > R$1000 -> todas.
+// A linha Dymar tem prazos próprios, sempre disponíveis.
 const MQ_PRAZOS_1DATA = ['7', '14', '21', '28', '35', '42'];
 const MQ_PRAZOS_2DATAS = ['7/14', '28/35', '28/56'];
 const MQ_PRAZOS_3DATAS = ['7/14/21', '21/28/35', '28/35/42', '28/42/56'];
 const MQ_PRAZOS_4DATAS = ['28/35/42/77'];
+const MQ_PRAZOS_DYMAR = ['10 dias', '15 dias', '10/20 dias', '30/60 dias'];
 const mqPrazoLabel = p => p.indexOf('/') === -1 ? p + ' dias' : p;
 function mqPrazoOptions(total) {
+    if (String(mqLine || '').toLowerCase() === 'dymar') return MQ_PRAZOS_DYMAR.slice();
     let prazos = MQ_PRAZOS_1DATA.slice();
     if (total > 500) prazos = prazos.concat(MQ_PRAZOS_2DATAS);
     if (total > 750) prazos = prazos.concat(MQ_PRAZOS_3DATAS);

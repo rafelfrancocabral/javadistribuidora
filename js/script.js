@@ -1076,7 +1076,10 @@ function renderClientOrders(orders) {
         return `<div class="order-card">
             <div class="order-card-head">
                 <div><span class="order-code">#${escapeHtml(o.codigo_cliente || o.id)}</span><span class="order-date">${date} ${time}</span></div>
-                <button type="button" class="order-pdf-btn" onclick="downloadOrderPDF('${o.id}')" title="Baixar este pedido em PDF"><i class="fas fa-file-pdf"></i> PDF</button>
+                <div class="order-actions">
+                    <button type="button" class="order-pdf-btn" onclick="downloadOrderPDF('${o.id}')" title="Abrir este pedido em PDF"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button type="button" class="order-pdf-btn order-share-btn" onclick="downloadOrderPDF('${o.id}', 'share')" title="Compartilhar o PDF deste pedido"><i class="fas fa-share-nodes"></i> Compartilhar</button>
+                </div>
             </div>
             ${items.length ? `<div class="order-items">${items.map(it => `<div class="order-item"><span>${escapeHtml(it.nome || '')} ${it.codigo ? `<small>(${escapeHtml(it.codigo)})</small>` : ''}</span><span>${it.quantidade || 0}x ${formatPrice(it.preco || 0)}</span></div>`).join('')}</div>` : ''}
             ${o.obs ? `<div class="order-obs" style="margin:8px 0 0;padding:8px 10px;border-radius:8px;background:rgba(31,157,85,.10);color:#1f9d55;font-size:12.5px;font-weight:600;"><i class="fas fa-gift"></i> ${escapeHtml(o.obs)}</div>` : ''}
@@ -1164,14 +1167,17 @@ function loadDymarLogoData() {
     return _dymarLogoDataPromise;
 }
 
-async function downloadOrderPDF(id) {
+async function downloadOrderPDF(id, mode) {
     const order = _clientOrders.find(o => String(o.id) === String(id));
     if (!order) return;
+    const shareMode = mode === 'share';
     const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || ''));
-    // Abre a aba ja no gesto do clique (evita bloqueio de pop-up), inclusive no mobile.
+    // No modo "abrir", a aba ja e aberta no gesto do clique (evita bloqueio de pop-up).
     let win = null;
-    try { win = window.open('', '_blank'); } catch (e) { win = null; }
-    if (win) { try { win.document.write('<title>Gerando PDF…</title><p style="font-family:sans-serif;padding:24px;color:#5b5466;">Gerando o PDF do pedido…</p>'); } catch (e) {} }
+    if (!shareMode) {
+        try { win = window.open('', '_blank'); } catch (e) { win = null; }
+        if (win) { try { win.document.write('<title>Gerando PDF…</title><p style="font-family:sans-serif;padding:24px;color:#5b5466;">Gerando o PDF do pedido…</p>'); } catch (e) {} }
+    }
     try { await ensureJsPDF(); }
     catch (e) { if (win && !win.closed) win.close(); showToast('Não foi possível gerar o PDF. Verifique a conexão.', true); return; }
     if (!window.jspdf || !window.jspdf.jsPDF) { if (win && !win.closed) win.close(); showToast('Biblioteca de PDF não carregada.', true); return; }
@@ -1262,6 +1268,24 @@ async function downloadOrderPDF(id) {
     }
     const fileName = (isOrderPdf ? 'pedido-' : 'orcamento-') + (order.codigo_cliente || order.id) + '-' + (razao ? razao.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
     const blob = doc.output('blob');
+    if (shareMode) {
+        const shareTitle = (isOrderPdf ? 'Pedido ' : 'Orçamento ') + String(order.codigo_cliente || order.id || '');
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        let canShareFile = false;
+        try { canShareFile = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) { canShareFile = false; }
+        if (canShareFile) {
+            try {
+                await navigator.share({ files: [file], title: shareTitle });
+                showToast('PDF compartilhado.');
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+            }
+        }
+        doc.save(fileName);
+        showToast('PDF salvo. Anexe o arquivo no WhatsApp.');
+        return;
+    }
     const url = URL.createObjectURL(blob);
     if (win && !win.closed) {
         win.location.href = url;

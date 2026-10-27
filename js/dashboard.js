@@ -717,6 +717,7 @@ function openQuoteDetail(id) {
         <div class="qd-row"><span>Total</span><span style="font-weight:700;color:var(--accent)">${formatPrice(q.total)}</span></div>
         <div class="qd-actions">
             <button class="btn btn-whatsapp-outline" onclick="downloadQuotePDF('${q.id}')"><i class="fas fa-file-pdf"></i> Ver PDF</button>
+            <button class="btn btn-whatsapp-outline" onclick="downloadQuotePDF('${q.id}', 'share')"><i class="fas fa-share-nodes"></i> Compartilhar PDF</button>
             <a class="btn btn-whatsapp-outline" href="https://wa.me/${(q.telefone||'').replace(/\D/g,'') || WHATSAPP_NUMBER}?text=${encodeURIComponent(buildQuoteMessage(q))}" target="_blank"><i class="fab fa-whatsapp"></i> Enviar WhatsApp</a>
             <button class="btn btn-primary" onclick="editQuote('${q.id}')"><i class="fas fa-pen"></i> Editar</button>
         </div>
@@ -763,7 +764,7 @@ function loadDymarLogoData() {
     return _dymarLogoDataPromise;
 }
 
-async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada (verifique a conexão).', true); return; } const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || '')); let win = null; try { win = window.open('', '_blank'); } catch (e) { win = null; } if (win) { try { win.document.write('<title>Gerando PDF…</title><p style="font-family:sans-serif;padding:24px;color:#5b5466;">Gerando o PDF…</p>'); } catch (e) {} } const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const pageW = 210, margin = 16; const width = pageW - margin * 2; let y = margin; const brand = '#581c87'; const light = '#5b5466'; const subX = pageW - margin; const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null; const byCode = {}; if (products.length) products.forEach(p => { if (p.codigo) byCode[String(p.codigo).trim().toLowerCase()] = p; }); const _isDymarItem = it => { const p = it && it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; return (p && String(p.linha || '').toLowerCase() === 'dymar') || Number(it && it.icmsst) > 0; }; const isDymarPdf = (String(q.linha || '').toLowerCase() === 'dymar') || (items ? items.some(_isDymarItem) : false); const isOrderPdf = ['aprovado', 'concluido'].includes(String(q.status || '').toLowerCase()); const pdfTitle = isOrderPdf ? 'PEDIDO Nº ' : 'ORÇAMENTO Nº '; const itemsTitle = isOrderPdf ? 'ITENS DO PEDIDO' : 'ITENS DO ORÇAMENTO'; const dymarLogoData = isDymarPdf ? await loadDymarLogoData() : null;
+async function downloadQuotePDF(id, mode) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; const shareMode = mode === 'share'; if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada (verifique a conexão).', true); return; } const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || '')); let win = null; if (!shareMode) { try { win = window.open('', '_blank'); } catch (e) { win = null; } if (win) { try { win.document.write('<title>Gerando PDF…</title><p style="font-family:sans-serif;padding:24px;color:#5b5466;">Gerando o PDF…</p>'); } catch (e) {} } } const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const pageW = 210, margin = 16; const width = pageW - margin * 2; let y = margin; const brand = '#581c87'; const light = '#5b5466'; const subX = pageW - margin; const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null; const byCode = {}; if (products.length) products.forEach(p => { if (p.codigo) byCode[String(p.codigo).trim().toLowerCase()] = p; }); const _isDymarItem = it => { const p = it && it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; return (p && String(p.linha || '').toLowerCase() === 'dymar') || Number(it && it.icmsst) > 0; }; const isDymarPdf = (String(q.linha || '').toLowerCase() === 'dymar') || (items ? items.some(_isDymarItem) : false); const isOrderPdf = ['aprovado', 'concluido'].includes(String(q.status || '').toLowerCase()); const pdfTitle = isOrderPdf ? 'PEDIDO Nº ' : 'ORÇAMENTO Nº '; const itemsTitle = isOrderPdf ? 'ITENS DO PEDIDO' : 'ITENS DO ORÇAMENTO'; const dymarLogoData = isDymarPdf ? await loadDymarLogoData() : null;
 
     const Hd = 40; const hStyle = PDF_HEADER_STYLE || 1; const pink = [255, 47, 230]; let bg, tc, sc, divC;
     if (hStyle === 3) { bg = [72, 72, 78]; tc = [255, 255, 255]; sc = [238, 214, 244]; divC = [255, 255, 255]; }
@@ -847,6 +848,24 @@ async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) ==
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
     const fileName = (isOrderPdf ? 'pedido-' : 'orcamento-') + (q.codigo_cliente || q.id) + '-' + (getQuoteClientName(q) ? getQuoteClientName(q).replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
     const blob = doc.output('blob');
+    if (shareMode) {
+        const shareTitle = (isOrderPdf ? 'Pedido ' : 'Orçamento ') + String(q.codigo_cliente || q.id || '');
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        let canShareFile = false;
+        try { canShareFile = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) { canShareFile = false; }
+        if (canShareFile) {
+            try {
+                await navigator.share({ files: [file], title: shareTitle });
+                toast('PDF compartilhado.');
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+            }
+        }
+        doc.save(fileName);
+        toast('PDF salvo. Anexe o arquivo no WhatsApp.');
+        return;
+    }
     const url = URL.createObjectURL(blob);
     const pdfLabel = 'PDF do ' + (isOrderPdf ? 'pedido' : 'orçamento');
     if (win && !win.closed) {

@@ -763,7 +763,7 @@ function loadDymarLogoData() {
     return _dymarLogoDataPromise;
 }
 
-async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada (verifique a conexão).', true); return; } const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const pageW = 210, margin = 16; const width = pageW - margin * 2; let y = margin; const brand = '#581c87'; const light = '#5b5466'; const subX = pageW - margin; const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null; const byCode = {}; if (products.length) products.forEach(p => { if (p.codigo) byCode[String(p.codigo).trim().toLowerCase()] = p; }); const _isDymarItem = it => { const p = it && it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; return (p && String(p.linha || '').toLowerCase() === 'dymar') || Number(it && it.icmsst) > 0; }; const isDymarPdf = (String(q.linha || '').toLowerCase() === 'dymar') || (items ? items.some(_isDymarItem) : false); const isOrderPdf = ['aprovado', 'concluido'].includes(String(q.status || '').toLowerCase()); const pdfTitle = isOrderPdf ? 'PEDIDO Nº ' : 'ORÇAMENTO Nº '; const itemsTitle = isOrderPdf ? 'ITENS DO PEDIDO' : 'ITENS DO ORÇAMENTO'; const dymarLogoData = isDymarPdf ? await loadDymarLogoData() : null;
+async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada (verifique a conexão).', true); return; } const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || '')); let win = null; try { win = window.open('', '_blank'); } catch (e) { win = null; } if (win) { try { win.document.write('<title>Gerando PDF…</title><p style="font-family:sans-serif;padding:24px;color:#5b5466;">Gerando o PDF…</p>'); } catch (e) {} } const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const pageW = 210, margin = 16; const width = pageW - margin * 2; let y = margin; const brand = '#581c87'; const light = '#5b5466'; const subX = pageW - margin; const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null; const byCode = {}; if (products.length) products.forEach(p => { if (p.codigo) byCode[String(p.codigo).trim().toLowerCase()] = p; }); const _isDymarItem = it => { const p = it && it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; return (p && String(p.linha || '').toLowerCase() === 'dymar') || Number(it && it.icmsst) > 0; }; const isDymarPdf = (String(q.linha || '').toLowerCase() === 'dymar') || (items ? items.some(_isDymarItem) : false); const isOrderPdf = ['aprovado', 'concluido'].includes(String(q.status || '').toLowerCase()); const pdfTitle = isOrderPdf ? 'PEDIDO Nº ' : 'ORÇAMENTO Nº '; const itemsTitle = isOrderPdf ? 'ITENS DO PEDIDO' : 'ITENS DO ORÇAMENTO'; const dymarLogoData = isDymarPdf ? await loadDymarLogoData() : null;
 
     const Hd = 40; const hStyle = PDF_HEADER_STYLE || 1; const pink = [255, 47, 230]; let bg, tc, sc, divC;
     if (hStyle === 3) { bg = [72, 72, 78]; tc = [255, 255, 255]; sc = [238, 214, 244]; divC = [255, 255, 255]; }
@@ -847,26 +847,19 @@ async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) ==
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
     const fileName = (isOrderPdf ? 'pedido-' : 'orcamento-') + (q.codigo_cliente || q.id) + '-' + (getQuoteClientName(q) ? getQuoteClientName(q).replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
     const blob = doc.output('blob');
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || ''));
-    const shareTitle = (isOrderPdf ? 'Pedido ' : 'Orçamento ') + String(q.codigo_cliente || q.id || '');
-    const shareText = shareTitle + (getQuoteClientName(q) ? ' - ' + getQuoteClientName(q) : '');
-    if (isMobile && navigator.share && navigator.canShare) {
-        try {
-            const file = new File([blob], fileName, { type: 'application/pdf' });
-            if (navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file] });
-                toast('PDF compartilhado.');
-                return;
-            }
-        } catch (e) {
-            if (e && e.name === 'AbortError') return;
-        }
-    }
     const url = URL.createObjectURL(blob);
-    const win = window.open(url, '_blank');
-    if (win) { setTimeout(() => URL.revokeObjectURL(url), 60000); }
-    else { doc.save(fileName); }
-    toast('PDF do ' + (isOrderPdf ? 'pedido' : 'orçamento') + ' aberto no navegador.'); }
+    const pdfLabel = 'PDF do ' + (isOrderPdf ? 'pedido' : 'orçamento');
+    if (win && !win.closed) {
+        win.location.href = url;
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        toast(pdfLabel + ' aberto no navegador.');
+    } else {
+        let opened = null;
+        try { opened = window.open(url, '_blank'); } catch (e) { opened = null; }
+        if (opened) { setTimeout(() => URL.revokeObjectURL(url), 60000); toast(pdfLabel + ' aberto no navegador.'); }
+        else if (isMobile) { window.location.href = url; }
+        else { URL.revokeObjectURL(url); doc.save(fileName); toast(pdfLabel + ' baixado.'); }
+    } }
 
 // ---------- Products ----------
 let productsSort = { key: '', dir: 1 };

@@ -1168,13 +1168,10 @@ async function downloadOrderPDF(id) {
     const order = _clientOrders.find(o => String(o.id) === String(id));
     if (!order) return;
     const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || ''));
-    // No desktop abre a aba ja no gesto do clique (evita bloqueio de pop-up).
-    // No mobile nao abre aba: compartilha o arquivo PDF via folha nativa.
+    // Abre a aba ja no gesto do clique (evita bloqueio de pop-up), inclusive no mobile.
     let win = null;
-    if (!isMobile) {
-        try { win = window.open('', '_blank'); } catch (e) { win = null; }
-        if (win) { try { win.document.write('<title>Gerando PDF…</title><p style="font-family:sans-serif;padding:24px;color:#5b5466;">Gerando o PDF do pedido…</p>'); } catch (e) {} }
-    }
+    try { win = window.open('', '_blank'); } catch (e) { win = null; }
+    if (win) { try { win.document.write('<title>Gerando PDF…</title><p style="font-family:sans-serif;padding:24px;color:#5b5466;">Gerando o PDF do pedido…</p>'); } catch (e) {} }
     try { await ensureJsPDF(); }
     catch (e) { if (win && !win.closed) win.close(); showToast('Não foi possível gerar o PDF. Verifique a conexão.', true); return; }
     if (!window.jspdf || !window.jspdf.jsPDF) { if (win && !win.closed) win.close(); showToast('Biblioteca de PDF não carregada.', true); return; }
@@ -1265,20 +1262,6 @@ async function downloadOrderPDF(id) {
     }
     const fileName = (isOrderPdf ? 'pedido-' : 'orcamento-') + (order.codigo_cliente || order.id) + '-' + (razao ? razao.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
     const blob = doc.output('blob');
-    const shareTitle = (isOrderPdf ? 'Pedido ' : 'Orçamento ') + String(order.codigo_cliente || order.id || '');
-    const shareText = shareTitle + (razao ? ' - ' + razao : '');
-    if (isMobile && navigator.share && navigator.canShare) {
-        try {
-            const file = new File([blob], fileName, { type: 'application/pdf' });
-            if (navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file] });
-                showToast('PDF compartilhado.');
-                return;
-            }
-        } catch (e) {
-            if (e && e.name === 'AbortError') return;
-        }
-    }
     const url = URL.createObjectURL(blob);
     if (win && !win.closed) {
         win.location.href = url;
@@ -1288,6 +1271,7 @@ async function downloadOrderPDF(id) {
         let opened = null;
         try { opened = window.open(url, '_blank'); } catch (e) { opened = null; }
         if (opened) { setTimeout(() => URL.revokeObjectURL(url), 60000); showToast('PDF do pedido aberto no navegador.'); }
+        else if (isMobile) { window.location.href = url; }
         else { URL.revokeObjectURL(url); doc.save(fileName); showToast('PDF do pedido baixado.'); }
     }
 }

@@ -1184,7 +1184,6 @@ async function downloadOrderPDF(id, mode) {
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    doc.setProperties({ title: String(order.codigo_cliente || order.id || '') });
     const pageW = 210, margin = 16, width = pageW - margin * 2, subX = pageW - margin;
     const brand = '#581c87', light = '#5b5466';
     const dt = new Date(order.created_at);
@@ -1266,10 +1265,16 @@ async function downloadOrderPDF(id, mode) {
         doc.text('Java Distribuidora • (12) 99778-0047 • Frete CIF acima de R$300,00', pageW / 2, 289, { align: 'center' });
         doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' });
     }
-    const fileName = (isOrderPdf ? 'pedido-' : 'orcamento-') + (order.codigo_cliente || order.id) + '-' + (razao ? razao.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
+    const clientName = razao || 'Cliente';
+    const docNumber = String(order.codigo_cliente || order.id || '');
+    const docKind = isOrderPdf ? 'Pedido' : 'Orçamento';
+    const safeClientName = String(clientName).replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'Cliente';
+    const baseName = (safeClientName + ' - ' + docKind + ' ' + docNumber).trim();
+    const fileName = baseName + '.pdf';
+    doc.setProperties({ title: baseName });
     const blob = doc.output('blob');
     if (shareMode) {
-        const shareTitle = (isOrderPdf ? 'Pedido ' : 'Orçamento ') + String(order.codigo_cliente || order.id || '');
+        const shareTitle = baseName;
         const file = new File([blob], fileName, { type: 'application/pdf' });
         let canShareFile = false;
         try { canShareFile = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) { canShareFile = false; }

@@ -846,10 +846,16 @@ async function downloadQuotePDF(id, mode) { const q = quotes.find(x => String(x.
     if (q.pagamento) { const totalPagamento = Number(q.total) + ((isDymarPdf && icmsTotal > 0) ? icmsTotal : 0); const payLines = buildPaymentLines(q.pagamento, q.created_at, totalPagamento); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
     if (q.obs) { if (y > 255) { doc.addPage(); y = margin; } y += 3; doc.setFontSize(10); doc.setTextColor(31, 157, 85); doc.setFont('helvetica', 'bold'); doc.text('Prêmio / Observações:', margin, y); y += 6; doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); const obsLines = doc.splitTextToSize(String(q.obs), width); obsLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.text(l, margin, y); y += 5.5; }); }
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
-    const fileName = (isOrderPdf ? 'pedido-' : 'orcamento-') + (q.codigo_cliente || q.id) + '-' + (getQuoteClientName(q) ? getQuoteClientName(q).replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
+    const clientName = getQuoteClientName(q) || 'Cliente';
+    const docNumber = String(q.codigo_cliente || q.id || '');
+    const docKind = isOrderPdf ? 'Pedido' : 'Orçamento';
+    const safeClientName = String(clientName).replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'Cliente';
+    const baseName = (safeClientName + ' - ' + docKind + ' ' + docNumber).trim();
+    const fileName = baseName + '.pdf';
+    doc.setProperties({ title: baseName });
     const blob = doc.output('blob');
     if (shareMode) {
-        const shareTitle = (isOrderPdf ? 'Pedido ' : 'Orçamento ') + String(q.codigo_cliente || q.id || '');
+        const shareTitle = baseName;
         const file = new File([blob], fileName, { type: 'application/pdf' });
         let canShareFile = false;
         try { canShareFile = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) { canShareFile = false; }

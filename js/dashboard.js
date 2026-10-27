@@ -687,6 +687,7 @@ function quoteCardHtml(q) {
                 <div class="quote-card-actions">
                     <button class="icon-btn" onclick="openQuoteDetail('${q.id}')" title="Detalhes"><i class="fas fa-eye"></i></button>
                     <button class="icon-btn pdf" onclick="downloadQuotePDF('${q.id}')" title="Abrir PDF do orçamento no navegador"><i class="fas fa-file-pdf"></i></button>
+                    <button class="icon-btn" onclick="downloadQuotePDF('${q.id}', 'share')" title="Compartilhar o PDF"><i class="fas fa-share-nodes"></i></button>
                     <button class="icon-btn" onclick="editQuote('${q.id}')" title="Editar"><i class="fas fa-pen"></i></button>
                     <button class="icon-btn" onclick="advanceQuote('${q.id}')" title="Avançar status"><i class="fas fa-arrow-right"></i></button>
                     <a class="icon-btn" href="https://wa.me/${(q.telefone||'').replace(/\D/g,'') || WHATSAPP_NUMBER}" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>

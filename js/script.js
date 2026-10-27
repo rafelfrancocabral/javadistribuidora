@@ -1144,6 +1144,26 @@ function buildPaymentLinesSite(pagamento, baseDate, total) {
     });
 }
 
+let _dymarLogoDataPromise = null;
+function loadDymarLogoData() {
+    if (_dymarLogoDataPromise) return _dymarLogoDataPromise;
+    _dymarLogoDataPromise = new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                canvas.getContext('2d').drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/jpeg', 0.92));
+            } catch (e) { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = 'img/dymar.jpg';
+    });
+    return _dymarLogoDataPromise;
+}
+
 async function downloadOrderPDF(id) {
     const order = _clientOrders.find(o => String(o.id) === String(id));
     if (!order) return;
@@ -1168,12 +1188,13 @@ async function downloadOrderPDF(id) {
     const emitido = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     let y = margin;
 
+    const items = (Array.isArray(order.itens) && order.itens.length) ? order.itens : null; const byCode = {}; (_allProducts || []).forEach(p => { if (p.codigo) byCode[String(p.codigo).trim().toLowerCase()] = p; }); const _isDymarItem = it => { const p = it && it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; return (p && String(p.linha || '').toLowerCase() === 'dymar') || Number(it && it.icmsst) > 0; }; const isDymarPdf = (String(order.linha || '').toLowerCase() === 'dymar') || (items ? items.some(_isDymarItem) : false); const isOrderPdf = ['aprovado', 'concluido'].includes(String(order.status || '').toLowerCase()); const pdfTitle = isOrderPdf ? 'PEDIDO Nº ' : 'ORÇAMENTO Nº '; const itemsTitle = isOrderPdf ? 'ITENS DO PEDIDO' : 'ITENS DO ORÇAMENTO'; const dymarLogoData = isDymarPdf ? await loadDymarLogoData() : null;
     const Hd = 40;
     doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, Hd, 'F');
     doc.setFillColor(255, 47, 230); doc.rect(0, Hd, pageW, 2.2, 'F');
-    if (typeof COMPANY_LOGO_DATA === 'string' && COMPANY_LOGO_DATA) { try { doc.addImage(COMPANY_LOGO_DATA, 'PNG', margin, 8, 34, 24); } catch (e) {} }
+    const dymarLogoOk = !!(isDymarPdf && dymarLogoData); const headerLogo = dymarLogoOk ? dymarLogoData : (typeof COMPANY_LOGO_DATA === 'string' ? COMPANY_LOGO_DATA : null); if (headerLogo) { try { if (dymarLogoOk) doc.addImage(headerLogo, 'JPEG', margin, 7, 24, 24); else doc.addImage(headerLogo, 'PNG', margin, 8, 34, 24); } catch (e) {} }
     doc.setTextColor(96, 96, 106); doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.text('EMITIDO EM ' + emitido, pageW - margin, 12, { align: 'right' });
-    doc.setTextColor(20, 20, 26); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text('ORÇAMENTO N° ' + String(order.codigo_cliente || order.id || ''), pageW / 2, 20, { align: 'center' });
+    doc.setTextColor(20, 20, 26); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text(pdfTitle + String(order.codigo_cliente || order.id || ''), pageW / 2, 20, { align: 'center' });
     doc.setDrawColor(226, 120, 210); doc.setLineWidth(0.4); doc.line(pageW / 2 - 42, 24.5, pageW / 2 + 42, 24.5);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(96, 96, 106); doc.text('Java Distribuidora', pageW / 2, 30, { align: 'center' }); doc.setLineWidth(0.2);
     y = Hd + 12;
@@ -1195,13 +1216,12 @@ async function downloadOrderPDF(id) {
     });
     y += Math.ceil(colIdx / 2) * 12 + 4;
 
-    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('ITENS DO ORÇAMENTO', margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
+    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(itemsTitle, margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
     const codeX = margin, descX = margin + 26, qtyX = subX - 84, unitX = subX - 58;
     doc.setFillColor(247, 243, 255); doc.rect(margin, y, width, 9, 'F');
     doc.setTextColor(brand); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
     doc.text('CÓDIGO', codeX, y + 6); doc.text('PRODUTO', descX, y + 6); doc.text('QTDE', qtyX, y + 6, { align: 'right' }); doc.text('UNIT', unitX, y + 6, { align: 'right' }); doc.text('SUBTOTAL', subX, y + 6, { align: 'right' }); y += 15;
     doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(9.5);
-    const items = (Array.isArray(order.itens) && order.itens.length) ? order.itens : null;
     if (items) {
         items.forEach(it => {
             if (y > 272) { doc.addPage(); y = margin; }
@@ -1243,9 +1263,9 @@ async function downloadOrderPDF(id) {
         doc.text('Java Distribuidora • (12) 99778-0047 • Frete CIF acima de R$300,00', pageW / 2, 289, { align: 'center' });
         doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' });
     }
-    const fileName = 'orcamento-' + (order.codigo_cliente || order.id) + '-' + (razao ? razao.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
+    const fileName = (isOrderPdf ? 'pedido-' : 'orcamento-') + (order.codigo_cliente || order.id) + '-' + (razao ? razao.replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
     const blob = doc.output('blob');
-    const shareTitle = 'Orçamento ' + String(order.codigo_cliente || order.id || '');
+    const shareTitle = (isOrderPdf ? 'Pedido ' : 'Orçamento ') + String(order.codigo_cliente || order.id || '');
     const shareText = shareTitle + (razao ? ' - ' + razao : '');
     if (isMobile && navigator.share && navigator.canShare) {
         try {

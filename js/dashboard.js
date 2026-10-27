@@ -743,7 +743,27 @@ function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA
 
 function buildPaymentLines(pagamento, baseDate, total) { if (!pagamento) return []; const p = String(pagamento).trim(); const pLower = p.toLowerCase(); const nums = p.match(/\d+/g) || []; let prazos = []; if (/^\d+x$/i.test(p)) { const n = parseInt(nums[0]); if (n > 1) for (let i = 1; i <= n; i++) prazos.push(30 * i); } else if (/boleto/.test(pLower)) { prazos.push(nums.length ? parseInt(nums[0]) : 30); } else if (nums.length) { prazos = nums.map(n => parseInt(n)).filter(n => n > 0); } if (!prazos.length) return []; const base = baseDate ? new Date(baseDate) : new Date(); const qtd = prazos.length; const valorParcela = Number(total) > 0 ? Number(total) / qtd : 0; return prazos.map((dias, i) => { const dt = new Date(base.getTime() + dias * 86400000); const dia = dt.toLocaleDateString('pt-BR'); const parcelaText = prazos.length === 1 ? 'Vencimento em ' + dia + ' (' + dias + ' dias)' : (i + 1) + 'ª parcela' + (dias ? ' (' + dias + ' dias)' : '') + ' — ' + dia; return valorParcela > 0 ? parcelaText + ' — ' + formatPrice(valorParcela) : parcelaText; }); }
 
-async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada (verifique a conexão).', true); return; } const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const pageW = 210, margin = 16; const width = pageW - margin * 2; let y = margin; const brand = '#581c87'; const light = '#5b5466'; const subX = pageW - margin;
+let _dymarLogoDataPromise = null;
+function loadDymarLogoData() {
+    if (_dymarLogoDataPromise) return _dymarLogoDataPromise;
+    _dymarLogoDataPromise = new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                canvas.getContext('2d').drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/jpeg', 0.92));
+            } catch (e) { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = 'img/dymar.jpg';
+    });
+    return _dymarLogoDataPromise;
+}
+
+async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada (verifique a conexão).', true); return; } const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const pageW = 210, margin = 16; const width = pageW - margin * 2; let y = margin; const brand = '#581c87'; const light = '#5b5466'; const subX = pageW - margin; const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null; const byCode = {}; if (products.length) products.forEach(p => { if (p.codigo) byCode[String(p.codigo).trim().toLowerCase()] = p; }); const _isDymarItem = it => { const p = it && it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; return (p && String(p.linha || '').toLowerCase() === 'dymar') || Number(it && it.icmsst) > 0; }; const isDymarPdf = (String(q.linha || '').toLowerCase() === 'dymar') || (items ? items.some(_isDymarItem) : false); const isOrderPdf = ['aprovado', 'concluido'].includes(String(q.status || '').toLowerCase()); const pdfTitle = isOrderPdf ? 'PEDIDO Nº ' : 'ORÇAMENTO Nº '; const itemsTitle = isOrderPdf ? 'ITENS DO PEDIDO' : 'ITENS DO ORÇAMENTO'; const dymarLogoData = isDymarPdf ? await loadDymarLogoData() : null;
 
     const Hd = 40; const hStyle = PDF_HEADER_STYLE || 1; const pink = [255, 47, 230]; let bg, tc, sc, divC;
     if (hStyle === 3) { bg = [72, 72, 78]; tc = [255, 255, 255]; sc = [238, 214, 244]; divC = [255, 255, 255]; }
@@ -752,10 +772,10 @@ async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) ==
     doc.setFillColor(bg[0], bg[1], bg[2]); doc.rect(0, 0, pageW, Hd, 'F');
     doc.setFillColor(pink[0], pink[1], pink[2]); doc.rect(0, Hd, pageW, 2.2, 'F');
 
-    if (typeof COMPANY_LOGO_DATA === 'string' && COMPANY_LOGO_DATA) { try { if (hStyle === 3) { doc.setFillColor(255, 255, 255); doc.rect(margin, 5, 34, 24, 'F'); doc.addImage(COMPANY_LOGO_DATA, 'PNG', margin + 2, 7, 30, 20); } else { doc.addImage(COMPANY_LOGO_DATA, 'PNG', margin, 8, 34, 24); } } catch (e) {} }
+    const dymarLogoOk = !!(isDymarPdf && dymarLogoData); const headerLogo = dymarLogoOk ? dymarLogoData : (typeof COMPANY_LOGO_DATA === 'string' ? COMPANY_LOGO_DATA : null); if (headerLogo) { try { if (hStyle === 3) { doc.setFillColor(255, 255, 255); doc.rect(margin, 5, 34, 24, 'F'); if (dymarLogoOk) doc.addImage(headerLogo, 'JPEG', margin + 6, 6, 22, 22); else doc.addImage(headerLogo, 'PNG', margin + 2, 7, 30, 20); } else { if (dymarLogoOk) doc.addImage(headerLogo, 'JPEG', margin, 7, 24, 24); else doc.addImage(headerLogo, 'PNG', margin, 8, 34, 24); } } catch (e) {} }
 
     doc.setTextColor(sc[0], sc[1], sc[2]); doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.text('EMITIDO EM ' + formatDate(q.created_at), pageW - margin, 12, { align: 'right' });
-    doc.setTextColor(tc[0], tc[1], tc[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text('ORÇAMENTO N° ' + String(q.codigo_cliente || q.id || ''), pageW / 2, 20, { align: 'center' });
+    doc.setTextColor(tc[0], tc[1], tc[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text(pdfTitle + String(q.codigo_cliente || q.id || ''), pageW / 2, 20, { align: 'center' });
     doc.setDrawColor(divC[0], divC[1], divC[2]); doc.setLineWidth(0.4); doc.line(pageW / 2 - 42, 24.5, pageW / 2 + 42, 24.5);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(sc[0], sc[1], sc[2]); doc.text('Java Distribuidora', pageW / 2, 30, { align: 'center' }); doc.setLineWidth(0.2);
     y = Hd + 12;
@@ -767,12 +787,7 @@ async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) ==
     [['Razão Social', getQuoteClientName(q)], ['CNPJ', cnpjCliente], ['Email', q.email], ['Telefone', q.telefone]].filter(r => r[1]).forEach(row => { const cx = colIdx % 2 === 0 ? margin : colHalf; const cy = y + Math.floor(colIdx / 2) * 12; doc.setFont('helvetica', 'bold'); doc.setTextColor(light); doc.setFontSize(8); doc.text(row[0].toUpperCase(), cx, cy); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(10); let val = String(row[1]); if (doc.getTextWidth(val) > colHalf - margin - 4) val = doc.splitTextToSize(val, colHalf - margin - 4)[0]; doc.text(val, cx, cy + 6); colIdx++; });
     y += Math.ceil(colIdx / 2) * 12 + 4;
 
-    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('ITENS DO ORÇAMENTO', margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
-    const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null;
-    const byCode = {};
-    if (products.length) products.forEach(p => { if (p.codigo) byCode[String(p.codigo).trim().toLowerCase()] = p; });
-    const _isDymarItem = it => { const p = it && it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; return (p && String(p.linha || '').toLowerCase() === 'dymar') || Number(it && it.icmsst) > 0; };
-    const isDymarPdf = (String(q.linha || '').toLowerCase() === 'dymar') || (items ? items.some(_isDymarItem) : false);
+    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(itemsTitle, margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
     let codeX, descX, qtyX, tabX, dscX, liqX, icmsX, codeC, prodC, qtyC, tabC, dscC, liqC, icmsC, subC, prodTrunc, seps;
     if (isDymarPdf) {
         codeX = 16; descX = 32; qtyX = 78; tabX = 96; dscX = 114; liqX = 134; icmsX = 152;
@@ -830,10 +845,10 @@ async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) ==
     if (q.pagamento) { const totalPagamento = Number(q.total) + ((isDymarPdf && icmsTotal > 0) ? icmsTotal : 0); const payLines = buildPaymentLines(q.pagamento, q.created_at, totalPagamento); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
     if (q.obs) { if (y > 255) { doc.addPage(); y = margin; } y += 3; doc.setFontSize(10); doc.setTextColor(31, 157, 85); doc.setFont('helvetica', 'bold'); doc.text('Prêmio / Observações:', margin, y); y += 6; doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); const obsLines = doc.splitTextToSize(String(q.obs), width); obsLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.text(l, margin, y); y += 5.5; }); }
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
-    const fileName = 'orcamento-' + (q.codigo_cliente || q.id) + '-' + (getQuoteClientName(q) ? getQuoteClientName(q).replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
+    const fileName = (isOrderPdf ? 'pedido-' : 'orcamento-') + (q.codigo_cliente || q.id) + '-' + (getQuoteClientName(q) ? getQuoteClientName(q).replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_') : 'cliente') + '.pdf';
     const blob = doc.output('blob');
     const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || ''));
-    const shareTitle = 'Orçamento ' + String(q.codigo_cliente || q.id || '');
+    const shareTitle = (isOrderPdf ? 'Pedido ' : 'Orçamento ') + String(q.codigo_cliente || q.id || '');
     const shareText = shareTitle + (getQuoteClientName(q) ? ' - ' + getQuoteClientName(q) : '');
     if (isMobile && navigator.share && navigator.canShare) {
         try {
@@ -851,7 +866,7 @@ async function downloadQuotePDF(id) { const q = quotes.find(x => String(x.id) ==
     const win = window.open(url, '_blank');
     if (win) { setTimeout(() => URL.revokeObjectURL(url), 60000); }
     else { doc.save(fileName); }
-    toast('PDF do orçamento aberto no navegador.'); }
+    toast('PDF do ' + (isOrderPdf ? 'pedido' : 'orçamento') + ' aberto no navegador.'); }
 
 // ---------- Products ----------
 let productsSort = { key: '', dir: 1 };
@@ -1725,7 +1740,7 @@ const MQ_PRAZOS_1DATA = ['7', '14', '21', '28', '35', '42'];
 const MQ_PRAZOS_2DATAS = ['7/14', '28/35', '28/56'];
 const MQ_PRAZOS_3DATAS = ['7/14/21', '21/28/35', '28/35/42', '28/42/56'];
 const MQ_PRAZOS_4DATAS = ['28/35/42/77'];
-const MQ_PRAZOS_DYMAR = ['10 dias', '15 dias', '10/20 dias', '30/60 dias'];
+const MQ_PRAZOS_DYMAR = ['10 dias', '15 dias', '10/20 dias', '30/60 dias', '28/42/56 dias', '30/45/60 dias', '30/60/90 dias', '30/40/50/60 dias'];
 const mqPrazoLabel = p => p.indexOf('/') === -1 ? p + ' dias' : p;
 function mqPrazoOptions(total) {
     if (String(mqLine || '').toLowerCase() === 'dymar') return MQ_PRAZOS_DYMAR.slice();

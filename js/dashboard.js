@@ -1168,10 +1168,11 @@ async function downloadCatalogPDF() {
         if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada.', true); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    doc.setProperties({ title: String(q.codigo_cliente || q.id || '') });
     const pageW = 210, pageH = 297, margin = 16, contentW = pageW - margin * 2;
     const brand = '#581c87'; const light = '#5b5466'; const pink = [255, 47, 230];
     const line = (currentChartGroup === 'dymar') ? 'Dymar' : 'Java';
+    const dymarLogoData = (currentChartGroup === 'dymar') ? await loadDymarLogoData() : null;
+    doc.setProperties({ title: 'Catálogo ' + line });
     const visibleProducts = products.filter(p => p.linha === currentChartGroup && p.visivel !== false);
     const catalogProducts = visibleProducts.length ? visibleProducts : products.filter(p => p.linha === currentChartGroup);
     if (!catalogProducts.length) { toast('Nenhum produto para gerar catálogo.', true); return; }
@@ -1239,8 +1240,13 @@ async function downloadCatalogPDF() {
         const Hd = 34;
         doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, Hd, 'F');
         doc.setFillColor(pink[0], pink[1], pink[2]); doc.rect(0, Hd, pageW, 2.2, 'F');
-        if (typeof COMPANY_LOGO_DATA === 'string' && COMPANY_LOGO_DATA) {
-            try { doc.addImage(COMPANY_LOGO_DATA, 'PNG', margin, 6, 26, 18); } catch (e) {}
+        const dymarLogoOk = !!(currentChartGroup === 'dymar' && dymarLogoData);
+        const headerLogo = dymarLogoOk ? dymarLogoData : (typeof COMPANY_LOGO_DATA === 'string' ? COMPANY_LOGO_DATA : null);
+        if (headerLogo) {
+            try {
+                if (dymarLogoOk) doc.addImage(headerLogo, 'JPEG', margin, 6, 18, 18);
+                else doc.addImage(headerLogo, 'PNG', margin, 6, 26, 18);
+            } catch (e) {}
         }
         doc.setTextColor(20, 20, 26); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
         doc.text(title, pageW / 2, 16, { align: 'center' });

@@ -793,9 +793,9 @@ async function downloadQuotePDF(id, mode) { const q = quotes.find(x => String(x.
     let codeX, descX, qtyX, tabX, dscX, liqX, icmsX, codeC, prodC, qtyC, tabC, dscC, liqC, icmsC, subC, prodTrunc, seps;
     if (isDymarPdf) {
         codeX = 14; descX = 26; qtyX = 80; tabX = 96; dscX = 110; liqX = 126; icmsX = 142;
-        codeC = (codeX + descX) / 2; prodC = (descX + qtyX) / 2; qtyC = (qtyX + tabX) / 2; tabC = (tabX + dscX) / 2; dscC = (dscX + liqX) / 2; liqC = (liqX + icmsX) / 2; icmsC = (icmsX + (icmsX + 12)) / 2; subC = ((icmsX + 12) + subX) / 2;
-        prodTrunc = qtyX - descX - 4;
-        seps = [descX, qtyX, tabX, dscX, liqX, icmsX, (icmsX + 12)];
+        codeC = (codeX + descX) / 2; prodC = (descX + qtyX) / 2; qtyC = (qtyX + tabX) / 2; tabC = (tabX + dscX) / 2; dscC = (dscX + liqX) / 2; liqC = (liqX + icmsX) / 2; icmsC = (icmsX + (icmsX + 14)) / 2; subC = ((icmsX + 14) + subX) / 2;
+        prodTrunc = qtyX - descX - 3;
+        seps = [descX, qtyX, tabX, dscX, liqX, icmsX, (icmsX + 14)];
     } else {
         codeX = 16; descX = 34; qtyX = 86; tabX = 104; dscX = 122; liqX = 142; icmsX = 164;
         codeC = (codeX + descX) / 2; prodC = (descX + qtyX) / 2; qtyC = (qtyX + tabX) / 2; tabC = (tabX + dscX) / 2; dscC = (dscX + liqX) / 2; liqC = (liqX + icmsX) / 2; subC = (icmsX + subX) / 2;

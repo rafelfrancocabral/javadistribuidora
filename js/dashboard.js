@@ -1765,7 +1765,7 @@ const MQ_PRAZOS_1DATA = ['7', '14', '21', '28', '35', '42'];
 const MQ_PRAZOS_2DATAS = ['7/14', '28/35', '28/56'];
 const MQ_PRAZOS_3DATAS = ['7/14/21', '21/28/35', '28/35/42', '28/42/56'];
 const MQ_PRAZOS_4DATAS = ['28/35/42/77'];
-const MQ_PRAZOS_DYMAR = ['10 dias', '15 dias', '10/20 dias', '30/60 dias', '28/42/56 dias', '30/45/60 dias', '30/60/90 dias', '30/40/50/60 dias'];
+const MQ_PRAZOS_DYMAR = ['10 dias', '15 dias', '30 dias', '45 dias', '10/20 dias', '30/60 dias', '28/42/56 dias', '30/45/60 dias', '30/60/90 dias', '30/40/50/60 dias'];
 const mqPrazoLabel = p => p.indexOf('/') === -1 ? p + ' dias' : p;
 function mqPrazoOptions(total) {
     if (String(mqLine || '').toLowerCase() === 'dymar') return MQ_PRAZOS_DYMAR.slice();

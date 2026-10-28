@@ -569,10 +569,11 @@
                     </div>
                     <small class="mq-line-hint">Após selecionar a linha, apenas produtos dela poderão ser adicionados.</small>
                 </div>
-                <div class="quote-items-head"><span>Itens do Orçamento</span><button type="button" class="btn btn-ghost btn-sm" id="mqAddItem"><i class="fas fa-plus"></i> Adicionar Produto</button></div>
+                <div class="quote-items-head"><span>Itens do Orçamento</span></div>
                 <small class="mq-line-hint" style="margin:-4px 0 8px;display:block;">Colunas: Código · Produto · Qtde · <strong>% Desc.</strong> (desconto manual por produto) · Subtotal já com o desconto aplicado.</small>
                 <div id="mqItems" class="quote-items"></div>
                 <div class="quote-items-empty" id="mqItemsEmpty">Nenhum item. Clique em "Adicionar Produto".</div>
+                <button type="button" class="btn btn-ghost btn-sm mq-add-below" id="mqAddItem"><i class="fas fa-plus"></i> Adicionar Produto</button>
                 <div class="quote-items-total"><span>Total</span><span id="mqTotalDisplay">R$ 0,00</span></div>
                 <div class="form-field">
                     <label>Forma de Pagamento *</label>
@@ -771,7 +772,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=2"></script>
-    <script src="js/dashboard.js?v=132"></script>
+    <script src="js/dashboard.js?v=133"></script>
 </body>
 </html><!-- redeploy:20261016104944 prize/rules/league -->
 <!-- pub:20261016105831 -->

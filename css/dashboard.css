@@ -417,7 +417,7 @@ input, select, textarea { font-family: inherit; }
     transform: translateY(-1px);
 }
 .mq-line-hint { display: block; color: var(--text-muted); font-size: 0.72rem; margin-top: 6px; }
-.quote-items-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
+.mq-add-below { align-self: flex-start; margin: 10px 0 12px; }
 .quote-items-head span { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
 .quote-items-empty { font-size: 0.8rem; color: var(--text-muted); padding: 10px; border: 1px dashed var(--border); border-radius: 8px; text-align: center; margin-bottom: 10px; }
 .quote-items-empty.hidden { display: none; }

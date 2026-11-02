@@ -328,6 +328,34 @@ const labels = [];
     });
 }
 
+const BIBLE_VERSES = [
+    { text: 'Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento.', ref: 'Provérbios 3:5' },
+    { text: 'Tudo posso naquele que me fortalece.', ref: 'Filipenses 4:13' },
+    { text: 'O Senhor é o meu pastor; nada me faltará.', ref: 'Salmos 23:1' },
+    { text: 'Entrega o teu caminho ao Senhor; confia nele, e ele o fará.', ref: 'Salmos 37:5' },
+    { text: 'Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo, e te sustento com a destra da minha justiça.', ref: 'Isaías 41:10' },
+    { text: 'Deus é o nosso refúgio e fortaleza, socorro bem presente nas tribulações.', ref: 'Salmos 46:1' },
+    { text: 'Buscai primeiro o reino de Deus, e a sua justiça, e todas estas coisas vos serão acrescentadas.', ref: 'Mateus 6:33' },
+    { text: 'O Senhor pelejará por vós, e vós vos calareis.', ref: 'Êxodo 14:14' },
+    { text: 'Bem-aventurado o homem que confia no Senhor, cuja esperança é o Senhor.', ref: 'Jeremias 17:7' },
+    { text: 'Se Deus é por nós, quem será contra nós?', ref: 'Romanos 8:31' },
+    { text: 'Em tudo dai graças, porque esta é a vontade de Deus em Cristo Jesus para convosco.', ref: '1 Tessalonicenses 5:16-18' },
+    { text: 'Lançando sobre ele toda a vossa ansiedade, porque ele tem cuidado de vós.', ref: '1 Pedro 5:7' },
+    { text: 'O Senhor te abençoe e te guarde; o Senhor faça resplandecer o seu rosto sobre ti e tenha misericórdia de ti.', ref: 'Números 6:24-25' },
+    { text: 'Aquietai-vos e sabei que eu sou Deus.', ref: 'Salmos 46:10' },
+    { text: 'Ele é o mesmo ontem, e hoje, e eternamente.', ref: 'Hebreus 13:8' }
+];
+function showBibleVerse() {
+    const verseEl = document.getElementById('dashBibleVerse');
+    const refEl = document.getElementById('dashBibleRef');
+    if (!verseEl || !refEl) return;
+    const idx = new Date().getDate() % BIBLE_VERSES.length;
+    const v = BIBLE_VERSES[idx];
+    verseEl.textContent = '"' + v.text + '"';
+    refEl.textContent = v.ref;
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showBibleVerse); else showBibleVerse();
+
 function buildPaymentChart() {
     const el = document.getElementById('chartPayments');
     const empty = document.getElementById('chartPaymentsEmpty');

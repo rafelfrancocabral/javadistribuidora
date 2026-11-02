@@ -343,18 +343,105 @@ const BIBLE_VERSES = [
     { text: 'Lançando sobre ele toda a vossa ansiedade, porque ele tem cuidado de vós.', ref: '1 Pedro 5:7' },
     { text: 'O Senhor te abençoe e te guarde; o Senhor faça resplandecer o seu rosto sobre ti e tenha misericórdia de ti.', ref: 'Números 6:24-25' },
     { text: 'Aquietai-vos e sabei que eu sou Deus.', ref: 'Salmos 46:10' },
-    { text: 'Ele é o mesmo ontem, e hoje, e eternamente.', ref: 'Hebreus 13:8' }
+    { text: 'Ele é o mesmo ontem, e hoje, e eternamente.', ref: 'Hebreus 13:8' },
+    { text: 'O Senhor é bom, um refúgio em tempos de angústia. Ele protege os que nele confiam.', ref: 'Naum 1:7' },
+    { text: 'Não te desamparei nem te deixarei.', ref: 'Hebreus 13:5' },
+    { text: 'Clama a mim, e responder-te-ei e anunciar-te-ei coisas grandes e firmes, que não sabes.', ref: 'Jeremias 33:3' },
+    { text: 'Os que esperam no Senhor renovam as suas forças.', ref: 'Isaías 40:31' },
+    { text: 'Deleita-te também no Senhor, e ele te concederá o que deseja o teu coração.', ref: 'Salmos 37:4' },
+    { text: 'Põe a tua esperança no Senhor, sê forte e corajoso; põe a tua esperança no Senhor.', ref: 'Salmos 27:14' },
+    { text: 'Aquele que começou boa obra em vós há de completá-la até ao Dia de Jesus Cristo.', ref: 'Filipenses 1:6' },
+    { text: 'O Senhor guarda os teus passos e te livra do mal.', ref: 'Salmos 121:7-8' },
+    { text: 'Confia em mim, pois eu sei os planos que tenho para vocês, planos de bem e não de mal.', ref: 'Jeremias 29:11' },
+    { text: 'O choro pode durar uma noite, mas a alegria vem pela manhã.', ref: 'Salmos 30:5' },
+    { text: 'Sede fortes e corajosos, não temais, nem vos assusteis por causa deles, pois o Senhor teu Deus é quem vai contigo.', ref: 'Deuteronômio 31:6' },
+    { text: 'Jesus Cristo é o mesmo ontem, e hoje, e eternamente.', ref: 'Hebreus 13:8' },
+    { text: 'O amor de Deus derramado em nossos corações pelo Espírito Santo que nos foi dado.', ref: 'Romanos 5:5' },
+    { text: 'Tudo coopera para o bem daqueles que amam a Deus, daqueles que são chamados segundo o seu propósito.', ref: 'Romanos 8:28' },
+    { text: 'Não andeis ansiosos por coisa alguma; antes, em tudo, sejam conhecidas, diante de Deus, as vossas petições pela oração e súplicas, com ação de graças.', ref: 'Filipenses 4:6' },
+    { text: 'O Senhor é justo em todos os seus caminhos e fiel em todas as suas obras.', ref: 'Salmos 145:17' },
+    { text: 'Fiel é Deus, pelo qual fostes chamados à comunhão de seu Filho Jesus Cristo, nosso Senhor.', ref: '1 Coríntios 1:9' },
+    { text: 'Quem habita no esconderijo do Altíssimo, à sombra do Onipotente descansará.', ref: 'Salmos 91:1' },
+    { text: 'Mil cairão ao teu lado, e dez mil à tua direita, mas não chegará a ti.', ref: 'Salmos 91:7' },
+    { text: 'Bendize, ó minha alma, ao Senhor, e não te esqueças de nenhum dos seus benefícios.', ref: 'Salmos 103:2' },
+    { text: 'Ele sara os de coração quebrantado e cuida das suas feridas.', ref: 'Salmos 147:3' },
+    { text: 'O Senhor é perto de todos os que o invocam, de todos os que o invocam em verdade.', ref: 'Salmos 145:18' },
+    { text: 'Cristo nos libertou para que permaneçamos livres.', ref: 'Gálatas 5:1' },
+    { text: 'Eu sou o caminho, e a verdade, e a vida. Ninguém vem ao Pai senão por mim.', ref: 'João 14:6' }
 ];
+
+const MOTIVATIONAL_MESSAGES = [
+    'A persistência realiza o impossível.',
+    'O sucesso começa com a decisão de tentar.',
+    'Cada dia é uma nova chance para recomeçar.',
+    'Grandes coisas nunca vêm da zona de conforto.',
+    'Seu esforço de hoje é o seu sucesso de amanhã.',
+    'Foque no progresso, não na perfeição.',
+    'A disciplina vence o talento quando o talento não se disciplina.',
+    'Nunca é tarde para ser quem você poderia ter sido.',
+    'Pequenos passos todos os dias levam a grandes resultados.',
+    'Acredite em você. Você é mais forte do que imagina.',
+    'Transforme obstáculos em oportunidades.',
+    'O melhor momento para começar é agora.',
+    'Sua determinação hoje molda seu futuro amanhã.',
+    'Não desista. Os começos são sempre os mais difíceis.',
+    'Coragem não é a ausência de medo, é agir apesar dele.',
+    'Quem persiste, conquista.',
+    'Sonhe grande, comece pequeno, aja agora.',
+    'Seu único limite é você mesmo.',
+    'Cada erro é uma lição em direção ao sucesso.',
+    'Vença a procrastinação com ação imediata.',
+    'Trabalhe em silêncio e deixe o sucesso fazer barulho.',
+    'Excelência é fazer o melhor com o que você tem hoje.',
+    'Confie no processo. Tudo tem seu tempo.',
+    'Você é capaz de muito mais do que pensa.',
+    'O fracasso é apenas uma oportunidade para recomeçar com mais sabedoria.',
+    'Mantenha o foco. Elimine as distrações.',
+    'A atitude certa supera qualquer obstáculo.',
+    'Construa seu futuro com as ações de hoje.',
+    'Pense positivo. Aja com fé. Colha com gratidão.',
+    'Seja a versão melhor de você mesmo todos os dias.',
+    'Oportunidades são criadas por quem se prepara.',
+    'Persistência é o caminho do êxito.',
+    'Levante-se mais forte a cada queda.',
+    'Invista em você. Ninguém fará isso por você.',
+    'Grandes realizações exigem tempo e dedicação.',
+    'Seu futuro começa com uma decisão hoje.',
+    'Não espere por oportunidades, crie-as.',
+    'Dificuldades preparam pessoas comuns para destinos extraordinários.',
+    'A força não vem do que você consegue fazer, vem de superar o que achava impossível.',
+    'Faça hoje o que outros não querem, para ter amanhã o que outros não terão.'
+];
+
 function showBibleVerse() {
     const verseEl = document.getElementById('dashBibleVerse');
     const refEl = document.getElementById('dashBibleRef');
     if (!verseEl || !refEl) return;
-    const idx = new Date().getDate() % BIBLE_VERSES.length;
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+    const idx = dayOfYear % BIBLE_VERSES.length;
     const v = BIBLE_VERSES[idx];
     verseEl.textContent = '"' + v.text + '"';
     refEl.textContent = v.ref;
 }
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showBibleVerse); else showBibleVerse();
+
+function showMotivational() {
+    const motEl = document.getElementById('dashMotivational');
+    if (!motEl) return;
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+    const idx = (dayOfYear + 7) % MOTIVATIONAL_MESSAGES.length;
+    motEl.textContent = MOTIVATIONAL_MESSAGES[idx];
+}
+
+function initInspiration() {
+    showBibleVerse();
+    showMotivational();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initInspiration);
+} else {
+    initInspiration();
+}
 
 function buildPaymentChart() {
     const el = document.getElementById('chartPayments');

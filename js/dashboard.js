@@ -1187,7 +1187,7 @@ async function downloadCatalogPDF() {
         if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada.', true); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const pageW = 210, pageH = 297, margin = 16, contentW = pageW - margin * 2;
+    const pageW = 210, pageH = 297, margin = 14, contentW = pageW - margin * 2;
     const brand = '#581c87'; const light = '#5b5466'; const pink = [255, 47, 230];
     const line = (currentChartGroup === 'dymar') ? 'Dymar' : 'Java';
     const dymarLogoData = (currentChartGroup === 'dymar') ? await loadDymarLogoData() : null;
@@ -1256,21 +1256,22 @@ async function downloadCatalogPDF() {
     await Promise.all(urls.map(async (u) => { imgCache.set(u, await imgDataUrl(u)); }));
 
     function drawHeader(title) {
-        const Hd = 34;
+        const Hd = 42;
         doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, Hd, 'F');
         doc.setFillColor(pink[0], pink[1], pink[2]); doc.rect(0, Hd, pageW, 2.2, 'F');
-        const dymarLogoOk = !!(currentChartGroup === 'dymar' && dymarLogoData);
-        const headerLogo = dymarLogoOk ? dymarLogoData : (typeof COMPANY_LOGO_DATA === 'string' ? COMPANY_LOGO_DATA : null);
+        const useDymar = (currentChartGroup === 'dymar');
+        const logoOk = !!(useDymar && dymarLogoData);
+        const headerLogo = logoOk ? dymarLogoData : (typeof COMPANY_LOGO_DATA === 'string' ? COMPANY_LOGO_DATA : null);
         if (headerLogo) {
             try {
-                if (dymarLogoOk) doc.addImage(headerLogo, 'JPEG', margin, 6, 18, 18);
-                else doc.addImage(headerLogo, 'PNG', margin, 6, 26, 18);
+                if (logoOk) doc.addImage(headerLogo, 'JPEG', margin, 6, 20, 20);
+                else doc.addImage(headerLogo, 'PNG', margin, 6, 32, 22);
             } catch (e) {}
         }
-        doc.setTextColor(20, 20, 26); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
-        doc.text(title, pageW / 2, 16, { align: 'center' });
+        doc.setTextColor(20, 20, 26); doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+        doc.text(title, pageW / 2, 18, { align: 'center' });
         doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(96, 96, 106);
-        doc.text('Linha ' + line + '  •  ' + new Date().toLocaleDateString('pt-BR'), pageW / 2, 24, { align: 'center' });
+        doc.text('Linha ' + line + '  •  ' + new Date().toLocaleDateString('pt-BR'), pageW / 2, 27, { align: 'center' });
     }
 
     function drawFooter() {
@@ -1281,18 +1282,34 @@ async function downloadCatalogPDF() {
         doc.text('Página ' + n + '/' + doc.internal.getNumberOfPages(), pageW - margin, pageH - 8, { align: 'right' });
     }
 
+    // First page with Java logo
+    if (line === 'Java') {
+        doc.addPage();
+        doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F');
+        const javaLogo = typeof COMPANY_LOGO_DATA === 'string' ? COMPANY_LOGO_DATA : null;
+        if (javaLogo) {
+            try { doc.addImage(javaLogo, 'PNG', (pageW - 80) / 2, 70, 80, 56); } catch (e) {}
+        }
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(26); doc.setTextColor(88, 28, 135);
+        doc.text('CATÁLOGO JAVA', pageW / 2, 150, { align: 'center' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(96, 96, 106);
+        doc.text(new Date().toLocaleDateString('pt-BR'), pageW / 2, 165, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text('Java Distribuidora  •  (12) 99778-0047', pageW / 2, pageH - 20, { align: 'center' });
+    }
+
     drawHeader('CATÁLOGO DE PRODUTOS');
-    let y = 42;
+    let y = 50;
 
     const cols = 4;
     const cellW = contentW / cols;
-    const imgSize = 34;
-    const cellH = 62;
+    const imgSize = 38;
+    const cellH = 70;
 
     function newPage() {
         doc.addPage();
         drawHeader('CATÁLOGO DE PRODUTOS');
-        y = 42;
+        y = 50;
     }
 
     catOrder.forEach((cat) => {
@@ -1338,15 +1355,15 @@ async function downloadCatalogPDF() {
             }
 
             // Code
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(88, 28, 135);
-            doc.text(String(p.codigo || '—'), x + cellW / 2, imgY + imgSize + 5, { align: 'center' });
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(8.8); doc.setTextColor(88, 28, 135);
+            doc.text(String(p.codigo || '—'), x + cellW / 2, imgY + imgSize + 6, { align: 'center' });
 
             // Description
             doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(30, 30, 40);
             const desc = String(p.nome || '').trim();
             const lines = doc.splitTextToSize(desc, cellW - 4).slice(0, 2);
-            let ly = imgY + imgSize + 9;
-            lines.forEach((ln) => { doc.text(ln, x + cellW / 2, ly, { align: 'center' }); ly += 3.6; });
+            let ly = imgY + imgSize + 11;
+            lines.forEach((ln) => { doc.text(ln, x + cellW / 2, ly, { align: 'center' }); ly += 4; });
 
             col++;
             if (col >= cols) { col = 0; y += cellH; }

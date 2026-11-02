@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --bg-primary: #ffffff;
     --bg-secondary: #f7f3ff;
     --bg-card: #ffffff;
@@ -116,7 +116,17 @@ input, select, textarea { font-family: inherit; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 /* ============ CARDS ============ */
-.dash-verse-bar{display:flex;align-items:flex-start;gap:12px;background:linear-gradient(90deg,rgba(124,58,237,.08) 0%,rgba(168,85,247,.05) 100%);border:1px solid rgba(124,58,237,.25);border-radius:14px;padding:14px 18px;margin-bottom:18px}.dash-verse-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;flex-shrink:0;box-shadow:0 8px 20px -12px #7c3aed}.dash-verse-text{flex:1;display:flex;flex-direction:column;gap:4px}.dash-verse-text p{margin:0;font-size:0.95rem;font-weight:700;color:var(--text-primary);line-height:1.5;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dash-verse-text span{font-size:0.8rem;font-weight:600;color:#7c3aed}.dash-cards{display:grid;grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));gap:16px;margin-bottom:24px}
+.dash-inspo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.dash-verse-bar{display:flex;align-items:flex-start;gap:12px;background:linear-gradient(90deg,rgba(124,58,237,.08) 0%,rgba(168,85,247,.05) 100%);border:1px solid rgba(124,58,237,.25);border-radius:14px;padding:12px 16px}
+.dash-verse-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;flex-shrink:0;box-shadow:0 8px 20px -12px #7c3aed}
+.dash-verse-text{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.dash-verse-text p{margin:0;font-size:0.92rem;font-weight:700;color:var(--text-primary);line-height:1.4;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-verse-text span{font-size:0.78rem;font-weight:600;color:#7c3aed}
+.dash-mot-bar{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,rgba(16,185,129,.08) 0%,rgba(52,211,153,.05) 100%);border:1px solid rgba(16,185,129,.25);border-radius:14px;padding:12px 16px}
+.dash-mot-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#10b981,#34d399);color:#fff;flex-shrink:0;box-shadow:0 8px 20px -12px #10b981}
+.dash-mot-text{flex:1;min-width:0}
+.dash-mot-text p{margin:0;font-size:0.92rem;font-weight:700;color:var(--text-primary);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-cards{display:grid;grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));gap:16px;margin-bottom:24px}
 .dash-card {
     background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 20px; display: flex; align-items: center; gap: 16px;
@@ -334,7 +344,7 @@ input, select, textarea { font-family: inherit; }
 .prio-mid { background: rgba(255,165,2,.15); color: var(--warning); }
 .prio-low { background: rgba(46,213,115,.15); color: var(--success); }
 
-/* ============ MENOR SAÍDA ============ */
+/* ============ MENOR SAÃDA ============ */
 .low-seller-list { display: flex; flex-direction: column; gap: 10px; }
 .low-seller { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
 .low-seller-head { display: flex; align-items: center; gap: 12px; }
@@ -492,9 +502,10 @@ input, select, textarea { font-family: inherit; }
     .dash-input, .dash-select { width: 100%; min-width: 0; }
     .quote-card { flex-direction: column; align-items: flex-start; }
     .dash-cards { grid-template-columns: repeat(2, 1fr); }
+    .dash-inspo-grid { grid-template-columns: 1fr; }
     .dash-charts-grid { grid-template-columns: 1fr; }
 
-    /* Tabelas → cards */
+    /* Tabelas â†’ cards */
     .product-table-wrap { overflow-x: visible; border: none; background: transparent; }
     .dash-table { display: block; min-width: 0; }
     .dash-table thead { display: none; }
@@ -514,7 +525,7 @@ input, select, textarea { font-family: inherit; }
     .dash-table .price-cell { font-size: 1rem; }
     .dash-table .toggle { margin-left: auto; }
 
-    /* Cat/Client lists → já são flex, só ajustar padding */
+    /* Cat/Client lists â†’ jÃ¡ sÃ£o flex, sÃ³ ajustar padding */
     .cat-row, .client-item { flex-wrap: wrap; gap: 10px; }
     .cat-row-actions, .client-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
     .client-meta { flex-direction: column; gap: 4px; align-items: flex-start; }
@@ -527,11 +538,11 @@ input, select, textarea { font-family: inherit; }
     .top-client-total, .top-seller-qty { font-size: 0.82rem; }
     .top-client-bar { height: 5px; }
 
-    /* Botões ação → 44x44 toque */
+    /* BotÃµes aÃ§Ã£o â†’ 44x44 toque */
     .icon-btn { width: 44px; height: 44px; font-size: 0.95rem; }
     .quote-card-actions { gap: 8px; justify-content: flex-end; width: 100%; margin-top: 8px; }
 
-    /* Gráficos altura reduzida */
+    /* GrÃ¡ficos altura reduzida */
     .dash-chart-panel canvas { height: 200px !important; }
     .dash-chart-panel h3 { font-size: 0.88rem; }
 
@@ -543,7 +554,7 @@ input, select, textarea { font-family: inherit; }
     .modal-footer { padding: 16px; flex-direction: column-reverse; }
     .modal-footer .btn { width: 100%; justify-content: center; }
 
-    /* Formulários */
+    /* FormulÃ¡rios */
     .form-row { grid-template-columns: 1fr; }
     .form-field input, .form-field select, .form-field textarea { padding: 14px 12px; font-size: 1rem; }
     .btn { padding: 14px 20px; font-size: 0.95rem; }
@@ -622,7 +633,7 @@ input, select, textarea { font-family: inherit; }
     .dash-sidebar { width: 280px; }
 }
 
-/* Focus visível para acessibilidade */
+/* Focus visÃ­vel para acessibilidade */
 @media (hover: none) and (pointer: coarse) {
     .icon-btn:hover, .btn:hover, .dash-nav-item:hover,
     .dash-card:hover, .toggle:hover { transform: none; box-shadow: none; }
@@ -630,7 +641,7 @@ input, select, textarea { font-family: inherit; }
     .btn:active { transform: scale(0.98); }
 }
 
-/* ===== Agenda de Visitas (calendário + rotas) ===== */
+/* ===== Agenda de Visitas (calendÃ¡rio + rotas) ===== */
 .visit-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start; }
 @media (max-width: 1024px) { .visit-layout { grid-template-columns: 1fr; } }
 
@@ -678,7 +689,7 @@ input, select, textarea { font-family: inherit; }
 
 .form-field input[type="date"], .form-field input[type="time"] { padding: 12px 12px; color-scheme: light; }
 
-/* ===== Importação de Produtos ===== */
+/* ===== ImportaÃ§Ã£o de Produtos ===== */
 .import-summary { display: flex; gap: 16px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; font-size: 0.85rem; font-weight: 700; }
 .imp-summary-ok { color: #1fb35f; }
 .imp-summary-upd { color: #e67e22; }
@@ -694,7 +705,7 @@ input, select, textarea { font-family: inherit; }
 #importTable td { font-size: 0.8rem; }
 .imp-row-err td { background: rgba(255, 71, 87, .04); }
 
-/* ===== Seletor de período (mobile) ===== */
+/* ===== Seletor de perÃ­odo (mobile) ===== */
 .period-select { display: none; }
 
 @media (max-width: 768px) {
@@ -703,7 +714,7 @@ input, select, textarea { font-family: inherit; }
     .dash-header-actions .dash-select { width: auto; }
 }
 
-/* ===== Tabela de produtos: mantém formato de tabela no mobile (rolagem horizontal) ===== */
+/* ===== Tabela de produtos: mantÃ©m formato de tabela no mobile (rolagem horizontal) ===== */
 @media (max-width: 768px) {
     .product-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); }
     #productTable { display: table; min-width: 800px; border-collapse: collapse; }
@@ -718,7 +729,7 @@ input, select, textarea { font-family: inherit; }
     #productTable .price-cell { font-size: 0.85rem; }
 }
 
-/* ===== Tabela de importação: mantém formato de tabela no mobile (rolagem horizontal) ===== */
+/* ===== Tabela de importaÃ§Ã£o: mantÃ©m formato de tabela no mobile (rolagem horizontal) ===== */
 @media (max-width: 768px) {
     .import-table-wrap { overflow-x: auto; }
     #importTable { display: table; min-width: 900px; border-collapse: collapse; }
@@ -734,13 +745,13 @@ input, select, textarea { font-family: inherit; }
     .table-wrap { overflow-x: visible; }
     .table-wrap .dash-table tr { padding: 12px 14px; }
     .table-wrap .dash-table td { font-size: 0.8rem; }
-    .table-wrap .dash-table td[data-label="Ações"] { flex-wrap: wrap; gap: 8px; padding-top: 12px; margin-top: 4px; border-top: 1px dashed var(--border); }
-    .table-wrap .dash-table td[data-label="Ações"] .btn-sm { flex: 1 1 auto; justify-content: center; }
+    .table-wrap .dash-table td[data-label="AÃ§Ãµes"] { flex-wrap: wrap; gap: 8px; padding-top: 12px; margin-top: 4px; border-top: 1px dashed var(--border); }
+    .table-wrap .dash-table td[data-label="AÃ§Ãµes"] .btn-sm { flex: 1 1 auto; justify-content: center; }
 }
 /* Precos e totais com digitos alinhados */
 .quote-card-total, .top-client-total, .low-seller-price, .top-seller-qty, .dash-table .price-cell, .quote-total-amount { font-variant-numeric: tabular-nums; }
 
-/* ===== Pódio virtual do League ===== */
+/* ===== PÃ³dio virtual do League ===== */
 .league-podium {
     display: grid;
     grid-template-columns: 1fr 1.18fr 1fr;
@@ -791,7 +802,7 @@ input, select, textarea { font-family: inherit; }
 .lp-item.lp-empty .lp-points { color: var(--text-muted); }
 .lp-item.lp-empty .lp-base { background: var(--bg-hover); color: var(--text-muted); }
 
-/* Troféu animado do 1º lugar */
+/* TrofÃ©u animado do 1Âº lugar */
 .lp-medal { position: relative; }
 .lp-trophy {
     font-size: 30px;
@@ -807,7 +818,7 @@ input, select, textarea { font-family: inherit; }
     50%      { transform: translateY(-8px) rotate(4deg); filter: drop-shadow(0 9px 14px rgba(245,197,24,.75)); }
 }
 .lp-1 .lp-medal::before, .lp-1 .lp-medal::after {
-    content: '✦'; position: absolute; color: #ffd93b; pointer-events: none;
+    content: 'âœ¦'; position: absolute; color: #ffd93b; pointer-events: none;
     animation: trophySparkle 2.2s ease-in-out infinite;
 }
 .lp-1 .lp-medal::before { top: -2px; right: -12px; font-size: 12px; }

@@ -573,6 +573,8 @@ async function syncPedido() {
         const subtotal = item.preco * item.qty;
         total += subtotal;
         return {
+            id: item.id,
+            img: item.img || '',
             codigo: item.codigo || '',
             nome: item.nome,
             categoria: item.categoria || '',
@@ -593,6 +595,34 @@ async function syncPedido() {
         }, _finalizar: false });
     } catch (e) {
         console.warn('Falha ao registrar pedido em andamento:', e);
+    }
+}
+
+async function restoreCartFromServer() {
+    if (!isClientLoggedIn()) return;
+    const email = getClientEmail();
+    if (!email) return;
+    try {
+        const { data, error } = await db.rpc('buscar_carrinho_cliente', {
+            _email: email,
+            _cliente_id: getClientId()
+        });
+        if (error) { console.warn('Falha ao buscar carrinho:', error); return; }
+        if (!data || !Array.isArray(data.itens) || data.itens.length === 0) return;
+        const cart = data.itens.map(it => ({
+            id: it.id != null ? it.id : (it.codigo || it.nome || Math.random().toString(36).slice(2)),
+            nome: it.nome || '',
+            codigo: it.codigo || '',
+            preco: Number(it.preco) || 0,
+            categoria: it.categoria || '',
+            img: it.img || '',
+            qty: Math.max(1, parseInt(it.quantidade, 10) || 1)
+        }));
+        localStorage.setItem(CART_KEY, JSON.stringify(cart));
+        updateCartBadge();
+        renderCartSidebar();
+    } catch (e) {
+        console.warn('Falha ao restaurar carrinho:', e);
     }
 }
 function descartarPedido(email, clienteId) {
@@ -960,6 +990,7 @@ async function submitClientLogin(e) {
         closeClientLoginModal();
         renderCatalog();
         renderCartSidebar();
+        restoreCartFromServer();
         showToast('Login realizado. Bem-vindo, ' + (_client.razao || '') + '!');
     }
 }
@@ -998,6 +1029,7 @@ function renderClientLoginChoose(accounts) {
                 closeClientLoginModal();
                 renderCatalog();
                 renderCartSidebar();
+                restoreCartFromServer();
                 showToast('Login realizado. Bem-vindo, ' + (_client.razao || '') + '!');
             }
         });
@@ -1315,6 +1347,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderCartSidebar();
     setupUI();
     recordAccess();
+    if (isClientLoggedIn()) restoreCartFromServer();
     Promise.all([loadProducts(), loadCategories()]).then(() => {
         renderCategoryPills();
         renderCatalog();

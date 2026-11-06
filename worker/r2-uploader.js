@@ -135,6 +135,8 @@ const ALLOWED_IMAGE_HOSTS = [
     'pub-3898e6d68e494c019d1a509264328a33.r2.dev'
 ];
 
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
+
 async function handleUpload(request, env) {
     const form = await request.formData();
     const main = form.get('main');

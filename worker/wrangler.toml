@@ -1,0 +1,8 @@
+name = "javadistribuidora-uploader"
+main = "r2-uploader.js"
+compatibility_date = "2026-11-06"
+keep_vars = true
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "produtosjava"

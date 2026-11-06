@@ -833,11 +833,11 @@ COMMIT;
 -- ============================================================================
 -- 1) Calcule o SHA-256 da senha escolhida (64 caracteres hex). No SQL Editor:
 --        select encode(sha256('SUA_SENHA'::bytea), 'hex');
--- 2) Exemplo (senha sugerida "Cabral@Seguro2026"):
---        update public.admins set senha_hash = '9fd6b12bcb7c2a4680c943e3e65ccbc28d69fe40cd9e6d4d24ef21525ad6bd5b'
+-- 2) Atualize o hash da senha do admin (nunca versione a senha nem o hash real):
+--        update public.admins set senha_hash = encode(sha256('SUA_SENHA_FORTE'::bytea), 'hex')
 --          where usuario = 'cabralsavfer@admin';
---    (troque pelo hash da senha que voce escolher)
--- 3) (Cloudflare) Secret do upload de imagens: crie/atualize a variavel
---    UPLOAD_SECRET do Worker com o valor que estiver em js/r2-config.js,
---    e faça o redeploy do Worker (worker/r2-uploader.js).
+--    (use uma senha forte e unica, guardada em um gerenciador de senhas)
+-- 3) (Cloudflare) O upload de imagens nao usa mais segredo compartilhado:
+--    o Worker valida o token de sessao do admin via RPC admin_verificar.
+--    Deploy: cd worker && wrangler deploy.
 -- ============================================================================

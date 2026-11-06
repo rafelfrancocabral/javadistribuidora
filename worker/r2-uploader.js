@@ -1,16 +1,15 @@
 // ============================================================
 // Cloudflare Worker - Uploader de imagens para R2 (Java Distribuidora)
 // ============================================================
-// INSTALACAO:
-//  1. Dashboard Cloudflare -> Workers & Pages -> worker "javadistribuidora-uploader"
-//  2. Substitua o codigo por este arquivo e clique em Deploy.
-//  3. Settings > Variables and Secrets:
-//       - R2 binding "IMAGES" apontando para o bucket "produtos"
-//       - Variavel secreta UPLOAD_SECRET = valor atual de js/r2-config.js (R2_WORKER_SECRET)
-//  4. IMPORTANTE: edite ALLOWED_ORIGINS abaixo com o dominio real do site
+// INSTALACAO (via wrangler):
+//  1. cd worker && wrangler deploy  (configuracao em wrangler.toml)
+//  2. Binding R2 "IMAGES" -> bucket "produtosjava"
+//  3. Variaveis SUPABASE_URL e SUPABASE_ANON_KEY em [vars] no wrangler.toml
+//  4. Nenhum segredo de upload no cliente: o Worker valida o token de sessao
+//     do painel (48 hex) pela RPC public.admin_verificar do Supabase.
+//  5. IMPORTANTE: edite ALLOWED_ORIGINS abaixo com o dominio real do site
 //     (ex.: https://javadistribuidora.vercel.app e seu dominio proprio, se houver).
-//     Sem isso, o worker rejeita os uploads (ou aceita de qualquer origem se a lista
-//     estiver vazia - nao recomendado).
+//     Sem isso, o worker rejeita os uploads de origens desconhecidas.
 // ============================================================
 
 // Dominios que podem fazer upload. Adicione aqui TODOS os dominios do site
@@ -52,6 +51,37 @@ function json(data, status = 200, extraHeaders = {}) {
         status,
         headers: { 'Content-Type': 'application/json', ...CORS_HEADERS, ...extraHeaders }
     });
+}
+
+// Valida o token de sessao do painel (48 hex) pela RPC admin_verificar do Supabase.
+// Nenhum segredo compartilhado fica no front-end: so vale um token de admin ativo.
+async function adminAutorizado(request, env) {
+    const auth = request.headers.get('Authorization') || '';
+    const match = auth.match(/^Bearer\s+([0-9a-f]{48})$/i);
+    if (!match) return false;
+
+    const base = (env.SUPABASE_URL || '').replace(/\/+$/, '');
+    if (!base || !env.SUPABASE_ANON_KEY) {
+        console.error('Configuracao ausente: SUPABASE_URL / SUPABASE_ANON_KEY');
+        return false;
+    }
+
+    try {
+        const res = await fetch(base + '/rest/v1/rpc/admin_verificar', {
+            method: 'POST',
+            headers: {
+                'apikey': env.SUPABASE_ANON_KEY,
+                'Authorization': 'Bearer ' + env.SUPABASE_ANON_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ _token: match[1] })
+        });
+        if (!res.ok) return false;
+        return (await res.json()) === true;
+    } catch (e) {
+        console.error('Falha ao validar sessao admin:', e && e.message ? e.message : e);
+        return false;
+    }
 }
 
 export default {
@@ -108,22 +138,19 @@ export default {
             return json({ error: 'origem nao permitida' }, 403);
         }
 
-        if (env.UPLOAD_SECRET) {
-            const auth = request.headers.get('Authorization') || '';
-            if (auth !== `Bearer ${env.UPLOAD_SECRET}`) {
-                return json({ error: 'unauthorized' }, 401);
-            }
+        if (url.pathname === '/health') {
+            return json({ ok: true, hasBucket: !!env.IMAGES });
         }
 
-        try {
-            if (url.pathname === '/health') {
-                return json({ ok: true, hasBucket: !!env.IMAGES });
+        if (url.pathname === '/upload' && request.method === 'POST') {
+            if (!(await adminAutorizado(request, env))) {
+                return json({ error: 'unauthorized' }, 401);
             }
-            if (url.pathname === '/upload' && request.method === 'POST') {
+            try {
                 return await handleUpload(request, env);
+            } catch (e) {
+                return json({ error: e.message || 'internal error' }, 500);
             }
-        } catch (e) {
-            return json({ error: e.message || 'internal error' }, 500);
         }
 
         return json({ error: 'not found' }, 404);

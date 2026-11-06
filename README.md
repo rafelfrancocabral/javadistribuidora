@@ -34,14 +34,17 @@ Execute o arquivo `sql/supabase-schema.sql` no SQL Editor do Supabase. As creden
 Tabelas: `produtos`, `categorias`, `subcategorias`, `orcamentos`, `clientes`. Storage bucket: `produtos`.
 
 ### 2. Cloudflare R2 (upload de imagens)
-1. Crie um bucket R2 chamado `produtos` e habilite o "r2.dev subdomain" (ou domínio próprio).
-2. Crie um Worker com o conteúdo de `worker/r2-uploader.js`.
-3. No Worker, crie uma Binding R2: nome `IMAGES`, bucket `produtos`.
-4. (Opcional) Crie a variável `UPLOAD_SECRET` no Worker e cole o mesmo valor em `js/r2-config.js`.
-5. Preencha `js/r2-config.js`:
+1. Crie um bucket R2 chamado `produtosjava` e habilite o "r2.dev subdomain" (ou domínio próprio).
+2. Deploy do Worker via Wrangler (configuração em `worker/wrangler.toml`):
+   ```bash
+   cd worker
+   wrangler deploy
+   ```
+   O binding `IMAGES` aponta para `produtosjava` e as variáveis `SUPABASE_URL` / `SUPABASE_ANON_KEY` ficam em `[vars]`.
+3. Autenticação do upload: o painel envia o token de sessão do admin (`jv2_admin_auth`) no header `Authorization: Bearer ...`; o Worker valida pela RPC `admin_verificar` do Supabase. **Nenhum segredo de upload fica no front-end.**
+4. Preencha `js/r2-config.js`:
    - `R2_WORKER_URL` = URL do Worker
    - `R2_PUBLIC_BASE_URL` = URL pública do bucket
-   - `R2_WORKER_SECRET` = a mesma senha do `UPLOAD_SECRET`
 
 Sem essa configuração, o upload de imagens do painel não funciona (o toast avisa "R2 ainda não configurado").
 
@@ -50,7 +53,7 @@ Mapeie este diretório para a Vercel (ou use `vercel deploy`). O `vercel.json` j
 
 ## Acesso ao painel
 - URL: `/login` ou `/login.html`
-- Admin: `cabralsavfer` (senha definida em `login.html`).
+- Admin: usuário definido na tabela `admins` (ex.: `cabralsavfer@admin`); a senha é armazenada como SHA-256 no banco, não em `login.html`.
 
 ## Fluxo do cliente
 1. Loga no site (senha = CNPJ só números, primeiro acesso exige troca).

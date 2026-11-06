@@ -3,3 +3,10 @@
 
 # Wrangler (estado local)
 .wrangler/
+
+# Vercel
+.vercel
+.env*
+
+# Supabase (estado local)
+supabase/.temp/

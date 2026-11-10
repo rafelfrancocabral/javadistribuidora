@@ -56,7 +56,7 @@ Mapeie este diretório para a Vercel (ou use `vercel deploy`). O `vercel.json` j
 - Admin: usuário definido na tabela `admins` (ex.: `cabralsavfer@admin`); a senha é armazenada como SHA-256 no banco, não em `login.html`.
 
 ## Fluxo do cliente
-1. Loga no site (senha = CNPJ só números, primeiro acesso exige troca).
+1. Loga no site (senha = CNPJ só números). No primeiro acesso o sistema **obriga a troca de senha uma única vez**; depois disso o cliente pode trocar novamente de forma manual em "Alterar senha". Se o admin cadastrar o cliente já com uma senha própria, não há troca obrigatória.
 2. Seleciona produtos (preço visível só com login).
 3. Checkout com prazo de pagamento → gera orçamento no WhatsApp + salva no Supabase.
 4. O orçamento aparece no dashboard em "Orçamentos".

@@ -266,7 +266,8 @@ $$;
 -- Insere ou atualiza um cliente. _cliente chaves:
 --   id (opcional), razao_social, cnpj, email, telefone,
 --   senha (hash opcional; em edicao, vazio = mantem atual),
---   trocar (boolean), novo (boolean)
+--   senha_trocada (boolean; true = cliente ja definiu a propria senha),
+--   novo (boolean)
 CREATE OR REPLACE FUNCTION public.admin_salvar_cliente(_token text, _cliente jsonb)
 RETURNS bigint
 LANGUAGE plpgsql
@@ -275,6 +276,7 @@ SET search_path = public
 AS $$
 DECLARE _id bigint;
 DECLARE _senha_hash text;
+DECLARE _digits text;
 DECLARE _nova boolean := coalesce((_cliente->>'novo')::boolean, false);
 BEGIN
     IF public.admin_requerido(_token) IS NULL THEN
@@ -285,16 +287,17 @@ BEGIN
     IF _nova THEN
         _senha_hash := nullif(_cliente->>'senha', '');
         IF _senha_hash IS NULL THEN
-            _senha_hash := regexp_replace(coalesce(_cliente->>'cnpj', ''), '\D', '', 'g');
-        END IF;
-        IF _senha_hash = '' THEN
-            RAISE EXCEPTION 'Informe uma senha ou preencha o CNPJ' USING ERRCODE = '22023';
+            _digits := regexp_replace(coalesce(_cliente->>'cnpj', ''), '\D', '', 'g');
+            IF _digits = '' THEN
+                RAISE EXCEPTION 'Informe uma senha ou preencha o CNPJ' USING ERRCODE = '22023';
+            END IF;
+            _senha_hash := encode(extensions.digest(_digits, 'sha256'), 'hex');
         END IF;
         INSERT INTO public.clientes (razao_social, cnpj, email, telefone, senha,
                                      senha_trocada, created_at, updated_at)
         VALUES (coalesce(_cliente->>'razao_social', ''), _cliente->>'cnpj', lower(_cliente->>'email'),
                 _cliente->>'telefone', _senha_hash,
-                coalesce((_cliente->>'trocar')::boolean, true), now(), now())
+                coalesce((_cliente->>'senha_trocada')::boolean, false), now(), now())
         RETURNING id INTO _id;
     ELSE
         IF _id IS NULL THEN
@@ -308,7 +311,7 @@ BEGIN
                    email = lower(_cliente->>'email'),
                    telefone = _cliente->>'telefone',
                    senha = _senha_hash,
-                   senha_trocada = coalesce((_cliente->>'trocar')::boolean, senha_trocada),
+                   senha_trocada = coalesce(senha_trocada, false) OR coalesce((_cliente->>'senha_trocada')::boolean, false),
                    updated_at = now()
              WHERE id = _id;
         ELSE
@@ -317,7 +320,7 @@ BEGIN
                    cnpj = _cliente->>'cnpj',
                    email = lower(_cliente->>'email'),
                    telefone = _cliente->>'telefone',
-                   senha_trocada = coalesce((_cliente->>'trocar')::boolean, senha_trocada),
+                   senha_trocada = coalesce(senha_trocada, false) OR coalesce((_cliente->>'senha_trocada')::boolean, false),
                    updated_at = now()
              WHERE id = _id;
         END IF;

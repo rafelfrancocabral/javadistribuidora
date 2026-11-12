@@ -438,12 +438,12 @@ input, select, textarea { font-family: inherit; }
 .quote-items-head span { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
 .quote-items-empty { font-size: 0.8rem; color: var(--text-muted); padding: 10px; border: 1px dashed var(--border); border-radius: 8px; text-align: center; margin-bottom: 10px; }
 .quote-items-empty.hidden { display: none; }
-.quote-item { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(300px, 2.6fr) minmax(64px, 84px) minmax(72px, 96px) minmax(120px, 150px) 36px; gap: 12px; align-items: center; margin-bottom: 8px; }
+.quote-item { display: grid; grid-template-columns: minmax(78px, 1fr) minmax(136px, 3fr) 104px 58px 68px 120px 34px; gap: 10px; align-items: center; margin-bottom: 8px; }
 .quote-item > * { min-width: 0; }
-.quote-item-head { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(300px, 2.6fr) minmax(64px, 84px) minmax(72px, 96px) minmax(120px, 150px) 36px; gap: 12px; align-items: center; padding-bottom: 6px; border-bottom: 1px dashed var(--border); margin-bottom: 10px; }
+.quote-item-head { display: grid; grid-template-columns: minmax(78px, 1fr) minmax(136px, 3fr) 104px 58px 68px 120px 34px; gap: 10px; align-items: center; padding-bottom: 6px; border-bottom: 1px dashed var(--border); margin-bottom: 10px; }
 .quote-item-head span { font-size: 0.66rem; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
-.quote-item-head span:nth-child(3), .quote-item-head span:nth-child(4) { text-align: center; }
-.quote-item-head span:nth-child(5) { text-align: right; }
+.quote-item-head span:nth-child(3), .quote-item-head span:nth-child(6) { text-align: right; }
+.quote-item-head span:nth-child(4), .quote-item-head span:nth-child(5) { text-align: center; }
 .quote-item .qi-product { position: relative; }
 .quote-item .qi-list, .quote-item .qi-code-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 50; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; max-height: 180px; overflow-y: auto; display: none; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
 .quote-item .qi-list.open, .quote-item .qi-code-list.open { display: block; }
@@ -454,6 +454,7 @@ input, select, textarea { font-family: inherit; }
 .quote-item input[type="text"], .quote-item input[type="number"] { width: 100%; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 10px 12px; font-size: 0.88rem; }
 .quote-item input:focus { outline: none; border-color: var(--accent-color); }
 .quote-item .qi-sub { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.quote-item .qi-unit { text-align: right; font-variant-numeric: tabular-nums; }
 .quote-item .qi-qty, .quote-item .qi-desc { text-align: center; }
 .quote-items-total { display: flex; align-items: center; justify-content: flex-end; gap: 12px; font-weight: 600; font-size: 1rem; color: var(--text-primary); padding: 12px 0; border-top: 1px solid var(--border); margin-bottom: 14px; }
 .quote-items-total span:last-child { color: var(--accent-color); font-size: 1.15rem; }

@@ -396,7 +396,8 @@ input, select, textarea { font-family: inherit; }
 .modal-overlay.open { display: flex; }
 .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; animation: modalIn 0.25s ease; }
 .modal-lg { max-width: 680px; }
-.modal-quote { max-width: 1040px; }
+.modal-quote { max-width: 1320px; max-height: calc(100vh - 40px); }
+.modal-quote .modal-body { padding: 26px 30px; }
 @keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: none; } }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .modal-header h3 { font-family: 'Inter', sans-serif; font-size: 1.1rem; font-weight: 600; }
@@ -437,9 +438,9 @@ input, select, textarea { font-family: inherit; }
 .quote-items-head span { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
 .quote-items-empty { font-size: 0.8rem; color: var(--text-muted); padding: 10px; border: 1px dashed var(--border); border-radius: 8px; text-align: center; margin-bottom: 10px; }
 .quote-items-empty.hidden { display: none; }
-.quote-item { display: grid; grid-template-columns: minmax(96px, 1fr) minmax(220px, 2.2fr) minmax(58px, 72px) minmax(64px, 84px) minmax(104px, 130px) 34px; gap: 10px; align-items: center; margin-bottom: 8px; }
+.quote-item { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(300px, 2.6fr) minmax(64px, 84px) minmax(72px, 96px) minmax(120px, 150px) 36px; gap: 12px; align-items: center; margin-bottom: 8px; }
 .quote-item > * { min-width: 0; }
-.quote-item-head { display: grid; grid-template-columns: minmax(96px, 1fr) minmax(220px, 2.2fr) minmax(58px, 72px) minmax(64px, 84px) minmax(104px, 130px) 34px; gap: 10px; align-items: center; padding-bottom: 6px; border-bottom: 1px dashed var(--border); margin-bottom: 10px; }
+.quote-item-head { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(300px, 2.6fr) minmax(64px, 84px) minmax(72px, 96px) minmax(120px, 150px) 36px; gap: 12px; align-items: center; padding-bottom: 6px; border-bottom: 1px dashed var(--border); margin-bottom: 10px; }
 .quote-item-head span { font-size: 0.66rem; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
 .quote-item-head span:nth-child(3), .quote-item-head span:nth-child(4) { text-align: center; }
 .quote-item-head span:nth-child(5) { text-align: right; }
@@ -450,7 +451,7 @@ input, select, textarea { font-family: inherit; }
 .quote-item .qi-opt:hover { background: var(--bg-secondary); }
 .quote-item .qi-opt small { color: var(--text-muted); display: block; }
 .quote-item .qi-code.resolved { border-color: #00c58e; }
-.quote-item input[type="text"], .quote-item input[type="number"] { width: 100%; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 9px 10px; font-size: 0.85rem; }
+.quote-item input[type="text"], .quote-item input[type="number"] { width: 100%; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 10px 12px; font-size: 0.88rem; }
 .quote-item input:focus { outline: none; border-color: var(--accent-color); }
 .quote-item .qi-sub { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .quote-item .qi-qty, .quote-item .qi-desc { text-align: center; }
@@ -563,6 +564,7 @@ input, select, textarea { font-family: inherit; }
     .modal { max-width: 100%; max-height: 95vh; border-radius: 14px 14px 0 0; }
     .modal-lg { max-width: 100%; }
     .modal-quote { max-width: 100%; }
+    .modal-quote .modal-body { padding: 16px; }
     .modal-body { padding: 16px; }
     .modal-header { padding: 16px; }
     .modal-footer { padding: 16px; flex-direction: column-reverse; }

@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS public.produtos (
     isdestaque BOOLEAN NOT NULL DEFAULT false,
     ispromocao BOOLEAN NOT NULL DEFAULT false,
     precopromocional NUMERIC(12,2) NOT NULL DEFAULT 0,
+    black_friday BOOLEAN NOT NULL DEFAULT false,
     linha TEXT NOT NULL DEFAULT 'java' CHECK (linha IN ('java', 'dymar')),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
@@ -55,6 +56,8 @@ CREATE INDEX IF NOT EXISTS idx_produtos_linha ON public.produtos (linha);
 
 -- Migracao para adicionar coluna linha em produtos existentes
 ALTER TABLE public.produtos ADD COLUMN IF NOT EXISTS linha TEXT NOT NULL DEFAULT 'java' CHECK (linha IN ('java', 'dymar'));
+-- Selo Black November (campanha sazonal)
+ALTER TABLE public.produtos ADD COLUMN IF NOT EXISTS black_friday BOOLEAN NOT NULL DEFAULT false;
 
 -- ------------------------------------------------------------
 -- Orcamentos (enviados do checkout via WhatsApp)

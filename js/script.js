@@ -20,6 +20,30 @@ function getThumbUrl(url) {
     if (!url || !url.includes('.webp')) return url;
     return url.replace('.webp', '_thumb.webp');
 }
+// Desconto (%) exibido nos produtos com selo Black November.
+function descontoBlackPct(p) {
+    if (!p || !p.isBlack) return 0;
+    const de = Number(p.preco) || 0;
+    const por = Number(p.precoPromocional) || 0;
+    if (!(por > 0) || !(de > 0) || por >= de) return 0;
+    return Math.round((1 - por / de) * 100);
+}
+// A campanha é controlada por js/campanha.js (datas e interruptor geral).
+function campanhaBlackAtiva() {
+    try { return !!(window.blackNovemberAtiva && window.blackNovemberAtiva()); }
+    catch (e) { return false; }
+}
+function seloBlack() {
+    try {
+        return (window.CAMPANHA && window.CAMPANHA.blackNovember && window.CAMPANHA.blackNovember.selo) || 'Black November';
+    } catch (e) { return 'Black November'; }
+}
+// Preço promocional vale para "Em promoção" ou, durante a campanha, para o selo Black.
+function precoPromocionalAtivo(p) {
+    if (!p) return false;
+    const ativo = p.isPromocao || (p.isBlack && campanhaBlackAtiva());
+    return !!ativo && Number(p.precoPromocional) > 0;
+}
 function showToast(msg, isError) {
     const t = document.createElement('div');
     t.className = 'toast-bar' + (isError ? ' error' : '');
@@ -158,7 +182,7 @@ let _categories = [];
 let _currentCategory = 'all';
 let _searchTerm = '';
 
-const PRODUCT_SELECT_FIELDS = 'id, codigo, nome, marca, categoria, subcategoria, preco, unidade, descricao, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional, somente_orcamento, linha, embalagem';
+const PRODUCT_SELECT_FIELDS = 'id, codigo, nome, marca, categoria, subcategoria, preco, unidade, descricao, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional, black_friday, somente_orcamento, linha, embalagem';
 
 function normalizeProduct(p) {
     return {
@@ -166,6 +190,7 @@ function normalizeProduct(p) {
         palavrasChave: Array.isArray(p.palavraschave) ? p.palavraschave : [],
         isDestaque: !!p.isdestaque,
         isPromocao: !!p.ispromocao,
+        isBlack: !!p.black_friday,
         precoPromocional: parseFloat(p.precopromocional) || 0,
         embalagem: parseInt(p.embalagem) || 1,
         _rnd: Math.random()
@@ -225,7 +250,9 @@ async function loadCategories() {
 function getFilteredProducts() {
     let list = _allProducts.slice();
     const categorySelected = _currentCategory && _currentCategory !== 'all';
-    if (categorySelected) {
+    if (_currentCategory === '__black') {
+        list = list.filter(p => p.isBlack);
+    } else if (categorySelected) {
         list = list.filter(p => p.categoria === _currentCategory);
     }
     if (_searchTerm) {
@@ -238,9 +265,10 @@ function getFilteredProducts() {
             return haystack.includes(t) || kw.includes(t);
         });
     }
-    // Ordem no index: 1) produtos com promoção, 2) produtos em destaque, 3) sem nenhuma tag.
-    // Dentro de cada grupo a ordem é aleatória (porém estável por carregamento de página).
-    const _rank = p => p.isPromocao ? 1 : (p.isDestaque ? 2 : 3);
+    // Ordem no index: 1) Black November (durante a campanha), 2) promoção,
+    // 3) destaque, 4) sem tag. Dentro do grupo a ordem é aleatória por carregamento.
+    const _blackAtivo = campanhaBlackAtiva();
+    const _rank = p => (_blackAtivo && p.isBlack) ? 0 : (p.isPromocao ? 1 : (p.isDestaque ? 2 : 3));
     return list.sort((a, b) => {
         const ra = _rank(a), rb = _rank(b);
         if (ra !== rb) return ra - rb;
@@ -266,13 +294,17 @@ function renderCatalog() {
     if (empty) empty.style.display = 'none';
 
     grid.innerHTML = filtered.map(p => {
-        const hasPromo = p.isPromocao && p.precoPromocional > 0;
+        const hasPromo = precoPromocionalAtivo(p);
         const price = hasPromo ? p.precoPromocional : p.preco;
         const emb = p.embalagem > 1 ? p.embalagem : 1;
         const img = (p.imagens && p.imagens.length > 0) ? p.imagens[0] : '';
         const thumb = img ? getThumbUrl(img) : '';
 
         const badges = [];
+        const isBlackNow = p.isBlack && campanhaBlackAtiva();
+        const off = isBlackNow ? descontoBlackPct(p) : 0;
+        if (isBlackNow) badges.push(`<span class="cat-badge black"><i class="fas fa-bolt"></i> ${escapeHtml(seloBlack())}</span>`);
+        if (off > 0) badges.push(`<span class="cat-badge desconto">-${off}%</span>`);
         if (p.isDestaque) badges.push('<span class="cat-badge destaque"><i class="fas fa-star"></i> Destaque</span>');
         if (p.isPromocao) badges.push('<span class="cat-badge promo"><i class="fas fa-fire"></i> Promoção</span>');
 
@@ -285,7 +317,7 @@ function renderCatalog() {
             : `<span class="price-lock">${priceLocked()}</span>`;
 
         return `
-        <div class="catalog-card ${p.isDestaque ? 'isDestaque' : ''} ${p.isPromocao ? 'isPromo' : ''}" data-pid="${escapeHtml(p.id)}">
+        <div class="catalog-card ${p.isDestaque ? 'isDestaque' : ''} ${p.isPromocao ? 'isPromo' : ''} ${(p.isBlack && campanhaBlackAtiva()) ? 'isBlack' : ''}" data-pid="${escapeHtml(p.id)}">
             <div class="cat-thumb">
                 ${img
                     ? `<img src="${escapeHtml(thumb)}" alt="${escapeHtml(p.nome)}" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(img)}'">`
@@ -316,13 +348,20 @@ function renderCatalog() {
 function renderCategoryPills() {
     const el = document.getElementById('catalogCats');
     if (!el) return;
+    if (_currentCategory === '__black' && !campanhaBlackAtiva()) _currentCategory = 'all';
+    const blackAtivo = campanhaBlackAtiva() && _allProducts.some(p => p.isBlack);
     const items = [
         { name: 'all', label: 'Todos' },
+        ...(blackAtivo ? [{
+            name: '__black',
+            label: (window.CAMPANHA && window.CAMPANHA.blackNovember && window.CAMPANHA.blackNovember.filtro) || 'Black November',
+            black: true
+        }] : []),
         ..._categories.map(c => ({ name: c.nome, label: c.nome }))
     ];
     el.innerHTML = items.map(c => `
-        <button class="cat-pill ${c.name === _currentCategory ? 'active' : ''}" data-cat="${escapeHtml(c.name)}">
-            ${escapeHtml(c.label)}
+        <button class="cat-pill ${c.black ? 'black-pill' : ''} ${c.name === _currentCategory ? 'active' : ''}" data-cat="${escapeHtml(c.name)}">
+            ${c.black ? '<i class="fas fa-bolt" style="margin-right:5px"></i>' : ''}${escapeHtml(c.label)}
         </button>
     `).join('');
 }
@@ -394,7 +433,7 @@ function addToCart(event, productId) {
     let qty = getQtyForEl(event && event.target);
     const emb = product.embalagem > 1 ? product.embalagem : 1;
     if (qty % emb) { qty = Math.ceil(qty / emb) * emb; }
-    const hasPromo = product.isPromocao && product.precoPromocional > 0;
+    const hasPromo = precoPromocionalAtivo(product);
     const img = (product.imagens && product.imagens.length > 0) ? product.imagens[0] : '';
     const thumb = img ? getThumbUrl(img) : '';
 
@@ -491,13 +530,17 @@ function openProductModal(productId) {
     const product = _allProducts.find(p => p.id === productId);
     if (!product) return;
 
-    const hasPromo = product.isPromocao && product.precoPromocional > 0;
+    const hasPromo = precoPromocionalAtivo(product);
     const price = hasPromo ? product.precoPromocional : product.preco;
     const emb = product.embalagem > 1 ? product.embalagem : 1;
     const img = (product.imagens && product.imagens.length > 0) ? product.imagens[0] : '';
     const thumb = img ? getThumbUrl(img) : '';
 
     const badges = [];
+    const blackAtivo = product.isBlack && campanhaBlackAtiva();
+    const off = blackAtivo ? descontoBlackPct(product) : 0;
+    if (blackAtivo) badges.push(`<span class="cat-badge black"><i class="fas fa-bolt"></i> ${escapeHtml(seloBlack())}</span>`);
+    if (off > 0) badges.push(`<span class="cat-badge desconto">-${off}%</span>`);
     if (product.isDestaque) badges.push('<span class="cat-badge destaque"><i class="fas fa-star"></i> Destaque</span>');
     if (product.isPromocao) badges.push('<span class="cat-badge promo"><i class="fas fa-fire"></i> Promoção</span>');
 

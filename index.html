@@ -9,7 +9,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=17">
+    <link rel="stylesheet" href="css/style.css?v=18">
+    <script src="js/campanha.js?v=1"></script>
+    <script>if (window.blackNovemberAtiva && window.blackNovemberAtiva()) document.documentElement.classList.add('isBlackCampaign');</script>
 </head>
 <body>
 
@@ -40,6 +42,62 @@
         </div>
     </div>
 </header>
+
+<!-- ===== HERO BLACK NOVEMBER (campanha sazonal — controlada por js/campanha.js) ===== -->
+<section class="hero hero-black" id="homeBlack">
+    <div class="hero-grid-layer"></div>
+    <div class="black-glow black-glow-a"></div>
+    <div class="black-glow black-glow-b"></div>
+    <div class="container hero-content">
+        <div class="hero-text">
+            <span class="black-eyebrow"><i class="fas fa-bolt"></i> 01 A 30 DE NOVEMBRO • EXCLUSIVO PARA LOJISTAS</span>
+            <h1 class="black-title">BLACK<span class="black-title-acc">NOVEMBER</span></h1>
+            <p>Preço de Black no atacado: condições especiais em todo o catálogo para lojistas com CNPJ ativo. Estoque limitado, ofertas válidas até 30/11.</p>
+            <div class="black-countdown" id="bnCountdown" aria-label="Tempo restante da campanha">
+                <div class="bn-unit"><strong data-bn="days">00</strong><span>dias</span></div>
+                <div class="bn-sep">:</div>
+                <div class="bn-unit"><strong data-bn="hours">00</strong><span>horas</span></div>
+                <div class="bn-sep">:</div>
+                <div class="bn-unit"><strong data-bn="minutes">00</strong><span>min</span></div>
+                <div class="bn-sep">:</div>
+                <div class="bn-unit"><strong data-bn="seconds">00</strong><span>seg</span></div>
+            </div>
+            <div class="hero-actions">
+                <a href="#produtos" class="btn btn-black btn-lg"><i class="fas fa-tags"></i> Ver ofertas Black</a>
+                <a href="https://wa.me/5512997780047" target="_blank" rel="noopener" class="btn btn-whatsapp btn-lg"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+            </div>
+            <small class="black-foot"><i class="fas fa-circle-info"></i> Preços liberados após o login do lojista.</small>
+        </div>
+        <div class="black-card">
+            <div class="black-card-top"><i class="fas fa-bolt"></i> Como aproveitar</div>
+            <div class="hero-steps">
+                <div class="hero-step">
+                    <span class="hero-step-num">1</span>
+                    <div class="hero-step-txt">
+                        <strong>Entre com seu CNPJ</strong>
+                        <small>Clientes cadastrados já veem o preço de atacado.</small>
+                    </div>
+                </div>
+                <div class="hero-step">
+                    <span class="hero-step-num">2</span>
+                    <div class="hero-step-txt">
+                        <strong>Filtre "Black November"</strong>
+                        <small>Produtos com o selo dourado estão com preço especial.</small>
+                    </div>
+                </div>
+                <div class="hero-step">
+                    <span class="hero-step-num">3</span>
+                    <div class="hero-step-txt">
+                        <strong>Monte seu orçamento</strong>
+                        <small>Confirmação na hora e entrega de seg a sex.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="black-card-foot"><i class="fas fa-clock"></i> Ofertas válidas até 30/11 ou enquanto durar o estoque.</div>
+        </div>
+    </div>
+    <div class="scroll-hint"><i class="fas fa-chevron-down"></i></div>
+</section>
 
 <!-- ===== HERO ===== -->
 <section class="hero" id="home">
@@ -370,6 +428,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-config.js?v=2"></script>
-<script src="js/script.js?v=35"></script>
+<script src="js/script.js?v=36"></script>
 </body>
 </html>

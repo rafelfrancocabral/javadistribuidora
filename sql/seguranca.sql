@@ -635,6 +635,7 @@ BEGIN
             isdestaque = coalesce((_payload->>'isdestaque')::boolean, isdestaque),
             ispromocao = coalesce((_payload->>'ispromocao')::boolean, ispromocao),
             precopromocional = coalesce((_payload->>'precopromocional')::numeric, precopromocional),
+            black_friday = coalesce((_payload->>'black_friday')::boolean, black_friday),
             somente_orcamento = coalesce((_payload->>'somente_orcamento')::boolean, somente_orcamento),
             visivel = coalesce((_payload->>'visivel')::boolean, visivel),
             linha = coalesce(_payload->>'linha', linha),
@@ -648,7 +649,7 @@ BEGIN
     INSERT INTO public.produtos
         (codigo, nome, marca, categoria, subcategoria, unidade, preco, preco_custo,
          estoque, icmsst, embalagem, descricao, palavraschave, imagens, isdestaque,
-         ispromocao, precopromocional, somente_orcamento, visivel, linha, created_at, updated_at)
+         ispromocao, precopromocional, black_friday, somente_orcamento, visivel, linha, created_at, updated_at)
     VALUES
         (coalesce(_payload->>'codigo', 'generated-' || floor(random() * 1000000)::int::text),
          coalesce(_payload->>'nome', 'Sem nome'), coalesce(_payload->>'marca', ''),
@@ -661,6 +662,7 @@ BEGIN
          coalesce((_payload->>'isdestaque')::boolean, false),
          coalesce((_payload->>'ispromocao')::boolean, false),
          coalesce((_payload->>'precopromocional')::numeric, 0),
+         coalesce((_payload->>'black_friday')::boolean, false),
          coalesce((_payload->>'somente_orcamento')::boolean, false),
          coalesce((_payload->>'visivel')::boolean, true),
          coalesce(_payload->>'linha', 'java'), now(), now())

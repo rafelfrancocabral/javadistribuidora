@@ -260,6 +260,11 @@ input, select, textarea { font-family: inherit; }
 .quote-card-total { font-family: 'Inter', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--text-primary); white-space: nowrap; letter-spacing: -0.5px; }
 .quote-code-badge { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--accent); background: rgba(88,28,135,.08); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
 .linha-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.badge-black {
+    display: inline-block; font-size: 0.6rem; font-weight: 800; letter-spacing: .5px;
+    padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+    color: #ffc93c; background: #14141a; border: 1px solid rgba(255,201,60,.55);
+}
 .linha-java { background: rgba(88,28,135,.15); color: var(--accent); }
 .linha-dymar { background: rgba(255,47,230,.15); color: var(--neon-fuchsia); }
 .quote-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-left: 16px; }

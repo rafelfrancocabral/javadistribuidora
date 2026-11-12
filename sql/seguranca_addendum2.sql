@@ -6,6 +6,6 @@ REVOKE SELECT ON public.produtos FROM anon;
 
 GRANT SELECT (id, codigo, nome, marca, categoria, subcategoria, preco, unidade,
               descricao, palavraschave, imagens, video, visivel, estoque,
-              isdestaque, ispromocao, precopromocional, somente_orcamento,
+              isdestaque, ispromocao, precopromocional, black_friday, somente_orcamento,
               linha, icmsst, embalagem, created_at, updated_at)
     ON public.produtos TO anon;

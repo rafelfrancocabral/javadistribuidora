@@ -60,3 +60,13 @@ Mapeie este diretório para a Vercel (ou use `vercel deploy`). O `vercel.json` j
 2. Seleciona produtos (preço visível só com login).
 3. Checkout com prazo de pagamento → gera orçamento no WhatsApp + salva no Supabase.
 4. O orçamento aparece no dashboard em "Orçamentos".
+
+## Campanhas sazonais (ex.: Black November)
+O hero e os selos de campanha são controlados por `js/campanha.js` — não é preciso mexer no HTML.
+
+- `ativa`: liga/desliga a campanha (interruptor geral).
+- `inicio` / `fim`: período em que o site aplica o tema sozinho. Ao passar da data final, o hero normal volta automaticamente.
+- Durante a campanha, o hero escuro substitui o hero padrão, o cabeçalho fica escuro, aparece a contagem regressiva e o filtro **Black November** no catálogo.
+- Para marcar produtos: painel → Produtos → editar → **Preço Black November** + preencher o **Preço Promocional**. O produto ganha o selo dourado, o desconto em % e sobe para o topo do catálogo.
+- A coluna usada no banco é `produtos.black_friday` (padrão `false`).
+

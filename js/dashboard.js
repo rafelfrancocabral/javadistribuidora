@@ -458,15 +458,16 @@ function buildPaymentChart() {
             map[cat] = (map[cat] || 0) + (sub || 0);
         });
     });
-    const labels = Object.keys(map);
-    const data = Object.values(map);
+    // Maior faturamento primeiro (R$ decrescente).
+    const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
+    const labels = sorted.map(([cat]) => cat);
+    const data = sorted.map(([, value]) => value);
     if (empty) empty.style.display = labels.length ? 'none' : '';
     if (chartPaymentsInstance) { chartPaymentsInstance.destroy(); chartPaymentsInstance = null; }
     if (!el || !labels.length) return;
 
     const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#10b981', '#f97316', '#ec4899', '#64748b'];
-
-    const total = data.reduce((a, b) => a + b, 0);
+    const chartFont = "'Manrope', 'Inter', sans-serif";
 
     chartPaymentsInstance = new Chart(el, {
         type: 'doughnut',
@@ -501,7 +502,7 @@ function buildPaymentChart() {
                     align: 'center',
                     maxWidth: 240,
                     labels: {
-                        font: { family: 'Inter', size: 15, weight: '700' },
+                        font: { family: chartFont, size: 14, weight: '600' },
                         color: '#1a1028',
                         padding: 22,
                         usePointStyle: true,
@@ -515,9 +516,8 @@ function buildPaymentChart() {
                                     const raw = String(label || '');
                                     const shortLabel = raw.length > 30 ? raw.slice(0, 29) + '…' : raw;
                                     const value = data.datasets[0].data[i];
-                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                     return {
-                                        text: `${shortLabel} — ${formatPrice(value)} — ${percentage}%`,
+                                        text: `${shortLabel} — ${formatPrice(value)}`,
                                         fillStyle: chart.data.datasets[0].backgroundColor[i],
                                         strokeStyle: 'transparent',
                                         lineWidth: 0,
@@ -534,9 +534,9 @@ function buildPaymentChart() {
                 },
                 tooltip: {
                     backgroundColor: 'rgba(11,6,20,0.96)',
-                    titleFont: { family: 'Inter', size: 13, weight: '700' },
+                    titleFont: { family: chartFont, size: 13, weight: '700' },
                     titleColor: '#fff',
-                    bodyFont: { family: 'Inter', size: 12.5, weight: '500' },
+                    bodyFont: { family: chartFont, size: 12.5, weight: '500' },
                     bodyColor: '#f3f0fc',
                     padding: 14,
                     cornerRadius: 12,
@@ -545,16 +545,19 @@ function buildPaymentChart() {
                     borderColor: 'rgba(239,68,68,0.4)',
                     borderWidth: 1.5,
                     callbacks: {
-                        label: (ctx) => {
-                            const value = ctx.parsed;
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return ` ${ctx.label}: ${formatPrice(value)} (${percentage}%)`;
-                        }
+                        label: (ctx) => ` ${ctx.label}: ${formatPrice(ctx.parsed)}`
                     }
                 }
             }
         }
     });
+
+    // Redesenha a legenda quando a Manrope terminar de carregar.
+    if (document.fonts && document.fonts.load) {
+        document.fonts.load('600 14px Manrope')
+            .then(() => { if (chartPaymentsInstance) chartPaymentsInstance.update('none'); })
+            .catch(() => {});
+    }
 }
 
 // ---------- Helpers ----------

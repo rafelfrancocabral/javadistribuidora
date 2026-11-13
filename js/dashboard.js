@@ -861,7 +861,7 @@ async function deleteQuote(id) { if (!confirm('Excluir este orçamento?')) retur
 
 function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA*', '']; const quoteName = getQuoteClientName(q); if (q.codigo_cliente) lines.push('Cliente: ' + quoteName + ' (#' + q.codigo_cliente + ')'); else lines.push('Cliente: ' + quoteName); if (q.codigo_retirada) lines.push('Cód. Retirada: ' + q.codigo_retirada); lines.push('Data: ' + formatDate(q.created_at)); lines.push(''); if (Array.isArray(q.itens) && q.itens.length) { q.itens.forEach(it => { lines.push('• ' + it.nome + ' (' + (it.codigo||'') + ')'); lines.push('  ' + it.quantidade + 'x ' + formatPrice(it.preco) + ' = ' + formatPrice(it.subtotal || (it.preco * it.quantidade))); }); } else { lines.push(String(q.itens || '')); } lines.push(''); lines.push('Total: ' + formatPrice(q.total)); if (q.pagamento) lines.push('Prazo de pagamento: ' + q.pagamento); if (q.obs) { lines.push(''); lines.push('Observações: ' + q.obs); } lines.push(''); lines.push('WhatsApp: (12) 99778-0047'); return lines.join('\n'); }
 
-function buildPaymentLines(pagamento, baseDate, total) { if (!pagamento) return []; const p = String(pagamento).trim(); const pLower = p.toLowerCase(); const nums = p.match(/\d+/g) || []; let prazos = []; if (/^\d+x$/i.test(p)) { const n = parseInt(nums[0]); if (n > 1) for (let i = 1; i <= n; i++) prazos.push(30 * i); } else if (/boleto/.test(pLower)) { prazos.push(nums.length ? parseInt(nums[0]) : 30); } else if (nums.length) { prazos = nums.map(n => parseInt(n)).filter(n => n > 0); } if (!prazos.length) return []; const base = baseDate ? new Date(baseDate) : new Date(); const qtd = prazos.length; const valorParcela = Number(total) > 0 ? Number(total) / qtd : 0; return prazos.map((dias, i) => { const dt = new Date(base.getTime() + dias * 86400000); const dia = dt.toLocaleDateString('pt-BR'); const parcelaText = prazos.length === 1 ? 'Vencimento em ' + dia + ' (' + dias + ' dias)' : (i + 1) + 'ª parcela' + (dias ? ' (' + dias + ' dias)' : '') + ' — ' + dia; return valorParcela > 0 ? parcelaText + ' — ' + formatPrice(valorParcela) : parcelaText; }); }
+function buildPaymentLines(pagamento, baseDate, total) { if (!pagamento) return []; const p = String(pagamento).trim(); const pLower = p.toLowerCase(); const nums = p.match(/\d+/g) || []; if (/^(?:à|a)\s*vista$/.test(pLower)) { const baseV = baseDate ? new Date(baseDate) : new Date(); const valorV = Number(total) > 0 ? formatPrice(Number(total)) : ''; return ['Vencimento imediato — ' + baseV.toLocaleDateString('pt-BR') + (valorV ? ' — ' + valorV : '')]; } let prazos = []; if (/^\d+x$/i.test(p)) { const n = parseInt(nums[0]); if (n > 1) for (let i = 1; i <= n; i++) prazos.push(30 * i); } else if (/boleto/.test(pLower)) { prazos.push(nums.length ? parseInt(nums[0]) : 30); } else if (nums.length) { prazos = nums.map(n => parseInt(n)).filter(n => n > 0); } if (!prazos.length) return []; const base = baseDate ? new Date(baseDate) : new Date(); const qtd = prazos.length; const valorParcela = Number(total) > 0 ? Number(total) / qtd : 0; return prazos.map((dias, i) => { const dt = new Date(base.getTime() + dias * 86400000); const dia = dt.toLocaleDateString('pt-BR'); const parcelaText = prazos.length === 1 ? 'Vencimento em ' + dia + ' (' + dias + ' dias)' : (i + 1) + 'ª parcela' + (dias ? ' (' + dias + ' dias)' : '') + ' — ' + dia; return valorParcela > 0 ? parcelaText + ' — ' + formatPrice(valorParcela) : parcelaText; }); }
 
 let _dymarLogoDataPromise = null;
 function loadDymarLogoData() {
@@ -1987,6 +1987,7 @@ function addQuoteItem() {
 // Regras de prazo (mesmas do site): o valor do orçamento libera mais datas.
 // <= R$500 -> 1 data; > R$500 -> +2 datas; > R$750 -> +3 datas; > R$1000 -> todas.
 // A linha Dymar tem prazos próprios, sempre disponíveis.
+const MQ_PRAZO_VISTA = 'À vista';
 const MQ_PRAZOS_1DATA = ['7', '14', '21', '28', '35', '42'];
 const MQ_PRAZOS_2DATAS = ['7/14', '28/35', '28/56'];
 const MQ_PRAZOS_3DATAS = ['7/14/21', '21/28/35', '28/35/42', '28/42/56'];
@@ -1994,12 +1995,12 @@ const MQ_PRAZOS_4DATAS = ['28/35/42/77'];
 const MQ_PRAZOS_DYMAR = ['10 dias', '15 dias', '30 dias', '45 dias', '10/20 dias', '30/60 dias', '28/42/56 dias', '30/45/60 dias', '30/60/90 dias', '30/40/50/60 dias'];
 const mqPrazoLabel = p => p.indexOf('/') === -1 ? p + ' dias' : p;
 function mqPrazoOptions(total) {
-    if (String(mqLine || '').toLowerCase() === 'dymar') return MQ_PRAZOS_DYMAR.slice();
+    if (String(mqLine || '').toLowerCase() === 'dymar') return [MQ_PRAZO_VISTA].concat(MQ_PRAZOS_DYMAR);
     let prazos = MQ_PRAZOS_1DATA.slice();
     if (total > 500) prazos = prazos.concat(MQ_PRAZOS_2DATAS);
     if (total > 750) prazos = prazos.concat(MQ_PRAZOS_3DATAS);
     if (total > 1000) prazos = prazos.concat(MQ_PRAZOS_4DATAS);
-    return prazos.map(mqPrazoLabel);
+    return [MQ_PRAZO_VISTA].concat(prazos.map(mqPrazoLabel));
 }
 function renderMqPaymentOptions(total, desired) {
     const sel = document.getElementById('mqPayment');

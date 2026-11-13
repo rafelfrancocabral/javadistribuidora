@@ -675,6 +675,7 @@ function descartarPedido(email, clienteId) {
 // ---------- Prazos de pagamento ----------
 // Regras: abaixo de R$500 -> apenas 1 data; acima de R$500 -> +2 datas;
 // acima de R$750 -> +3 datas; acima de R$1000 -> libera todas (4 datas).
+const PRAZO_VISTA = 'À vista';
 const PRAZOS_1DATA = ['7', '14', '21', '28', '35', '42'];
 const PRAZOS_2DATAS = ['7/14', '28/35', '28/56'];
 const PRAZOS_3DATAS = ['7/14/21', '21/28/35', '28/35/42', '28/42/56'];
@@ -688,8 +689,9 @@ function renderPaymentOptions(total) {
     if (total > 500) prazos = prazos.concat(PRAZOS_2DATAS);
     if (total > 750) prazos = prazos.concat(PRAZOS_3DATAS);
     if (total > 1000) prazos = prazos.concat(PRAZOS_4DATAS);
+    const labels = [PRAZO_VISTA].concat(prazos.map(prazoLabel));
     sel.innerHTML = '<option value="">Selecione o prazo...</option>' +
-        prazos.map(p => `<option value="${prazoLabel(p)}">${prazoLabel(p)}</option>`).join('');
+        labels.map(l => `<option value="${l}">${l}</option>`).join('');
     sel.value = '';
 }
 
@@ -1206,6 +1208,12 @@ function buildPaymentLinesSite(pagamento, baseDate, total) {
     const p = String(pagamento).trim();
     const pLower = p.toLowerCase();
     const nums = p.match(/\d+/g) || [];
+    // Pagamento a vista: uma unica data (hoje), sem parcelamento.
+    if (/^(?:à|a)\s*vista$/.test(pLower)) {
+        const baseV = baseDate ? new Date(baseDate) : new Date();
+        const valorV = Number(total) > 0 ? formatPrice(Number(total)) : '';
+        return ['Vencimento imediato — ' + baseV.toLocaleDateString('pt-BR') + (valorV ? ' — ' + valorV : '')];
+    }
     let prazos = [];
     if (/^\d+x$/i.test(p)) { const n = parseInt(nums[0]); if (n > 1) for (let i = 1; i <= n; i++) prazos.push(30 * i); }
     else if (/boleto/.test(pLower)) { prazos.push(nums.length ? parseInt(nums[0]) : 30); }

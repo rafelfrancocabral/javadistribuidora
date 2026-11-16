@@ -364,6 +364,223 @@ html.isBlackCampaign .user-chip {
     .bn-unit { flex: 1; min-width: 0; }
 }
 
+/* ---------- Super Natal (campanha sazonal) ---------- */
+html.isNatalCampaign {
+    --xn-green: #0ea56f;
+    --xn-green-deep: #04231a;
+    --xn-red: #e11d48;
+    --xn-gold: #ffd166;
+}
+#homeNatal { display: none; }
+html.isNatalCampaign #homeNatal { display: flex; }
+html.isNatalCampaign #home { display: none; }
+
+.hero-natal {
+    background:
+        radial-gradient(55% 70% at 15% 8%, rgba(16,185,129,.20), transparent 65%),
+        radial-gradient(60% 70% at 92% 18%, rgba(225,29,72,.24), transparent 65%),
+        radial-gradient(42% 55% at 6% 84%, rgba(225,29,72,.16), transparent 70%),
+        radial-gradient(50% 60% at 50% 110%, rgba(255,209,102,.12), transparent 65%),
+        #04120d;
+    color: #fff;
+}
+.hero-natal .hero-grid-layer {
+    background-image:
+        linear-gradient(rgba(255,209,102,.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,209,102,.055) 1px, transparent 1px);
+    mask-image: radial-gradient(70% 70% at 50% 40%, #000 15%, transparent 82%);
+}
+.natal-glow { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; }
+.natal-glow-a { width: 460px; height: 460px; background: radial-gradient(circle, rgba(16,185,129,.30), transparent 65%);
+    top: -160px; left: -120px; animation: pulseGlow 8s ease-in-out infinite; }
+.natal-glow-b { width: 520px; height: 520px; background: radial-gradient(circle, rgba(225,29,72,.32), transparent 65%);
+    bottom: -200px; right: -140px; animation: pulseGlow 10s ease-in-out infinite reverse; }
+
+/* Neve discreta (puro CSS) */
+.natal-snow { position: absolute; inset: -25% -10% 0; pointer-events: none; background-repeat: repeat; }
+.natal-snow-a {
+    opacity: .5;
+    background-image:
+        radial-gradient(2.2px 2.2px at 24px 18px, rgba(255,255,255,.95), transparent 60%),
+        radial-gradient(1.8px 1.8px at 128px 96px, rgba(255,255,255,.75), transparent 60%),
+        radial-gradient(2.4px 2.4px at 212px 42px, rgba(255,255,255,.85), transparent 60%),
+        radial-gradient(1.6px 1.6px at 64px 172px, rgba(255,255,255,.6), transparent 60%),
+        radial-gradient(2px 2px at 254px 192px, rgba(255,255,255,.7), transparent 60%);
+    background-size: 300px 240px;
+    animation: neveCai 24s linear infinite;
+}
+.natal-snow-b {
+    opacity: .32;
+    background-image:
+        radial-gradient(1.6px 1.6px at 52px 60px, rgba(255,255,255,.6), transparent 60%),
+        radial-gradient(2.6px 2.6px at 172px 140px, rgba(255,255,255,.8), transparent 60%),
+        radial-gradient(1.4px 1.4px at 262px 32px, rgba(255,255,255,.55), transparent 60%);
+    background-size: 220px 200px;
+    animation: neveCai 38s linear infinite;
+}
+@keyframes neveCai {
+    from { transform: translate3d(0, -10%, 0); }
+    to { transform: translate3d(22px, 12%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .natal-snow-a, .natal-snow-b, .natal-glow-a, .natal-glow-b { animation: none; }
+}
+
+/* Árvore de Natal no fundo direito — feita de ferramentas de construção.
+   Fica atrás do conteúdo e some suavemente na borda esquerda. */
+.natal-tree {
+    position: absolute;
+    right: clamp(-160px, -6vw, -40px);
+    bottom: 0;
+    height: 100%;
+    max-height: 900px;
+    z-index: 1;
+    pointer-events: none;
+    opacity: .46;
+    filter: drop-shadow(0 0 34px rgba(16,185,129,.20));
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 24%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 24%);
+}
+.natal-tree svg {
+    height: 100%; width: auto; display: block;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 88%, transparent 100%);
+}
+
+.hero-natal .hero-text h1.natal-title {
+    font-family: 'Inter', sans-serif; font-weight: 900; letter-spacing: -1px; line-height: .92;
+    font-size: clamp(46px, 8.4vw, 92px); margin-bottom: 20px;
+    display: flex; flex-direction: column; color: #fff;
+    text-shadow: 0 0 46px rgba(255,209,102,.20), 0 0 70px rgba(225,29,72,.18);
+}
+.natal-title-acc {
+    background: linear-gradient(135deg, #b8ffdd, var(--xn-gold) 42%, #ff2d55 94%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    letter-spacing: -1.5px;
+}
+.natal-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+    font-size: 11px; letter-spacing: 1.8px; font-weight: 700;
+    padding: 7px 14px; border-radius: 999px; margin-bottom: 22px;
+    color: var(--xn-gold); background: rgba(255,209,102,.08);
+    border: 1px solid rgba(255,209,102,.4);
+    box-shadow: 0 0 24px rgba(16,185,129,.22);
+}
+.natal-eyebrow i { color: #ff8fa3; }
+.hero-natal .hero-text p { color: rgba(255,255,255,.74); }
+
+.natal-countdown { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+.xn-unit {
+    min-width: 74px; padding: 10px 8px; border-radius: 14px; text-align: center;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,209,102,.28);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.xn-unit strong {
+    display: block; font-family: 'Inter', sans-serif; font-size: 30px; font-weight: 900;
+    line-height: 1.1; color: #fff; font-variant-numeric: tabular-nums;
+}
+.xn-unit span { font-size: 10.5px; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,.5); }
+.xn-sep { color: rgba(255,107,129,.8); font-weight: 800; font-size: 22px; }
+
+.btn-natal {
+    background: linear-gradient(135deg, #34d399, #0b8a5c 55%, #065f46);
+    color: #eafff5; font-weight: 800;
+    box-shadow: 0 12px 30px rgba(14,165,111,.34), inset 0 0 0 1px rgba(255,209,102,.35);
+}
+.btn-natal:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(14,165,111,.45), 0 0 24px rgba(255,209,102,.3);
+}
+
+.natal-card {
+    position: relative; border-radius: var(--radius); padding: 28px; color: #fff;
+    background: linear-gradient(160deg, rgba(6,45,32,.94), rgba(4,18,13,.97));
+    border: 1px solid rgba(255,209,102,.3);
+    box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 30px rgba(16,185,129,.14), 0 0 44px rgba(225,29,72,.12);
+}
+.natal-card-top {
+    display: flex; align-items: center; gap: 10px; font-family: 'Inter', sans-serif;
+    font-weight: 700; font-size: 14px; color: var(--xn-gold);
+    padding-bottom: 16px; border-bottom: 1px dashed rgba(255,209,102,.25);
+}
+.natal-card-top i { font-size: 18px; }
+.hero-natal .hero-step-num {
+    background: linear-gradient(140deg, #b8ffdd, var(--xn-green));
+    color: #04231a; box-shadow: 0 0 18px rgba(16,185,129,.35);
+}
+.natal-card-foot {
+    margin-top: 6px; padding: 12px 14px; border-radius: 12px;
+    background: rgba(255,209,102,.1); color: var(--xn-gold);
+    display: flex; gap: 8px; align-items: center;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13.5px;
+}
+.natal-foot { display: inline-flex; align-items: center; gap: 8px; color: rgba(255,255,255,.5); font-size: 12.5px; }
+.hero-natal .scroll-hint { color: rgba(255,255,255,.4); }
+
+/* Header no tema escuro durante a campanha de Natal */
+html.isNatalCampaign .site-header {
+    background: rgba(4,18,13,.86);
+    border-bottom-color: rgba(255,209,102,.2);
+}
+html.isNatalCampaign .brand-text { color: #fff; }
+html.isNatalCampaign .brand-acc { color: var(--xn-gold); }
+html.isNatalCampaign .main-nav a { color: rgba(255,255,255,.72); }
+html.isNatalCampaign .main-nav a:hover { color: var(--xn-gold); }
+html.isNatalCampaign .nav-cart-btn,
+html.isNatalCampaign .nav-lock-btn {
+    background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.16); color: var(--xn-gold);
+}
+html.isNatalCampaign .nav-toggle { color: #fff; }
+html.isNatalCampaign .btn-login,
+html.isNatalCampaign .user-chip {
+    background: linear-gradient(135deg, #34d399, #0b7a52); color: #03150f;
+    box-shadow: 0 8px 20px rgba(16,185,129,.3);
+}
+
+/* Catálogo no tema de Natal (produtos com o selo da campanha) */
+html.isNatalCampaign .catalog-card.isBlack { border-color: rgba(16,185,129,.5); box-shadow: 0 10px 32px rgba(14,165,111,.16); }
+html.isNatalCampaign .catalog-card.isBlack:hover { box-shadow: 0 18px 44px rgba(14,165,111,.24); }
+html.isNatalCampaign .cat-badge.black {
+    background: linear-gradient(135deg, #065f46, #0ea56f);
+    color: #eafff5; border-color: rgba(255,209,102,.6);
+    box-shadow: 0 0 14px rgba(16,185,129,.28);
+}
+html.isNatalCampaign .cat-pill.black-pill { border-color: rgba(16,185,129,.55); background: #effcf6; color: #047857; }
+html.isNatalCampaign .cat-pill.black-pill:hover { border-color: #059669; color: #065f46; }
+html.isNatalCampaign .cat-pill.black-pill.active {
+    background: linear-gradient(135deg, #34d399, #0b7a52); color: #03150f;
+    border-color: transparent; box-shadow: 0 8px 20px rgba(16,185,129,.35);
+}
+
+@media (max-width: 1200px) {
+    .natal-tree { height: 95%; right: -140px; opacity: .36; }
+}
+@media (max-width: 900px) {
+    html.isNatalCampaign .main-nav {
+        background: #04120d;
+        border-bottom: 1px solid rgba(255,209,102,.18);
+    }
+}
+@media (max-width: 880px) {
+    /* No celular a árvore vira uma marca d'água discreta no canto direito */
+    .natal-tree {
+        top: 34px; bottom: auto;
+        right: -150px;
+        height: 520px;
+        opacity: .17;
+    }
+    .hero-natal { padding-top: 46px; }
+    .hero-natal .hero-text h1.natal-title { font-size: clamp(40px, 12vw, 68px); }
+    .natal-countdown { gap: 6px; }
+    .xn-unit { min-width: 60px; padding: 8px 6px; }
+    .xn-unit strong { font-size: 24px; }
+}
+@media (max-width: 460px) {
+    .xn-sep { display: none; }
+    .xn-unit { flex: 1; min-width: 0; }
+    .natal-tree { top: 26px; right: -165px; height: 470px; opacity: .15; }
+}
+
 /* ---------- Howto ---------- */
 .howto { background: var(--bg-secondary); }
 .howto-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
@@ -864,6 +1081,10 @@ body { overflow-x: hidden; }
     html.isBlackCampaign .nav-toggle {
         background: rgba(255, 255, 255, .10);
         color: var(--bn-gold);
+    }
+    html.isNatalCampaign .nav-toggle {
+        background: rgba(255, 255, 255, .10);
+        color: var(--xn-gold);
     }
     .nav-orders-btn i { font-size: 18px; }
     .btn-login { min-height: 44px; padding: 0 14px; font-size: 14px; }

@@ -9,9 +9,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=22">
-    <script src="js/campanha.js?v=1"></script>
-    <script>if (window.blackNovemberAtiva && window.blackNovemberAtiva()) document.documentElement.classList.add('isBlackCampaign');</script>
+    <link rel="stylesheet" href="css/style.css?v=28">
+    <script src="js/campanha.js?v=5"></script>
+    <script>
+        (function () {
+            var c = window.campanhaAtual && window.campanhaAtual();
+            if (c && c.cfg.classe) document.documentElement.classList.add(c.cfg.classe);
+        })();
+    </script>
 </head>
 <body>
 
@@ -54,13 +59,13 @@
             <h1 class="black-title">BLACK<span class="black-title-acc">NOVEMBER</span></h1>
             <p>Preço de Black no atacado: condições especiais em todo o catálogo para lojistas com CNPJ ativo. Estoque limitado, ofertas válidas até 30/11.</p>
             <div class="black-countdown" id="bnCountdown" aria-label="Tempo restante da campanha">
-                <div class="bn-unit"><strong data-bn="days">00</strong><span>dias</span></div>
+                <div class="bn-unit"><strong data-cd="days">00</strong><span>dias</span></div>
                 <div class="bn-sep">:</div>
-                <div class="bn-unit"><strong data-bn="hours">00</strong><span>horas</span></div>
+                <div class="bn-unit"><strong data-cd="hours">00</strong><span>horas</span></div>
                 <div class="bn-sep">:</div>
-                <div class="bn-unit"><strong data-bn="minutes">00</strong><span>min</span></div>
+                <div class="bn-unit"><strong data-cd="minutes">00</strong><span>min</span></div>
                 <div class="bn-sep">:</div>
-                <div class="bn-unit"><strong data-bn="seconds">00</strong><span>seg</span></div>
+                <div class="bn-unit"><strong data-cd="seconds">00</strong><span>seg</span></div>
             </div>
             <div class="hero-actions">
                 <a href="#produtos" class="btn btn-black btn-lg"><i class="fas fa-tags"></i> Ver ofertas Black</a>
@@ -94,6 +99,158 @@
                 </div>
             </div>
             <div class="black-card-foot"><i class="fas fa-clock"></i> Ofertas válidas até 30/11 ou enquanto durar o estoque.</div>
+        </div>
+    </div>
+    <div class="scroll-hint"><i class="fas fa-chevron-down"></i></div>
+</section>
+
+<!-- ===== HERO SUPER NATAL (campanha sazonal — controlada por js/campanha.js) ===== -->
+<section class="hero hero-natal" id="homeNatal">
+    <div class="hero-grid-layer"></div>
+    <div class="natal-glow natal-glow-a"></div>
+    <div class="natal-glow natal-glow-b"></div>
+    <div class="natal-snow natal-snow-a"></div>
+    <div class="natal-snow natal-snow-b"></div>
+    <div class="natal-tree" aria-hidden="true">
+        <svg viewBox="0 0 420 660" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="natalTreeStroke" x1="210" y1="17" x2="210" y2="632" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#8df5c8"/>
+                    <stop offset=".55" stop-color="#34d399"/>
+                    <stop offset="1" stop-color="#0b7a52"/>
+                </linearGradient>
+                <linearGradient id="natalTreeFill" x1="210" y1="92" x2="210" y2="632" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#34d399" stop-opacity=".18"/>
+                    <stop offset="1" stop-color="#065f46" stop-opacity=".03"/>
+                </linearGradient>
+            </defs>
+
+            <!-- estrela com porca sextavada -->
+            <path d="M 210.0 17.0 L 216.8 34.7 L 235.7 35.7 L 220.9 47.6 L 225.9 65.8 L 210.0 55.5 L 194.1 65.8 L 199.1 47.6 L 184.3 35.7 L 203.2 34.7 Z" fill="#ffd166" fill-opacity=".92" stroke="#ffd166" stroke-opacity=".5" stroke-width="1.4"/>
+            <path d="M 210.0 37.5 L 217.4 41.8 L 217.4 50.2 L 210.0 54.5 L 202.6 50.2 L 202.6 41.8 Z" stroke="#04231a" stroke-opacity=".5" stroke-width="1.6"/>
+
+            <!-- galhos em formato de serra -->
+            <path d="M 210 92 L 276 252 L 249.6 260.0 L 223.2 252.0 L 196.8 260.0 L 170.4 252.0 L 144.0 260.0 L 144 252 Z" fill="url(#natalTreeFill)" stroke="url(#natalTreeStroke)" stroke-width="2.4" stroke-linejoin="round" stroke-opacity=".8"/>
+            <path d="M 210 196 L 320 404 L 295.6 412.0 L 271.1 404.0 L 246.7 412.0 L 222.2 404.0 L 197.8 412.0 L 173.3 404.0 L 148.9 412.0 L 124.4 404.0 L 100.0 412.0 L 100 404 Z" fill="url(#natalTreeFill)" stroke="url(#natalTreeStroke)" stroke-width="2.4" stroke-linejoin="round" stroke-opacity=".72"/>
+            <path d="M 210 336 L 364 548 L 340.3 556.0 L 316.6 548.0 L 292.9 556.0 L 269.2 548.0 L 245.5 556.0 L 221.8 548.0 L 198.2 556.0 L 174.5 548.0 L 150.8 556.0 L 127.1 548.0 L 103.4 556.0 L 79.7 548.0 L 56.0 556.0 L 56 548 Z" fill="url(#natalTreeFill)" stroke="url(#natalTreeStroke)" stroke-width="2.4" stroke-linejoin="round" stroke-opacity=".64"/>
+
+            <!-- tronco: vergalhão roscado -->
+            <path d="M201 548v56M219 548v56" stroke="#9ec4b6" stroke-opacity=".5" stroke-width="1.8"/>
+            <path d="M201 556l18 7M201 570l18 7M201 584l18 7M201 598l18 6" stroke="#9ec4b6" stroke-opacity=".38" stroke-width="1.3"/>
+            <path d="M197 605h26" stroke="#9ec4b6" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- base: nível de bolha -->
+            <rect x="64" y="608" width="292" height="24" rx="6" fill="#8df5c8" fill-opacity=".05" stroke="url(#natalTreeStroke)" stroke-opacity=".6" stroke-width="2"/>
+            <path d="M64 620h16M340 620h16" stroke="#8df5c8" stroke-opacity=".22" stroke-width="2" stroke-linecap="round"/>
+            <rect x="118" y="615" width="52" height="10" rx="5" stroke="#ffd166" stroke-opacity=".5" stroke-width="1.4"/>
+            <circle cx="139" cy="620" r="3.2" fill="#ffd166" fill-opacity=".85"/>
+            <path d="M130 616.5v7M148 616.5v7" stroke="#ffd166" stroke-opacity=".35" stroke-width="1.2"/>
+            <rect x="250" y="615" width="52" height="10" rx="5" stroke="#ffd166" stroke-opacity=".5" stroke-width="1.4"/>
+            <circle cx="271" cy="620" r="3.2" fill="#ffd166" fill-opacity=".85"/>
+            <path d="M262 616.5v7M280 616.5v7" stroke="#ffd166" stroke-opacity=".35" stroke-width="1.2"/>
+            <circle cx="210" cy="620" r="4" stroke="#ffd166" stroke-opacity=".45" stroke-width="1.3"/>
+
+            <!-- garlanda: metro articulado -->
+            <path d="M 122.0 302 L 151.3 315 L 180.7 302 L 210.0 315 L 239.3 302 L 268.6 315 L 298.0 302" stroke="#ffd166" stroke-opacity=".48" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M151.3 312v6 M180.7 299v6 M210.0 312v6 M239.3 299v6 M268.6 312v6" stroke="#ffd166" stroke-opacity=".3" stroke-width="1.2"/>
+            <circle cx="151.3" cy="321" r="4" fill="#ff4d6d" fill-opacity=".8"/>
+            <circle cx="210" cy="321" r="4" fill="#ff4d6d" fill-opacity=".8"/>
+            <circle cx="268.6" cy="321" r="4" fill="#ff4d6d" fill-opacity=".8"/>
+
+            <!-- chave de boca -->
+            <g transform="translate(210 150) rotate(-14)" stroke="#ffd166" stroke-opacity=".6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="0" cy="0" r="9"/>
+                <circle cx="0" cy="0" r="4.2" stroke-opacity=".45"/>
+                <path d="M-3.6 8 L3.6 8 L2.6 50 L-2.6 50 Z"/>
+                <path d="M-9 48 L-9 63 L-3 63 L-3 56 L3 56 L3 63 L9 63 L9 48"/>
+            </g>
+
+            <!-- serra circular -->
+            <g stroke="#cfe9df" stroke-opacity=".55" stroke-linecap="round">
+                <circle cx="152" cy="366" r="25" stroke-width="2"/>
+                <circle cx="152" cy="366" r="5.5" stroke-width="1.6"/>
+                <circle cx="152" cy="366" r="2" stroke-width="1.2"/>
+                <path d="M177.0 366.0L182.0 366.0 M175.5 374.6L180.2 376.3 M171.2 382.1L175.0 385.3 M164.5 387.7L167.0 392.0 M156.3 390.6L157.2 395.5 M147.7 390.6L146.8 395.5 M139.5 387.7L137.0 392.0 M132.8 382.1L129.0 385.3 M128.5 374.6L123.8 376.3 M127.0 366.0L122.0 366.0 M128.5 357.4L123.8 355.7 M132.8 349.9L129.0 346.7 M139.5 344.3L137.0 340.0 M147.7 341.4L146.8 336.5 M156.3 341.4L157.2 336.5 M164.5 344.3L167.0 340.0 M171.2 349.9L175.0 346.7 M175.5 357.4L180.2 355.7" stroke-width="1.7"/>
+            </g>
+
+            <!-- martelo -->
+            <g transform="translate(262 352) rotate(16)" stroke="#ffd166" stroke-opacity=".6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M-3.6 6 L3.6 6 L2.6 54 L-2.6 54 Z"/>
+                <path d="M-24 -8 L6 -8 L10 8 L-24 8 Z"/>
+                <path d="M-24 -8 C-31 -6 -32 2 -25 5"/>
+            </g>
+
+            <!-- chave de fenda -->
+            <g transform="translate(148 466) rotate(-20)" stroke="#cfe9df" stroke-opacity=".55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="-6" y="0" width="12" height="26" rx="5"/>
+                <path d="M-4 7h8M-4 12h8M-4 17h8" stroke-opacity=".38" stroke-width="1.2"/>
+                <path d="M-1.7 26 L1.7 26 L1.7 58 L-1.7 58"/>
+                <path d="M-4 58 L4 58 L2.2 65 L-2.2 65 Z"/>
+            </g>
+
+            <!-- porcas sextavadas e bolas -->
+            <path d="M 253.0 280.5 L 259.5 284.2 L 259.5 291.8 L 253.0 295.5 L 246.5 291.8 L 246.5 284.2 Z" stroke="#ffd166" stroke-opacity=".55" stroke-width="1.5"/>
+            <circle cx="253" cy="288" r="3.1" stroke="#ffd166" stroke-opacity=".45" stroke-width="1.2"/>
+            <path d="M 112.0 505.5 L 119.4 509.8 L 119.4 518.2 L 112.0 522.5 L 104.6 518.2 L 104.6 509.8 Z" stroke="#ffd166" stroke-opacity=".55" stroke-width="1.5"/>
+            <circle cx="112" cy="514" r="3.6" stroke="#ffd166" stroke-opacity=".45" stroke-width="1.2"/>
+            <path d="M 296.0 517.5 L 303.4 521.8 L 303.4 530.2 L 296.0 534.5 L 288.6 530.2 L 288.6 521.8 Z" stroke="#ffd166" stroke-opacity=".55" stroke-width="1.5"/>
+            <circle cx="296" cy="526" r="3.6" stroke="#ffd166" stroke-opacity=".45" stroke-width="1.2"/>
+            <path d="M 210.0 555.5 L 215.6 558.8 L 215.6 565.2 L 210.0 568.5 L 204.4 565.2 L 204.4 558.8 Z" stroke="#ffd166" stroke-opacity=".55" stroke-width="1.5"/>
+            <circle cx="210" cy="562" r="2.7" stroke="#ffd166" stroke-opacity=".45" stroke-width="1.2"/>
+            <circle cx="176" cy="238" r="4" fill="#ff4d6d" fill-opacity=".82"/>
+            <circle cx="196" cy="430" r="4.2" fill="#ff4d6d" fill-opacity=".78"/>
+            <circle cx="300" cy="470" r="3.6" fill="#ff4d6d" fill-opacity=".75"/>
+            <circle cx="246" cy="500" r="3.2" fill="#ff4d6d" fill-opacity=".7"/>
+            <circle cx="130" cy="470" r="3" fill="#ffd166" fill-opacity=".8"/>
+            <circle cx="230" cy="214" r="3" fill="#ff4d6d" fill-opacity=".7"/>
+        </svg>
+    </div>
+    <div class="container hero-content">
+        <div class="hero-text">
+            <span class="natal-eyebrow"><i class="fas fa-snowflake"></i> 01 A 31 DE DEZEMBRO &bull; EXCLUSIVO PARA LOJISTAS</span>
+            <h1 class="natal-title">SUPER<span class="natal-title-acc">NATAL</span></h1>
+            <p>Preço de Natal no atacado: condições especiais em todo o catálogo para lojistas com CNPJ ativo. Estoque limitado, ofertas válidas até 31/12.</p>
+            <div class="natal-countdown" id="natalCountdown" aria-label="Tempo restante da campanha">
+                <div class="xn-unit"><strong data-cd="days">00</strong><span>dias</span></div>
+                <div class="xn-sep">:</div>
+                <div class="xn-unit"><strong data-cd="hours">00</strong><span>horas</span></div>
+                <div class="xn-sep">:</div>
+                <div class="xn-unit"><strong data-cd="minutes">00</strong><span>min</span></div>
+                <div class="xn-sep">:</div>
+                <div class="xn-unit"><strong data-cd="seconds">00</strong><span>seg</span></div>
+            </div>
+            <div class="hero-actions">
+                <a href="#produtos" class="btn btn-natal btn-lg"><i class="fas fa-gift"></i> Ver ofertas de Natal</a>
+                <a href="https://wa.me/5512997780047" target="_blank" rel="noopener" class="btn btn-whatsapp btn-lg"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+            </div>
+            <small class="natal-foot"><i class="fas fa-circle-info"></i> Preços liberados após o login do lojista.</small>
+        </div>
+        <div class="natal-card">
+            <div class="natal-card-top"><i class="fas fa-star"></i> Como aproveitar</div>
+            <div class="hero-steps">
+                <div class="hero-step">
+                    <span class="hero-step-num">1</span>
+                    <div class="hero-step-txt">
+                        <strong>Entre com seu CNPJ</strong>
+                        <small>Clientes cadastrados já veem o preço de atacado.</small>
+                    </div>
+                </div>
+                <div class="hero-step">
+                    <span class="hero-step-num">2</span>
+                    <div class="hero-step-txt">
+                        <strong>Filtre "Super Natal"</strong>
+                        <small>Produtos com o selo dourado estão com preço especial.</small>
+                    </div>
+                </div>
+                <div class="hero-step">
+                    <span class="hero-step-num">3</span>
+                    <div class="hero-step-txt">
+                        <strong>Monte seu orçamento</strong>
+                        <small>Confirmação na hora e entrega de seg a sex.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="natal-card-foot"><i class="fas fa-clock"></i> Ofertas válidas até 31/12 ou enquanto durar o estoque.</div>
         </div>
     </div>
     <div class="scroll-hint"><i class="fas fa-chevron-down"></i></div>
@@ -428,6 +585,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-config.js?v=2"></script>
-<script src="js/script.js?v=37"></script>
+<script src="js/script.js?v=39"></script>
 </body>
 </html>

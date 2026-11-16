@@ -20,28 +20,39 @@ function getThumbUrl(url) {
     if (!url || !url.includes('.webp')) return url;
     return url.replace('.webp', '_thumb.webp');
 }
-// Desconto (%) exibido nos produtos com selo Black November.
-function descontoBlackPct(p) {
+// Desconto (%) exibido nos produtos com selo da campanha sazonal.
+function descontoCampanhaPct(p) {
     if (!p || !p.isBlack) return 0;
     const de = Number(p.preco) || 0;
     const por = Number(p.precoPromocional) || 0;
     if (!(por > 0) || !(de > 0) || por >= de) return 0;
     return Math.round((1 - por / de) * 100);
 }
-// A campanha é controlada por js/campanha.js (datas e interruptor geral).
-function campanhaBlackAtiva() {
-    try { return !!(window.blackNovemberAtiva && window.blackNovemberAtiva()); }
+// A campanha sazonal é controlada por js/campanha.js (datas e interruptor geral).
+// Pode ser Black November, Super Natal etc. — o rótulo vem da campanha em vigor.
+function campanhaSazonalAtiva() {
+    try { return !!(window.campanhaAtiva && window.campanhaAtiva()); }
     catch (e) { return false; }
 }
-function seloBlack() {
-    try {
-        return (window.CAMPANHA && window.CAMPANHA.blackNovember && window.CAMPANHA.blackNovember.selo) || 'Black November';
-    } catch (e) { return 'Black November'; }
+function seloCampanha() {
+    try { return (window.campanhaSelo && window.campanhaSelo()) || 'Oferta'; }
+    catch (e) { return 'Oferta'; }
 }
-// Preço promocional vale para "Em promoção" ou, durante a campanha, para o selo Black.
+function iconeCampanha() {
+    try { return (window.campanhaIcone && window.campanhaIcone()) || 'fa-tags'; }
+    catch (e) { return 'fa-tags'; }
+}
+// Ao trocar de campanha com a página aberta (ex.: Black → Natal),
+// refaz filtro e selos do catálogo.
+document.addEventListener('campanha:mudou', () => {
+    if (!_allProducts.length) return;
+    renderCategoryPills();
+    renderCatalog();
+});
+// Preço promocional vale para "Em promoção" ou, durante a campanha, para o selo da campanha.
 function precoPromocionalAtivo(p) {
     if (!p) return false;
-    const ativo = p.isPromocao || (p.isBlack && campanhaBlackAtiva());
+    const ativo = p.isPromocao || (p.isBlack && campanhaSazonalAtiva());
     return !!ativo && Number(p.precoPromocional) > 0;
 }
 function showToast(msg, isError) {
@@ -265,10 +276,10 @@ function getFilteredProducts() {
             return haystack.includes(t) || kw.includes(t);
         });
     }
-    // Ordem no index: 1) Black November (durante a campanha), 2) promoção,
-    // 3) destaque, 4) sem tag. Dentro do grupo a ordem é aleatória por carregamento.
-    const _blackAtivo = campanhaBlackAtiva();
-    const _rank = p => (_blackAtivo && p.isBlack) ? 0 : (p.isPromocao ? 1 : (p.isDestaque ? 2 : 3));
+    // Ordem no index: 1) ofertas da campanha (Black November / Super Natal),
+    // 2) promoção, 3) destaque, 4) sem tag. Dentro do grupo é aleatório por carregamento.
+    const _campanhaAtiva = campanhaSazonalAtiva();
+    const _rank = p => (_campanhaAtiva && p.isBlack) ? 0 : (p.isPromocao ? 1 : (p.isDestaque ? 2 : 3));
     return list.sort((a, b) => {
         const ra = _rank(a), rb = _rank(b);
         if (ra !== rb) return ra - rb;
@@ -301,9 +312,9 @@ function renderCatalog() {
         const thumb = img ? getThumbUrl(img) : '';
 
         const badges = [];
-        const isBlackNow = p.isBlack && campanhaBlackAtiva();
-        const off = isBlackNow ? descontoBlackPct(p) : 0;
-        if (isBlackNow) badges.push(`<span class="cat-badge black"><i class="fas fa-bolt"></i> ${escapeHtml(seloBlack())}</span>`);
+        const isOfertaCampanha = p.isBlack && campanhaSazonalAtiva();
+        const off = isOfertaCampanha ? descontoCampanhaPct(p) : 0;
+        if (isOfertaCampanha) badges.push(`<span class="cat-badge black"><i class="fas ${iconeCampanha()}"></i> ${escapeHtml(seloCampanha())}</span>`);
         if (off > 0) badges.push(`<span class="cat-badge desconto">-${off}%</span>`);
         if (p.isDestaque) badges.push('<span class="cat-badge destaque"><i class="fas fa-star"></i> Destaque</span>');
         if (p.isPromocao) badges.push('<span class="cat-badge promo"><i class="fas fa-fire"></i> Promoção</span>');
@@ -317,7 +328,7 @@ function renderCatalog() {
             : `<span class="price-lock">${priceLocked()}</span>`;
 
         return `
-        <div class="catalog-card ${p.isDestaque ? 'isDestaque' : ''} ${p.isPromocao ? 'isPromo' : ''} ${(p.isBlack && campanhaBlackAtiva()) ? 'isBlack' : ''}" data-pid="${escapeHtml(p.id)}">
+        <div class="catalog-card ${p.isDestaque ? 'isDestaque' : ''} ${p.isPromocao ? 'isPromo' : ''} ${(p.isBlack && campanhaSazonalAtiva()) ? 'isBlack' : ''}" data-pid="${escapeHtml(p.id)}">
             <div class="cat-thumb">
                 ${img
                     ? `<img src="${escapeHtml(thumb)}" alt="${escapeHtml(p.nome)}" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(img)}'">`
@@ -348,20 +359,20 @@ function renderCatalog() {
 function renderCategoryPills() {
     const el = document.getElementById('catalogCats');
     if (!el) return;
-    if (_currentCategory === '__black' && !campanhaBlackAtiva()) _currentCategory = 'all';
-    const blackAtivo = campanhaBlackAtiva() && _allProducts.some(p => p.isBlack);
+    if (_currentCategory === '__black' && !campanhaSazonalAtiva()) _currentCategory = 'all';
+    const campanhaAtiva = campanhaSazonalAtiva() && _allProducts.some(p => p.isBlack);
     const items = [
         { name: 'all', label: 'Todos' },
-        ...(blackAtivo ? [{
+        ...(campanhaAtiva ? [{
             name: '__black',
-            label: (window.CAMPANHA && window.CAMPANHA.blackNovember && window.CAMPANHA.blackNovember.filtro) || 'Black November',
+            label: (window.campanhaFiltro && window.campanhaFiltro()) || 'Ofertas',
             black: true
         }] : []),
         ..._categories.map(c => ({ name: c.nome, label: c.nome }))
     ];
     el.innerHTML = items.map(c => `
         <button class="cat-pill ${c.black ? 'black-pill' : ''} ${c.name === _currentCategory ? 'active' : ''}" data-cat="${escapeHtml(c.name)}">
-            ${c.black ? '<i class="fas fa-bolt" style="margin-right:5px"></i>' : ''}${escapeHtml(c.label)}
+            ${c.black ? `<i class="fas ${iconeCampanha()}" style="margin-right:5px"></i>` : ''}${escapeHtml(c.label)}
         </button>
     `).join('');
 }
@@ -537,9 +548,9 @@ function openProductModal(productId) {
     const thumb = img ? getThumbUrl(img) : '';
 
     const badges = [];
-    const blackAtivo = product.isBlack && campanhaBlackAtiva();
-    const off = blackAtivo ? descontoBlackPct(product) : 0;
-    if (blackAtivo) badges.push(`<span class="cat-badge black"><i class="fas fa-bolt"></i> ${escapeHtml(seloBlack())}</span>`);
+    const ofertaCampanha = product.isBlack && campanhaSazonalAtiva();
+    const off = ofertaCampanha ? descontoCampanhaPct(product) : 0;
+    if (ofertaCampanha) badges.push(`<span class="cat-badge black"><i class="fas ${iconeCampanha()}"></i> ${escapeHtml(seloCampanha())}</span>`);
     if (off > 0) badges.push(`<span class="cat-badge desconto">-${off}%</span>`);
     if (product.isDestaque) badges.push('<span class="cat-badge destaque"><i class="fas fa-star"></i> Destaque</span>');
     if (product.isPromocao) badges.push('<span class="cat-badge promo"><i class="fas fa-fire"></i> Promoção</span>');

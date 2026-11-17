@@ -168,7 +168,6 @@ function buildQuoteChart(period) {
     const periodQ = getSalesInPeriod(period);
 
 const labels = [];
-    const dataAcum = [];
     const dataAcumSt = [];
     const dataMeta = [];
     const buckets = [];
@@ -220,15 +219,12 @@ const labels = [];
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const dayMs = 86400000;
 
-    let sum = 0, sumSt = 0, metaAcum = 0, di = 0;
+    let sumSt = 0, metaAcum = 0, di = 0;
     buckets.forEach(bkt => {
         labels.push(bkt.label);
         const noBucket = q => { const d = saleDate(q); return d >= bkt.start && d < bkt.end; };
-        const val = periodQ.reduce((s, q) => s + (noBucket(q) ? (Number(q.total) || 0) : 0), 0);
         const valSt = periodQ.reduce((s, q) => s + (noBucket(q) ? quoteTotalWithSt(q) : 0), 0);
-        sum += val;
         sumSt += valSt;
-        dataAcum.push(sum);
         dataAcumSt.push(sumSt);
         if (period === 'today') {
             const dm = metaDoDiaEm(dayStart);
@@ -255,9 +251,9 @@ const labels = [];
         data: { 
             labels, 
             datasets: [
-                { 
-                    label: 'Vendas acumuladas (R$)', 
-                    data: dataAcum, 
+                {
+                    label: 'Vendas acumuladas c/ ST (R$)',
+                    data: dataAcumSt,
                     fill: true,
                     tension: 0.45,
                     borderColor: '#00ffa3',
@@ -273,22 +269,6 @@ const labels = [];
                     pointHoverBorderWidth: 2,
                     hoverBorderColor: '#4f6bff',
                     hoverBorderWidth: 3
-                },
-                {
-                    label: 'Vendas acumuladas c/ ST (R$)',
-                    data: dataAcumSt,
-                    fill: false,
-                    tension: 0.45,
-                    borderColor: '#a855f7',
-                    backgroundColor: 'rgba(168,85,247,0.08)',
-                    borderWidth: 2.5,
-                    pointRadius: 2,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#a855f7',
-                    pointBorderWidth: 2,
-                    pointHoverBackgroundColor: '#a855f7',
-                    pointHoverBorderColor: '#fff'
                 },
                 { 
                     label: 'Meta diária acumulada (R$)', 
@@ -799,11 +779,6 @@ async function renderOverview() {
     document.getElementById('metricSold').textContent = formatPrice(totalSold);
     const soldLabel = document.getElementById('metricSoldLabel');
     if (soldLabel) soldLabel.textContent = comStLinha ? 'Total vendido c/ ST' : 'Total vendido';
-    const soldBase = document.getElementById('metricSoldBase');
-    if (soldBase) {
-        soldBase.textContent = comStLinha ? 'sem ST: ' + formatPrice(totalSold - totalSt) : '';
-        soldBase.style.display = comStLinha ? '' : 'none';
-    }
     const soldClients = new Set(salesQ.map(q => q.email || q.nome_cliente));
     document.getElementById('metricClients').textContent = soldClients.size;
     const soldItems = salesQ.reduce((s, q) => s + (Array.isArray(q.itens) ? q.itens.reduce((a, i) => a + (Number(i.quantidade) || 0), 0) : 0), 0);
@@ -884,10 +859,7 @@ function quoteCardHtml(q) {
                 </div>
                 <div class="quote-card-footer">
                     <span class="quote-status-before-total status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span>
-                    <div class="quote-card-amounts">
-                        <div class="quote-card-total">${formatPrice(q.total)}</div>
-                        ${comSt ? `<div class="quote-card-st">c/ ST ${formatPrice(quoteTotalWithSt(q))}</div>` : ''}
-                    </div>
+                    <div class="quote-card-total">${formatPrice(comSt ? quoteTotalWithSt(q) : q.total)}</div>
                 </div>
                 <div class="quote-card-actions">
                     <button class="icon-btn" onclick="openQuoteDetail('${q.id}')" title="Detalhes"><i class="fas fa-eye"></i></button>
@@ -922,9 +894,7 @@ function openQuoteDetail(id) {
         ${itemsHtml}
         ${q.pagamento ? `<div class="qd-row"><span>Prazo</span><span>${escapeHtml(q.pagamento)}</span></div>` : ''}
         ${q.obs ? `<div class="qd-row" style="align-items:flex-start"><span>Observações</span><span style="text-align:right;color:#1f9d55;font-weight:600;white-space:pre-wrap">${escapeHtml(q.obs)}</span></div>` : ''}
-        <div class="qd-row"><span>Total</span><span style="font-weight:700;color:var(--accent)">${formatPrice(q.total)}</span></div>
-        ${comSt ? `<div class="qd-row"><span>ICMS-ST</span><span>${formatPrice(st)}</span></div>
-        <div class="qd-row"><span>Total com ICMS-ST</span><span style="font-weight:700;color:var(--accent)">${formatPrice(quoteTotalWithSt(q))}</span></div>` : ''}
+        <div class="qd-row"><span>${comSt ? 'Total com ICMS-ST' : 'Total'}</span><span style="font-weight:700;color:var(--accent)">${formatPrice(comSt ? quoteTotalWithSt(q) : q.total)}</span></div>
         <div class="qd-actions">
             <button class="btn btn-whatsapp-outline" onclick="downloadQuotePDF('${q.id}')"><i class="fas fa-file-pdf"></i> Ver PDF</button>
             <button class="btn btn-whatsapp-outline" onclick="downloadQuotePDF('${q.id}', 'share')"><i class="fas fa-share-nodes"></i> Compartilhar PDF</button>
@@ -950,7 +920,7 @@ async function advanceQuote(id) { const q = quotes.find(x => String(x.id) === St
 
 async function deleteQuote(id) { if (!confirm('Excluir este orçamento?')) return; const qq = quotes.find(x => String(x.id) === String(id)); try { await adminCall('admin_excluir_orcamento', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } quotes = quotes.filter(x => String(x.id) !== String(id)); trackAction('Orçamento excluído: ' + (qq ? (qq.codigo_cliente || qq.nome_cliente || qq.id) : id)); updatePendingBadge(); renderQuotes(); loadProducts().then(() => { try { renderProducts(); } catch (e) {} }).catch(() => {}); toast('Orçamento excluído'); }
 
-function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA*', '']; const quoteName = getQuoteClientName(q); if (q.codigo_cliente) lines.push('Cliente: ' + quoteName + ' (#' + q.codigo_cliente + ')'); else lines.push('Cliente: ' + quoteName); if (q.codigo_retirada) lines.push('Cód. Retirada: ' + q.codigo_retirada); lines.push('Data: ' + formatDate(q.created_at)); lines.push(''); if (Array.isArray(q.itens) && q.itens.length) { q.itens.forEach(it => { lines.push('• ' + it.nome + ' (' + (it.codigo||'') + ')'); lines.push('  ' + it.quantidade + 'x ' + formatPrice(it.preco) + ' = ' + formatPrice(it.subtotal || (it.preco * it.quantidade))); }); } else { lines.push(String(q.itens || '')); } lines.push(''); lines.push('Total: ' + formatPrice(q.total)); const st = quoteIcmsSt(q); const comSt = String(q.linha || '').toLowerCase() === 'dymar' || st > 0; if (comSt) lines.push('Total com ICMS-ST: ' + formatPrice(quoteTotalWithSt(q))); if (q.pagamento) lines.push('Prazo de pagamento: ' + q.pagamento); if (q.obs) { lines.push(''); lines.push('Observações: ' + q.obs); } lines.push(''); lines.push('WhatsApp: (12) 99778-0047'); return lines.join('\n'); }
+function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA*', '']; const quoteName = getQuoteClientName(q); if (q.codigo_cliente) lines.push('Cliente: ' + quoteName + ' (#' + q.codigo_cliente + ')'); else lines.push('Cliente: ' + quoteName); if (q.codigo_retirada) lines.push('Cód. Retirada: ' + q.codigo_retirada); lines.push('Data: ' + formatDate(q.created_at)); lines.push(''); if (Array.isArray(q.itens) && q.itens.length) { q.itens.forEach(it => { lines.push('• ' + it.nome + ' (' + (it.codigo||'') + ')'); lines.push('  ' + it.quantidade + 'x ' + formatPrice(it.preco) + ' = ' + formatPrice(it.subtotal || (it.preco * it.quantidade))); }); } else { lines.push(String(q.itens || '')); } lines.push(''); const st = quoteIcmsSt(q); const comSt = String(q.linha || '').toLowerCase() === 'dymar' || st > 0; lines.push((comSt ? 'Total com ICMS-ST: ' : 'Total: ') + formatPrice(comSt ? quoteTotalWithSt(q) : q.total)); if (q.pagamento) lines.push('Prazo de pagamento: ' + q.pagamento); if (q.obs) { lines.push(''); lines.push('Observações: ' + q.obs); } lines.push(''); lines.push('WhatsApp: (12) 99778-0047'); return lines.join('\n'); }
 
 function buildPaymentLines(pagamento, baseDate, total) { if (!pagamento) return []; const p = String(pagamento).trim(); const pLower = p.toLowerCase(); const nums = p.match(/\d+/g) || []; if (/^(?:à|a)\s*vista$/.test(pLower)) { const baseV = baseDate ? new Date(baseDate) : new Date(); const valorV = Number(total) > 0 ? formatPrice(Number(total)) : ''; return ['Vencimento imediato — ' + baseV.toLocaleDateString('pt-BR') + (valorV ? ' — ' + valorV : '')]; } let prazos = []; if (/^\d+x$/i.test(p)) { const n = parseInt(nums[0]); if (n > 1) for (let i = 1; i <= n; i++) prazos.push(30 * i); } else if (/boleto/.test(pLower)) { prazos.push(nums.length ? parseInt(nums[0]) : 30); } else if (nums.length) { prazos = nums.map(n => parseInt(n)).filter(n => n > 0); } if (!prazos.length) return []; const base = baseDate ? new Date(baseDate) : new Date(); const qtd = prazos.length; const valorParcela = Number(total) > 0 ? Number(total) / qtd : 0; return prazos.map((dias, i) => { const dt = new Date(base.getTime() + dias * 86400000); const dia = dt.toLocaleDateString('pt-BR'); const parcelaText = prazos.length === 1 ? 'Vencimento em ' + dia + ' (' + dias + ' dias)' : (i + 1) + 'ª parcela' + (dias ? ' (' + dias + ' dias)' : '') + ' — ' + dia; return valorParcela > 0 ? parcelaText + ' — ' + formatPrice(valorParcela) : parcelaText; }); }
 
@@ -1030,12 +1000,12 @@ async function downloadQuotePDF(id, mode) { const q = quotes.find(x => String(x.
     const trows = descTotal > 0 ? [
         { label: 'SUBTOTAL (preço de tabela)', val: formatPrice(brutoTotal), bold: false, size: 10, color: light, fill: false },
         { label: 'DESCONTO', val: '- ' + formatPrice(descTotal), bold: false, size: 10, color: light, fill: false },
-        { label: 'TOTAL', val: formatPrice(totalTabela), bold: true, size: 12, color: brand, fill: icmsTotal <= 0 },
-        ...(icmsTotal > 0 && isDymarPdf ? [
+        { label: 'TOTAL', val: formatPrice(totalTabela), bold: true, size: 12, color: brand, fill: !isDymarPdf },
+        ...(isDymarPdf ? [
             { label: 'ICMS-ST (percentuais dos itens Dymar)', val: formatPrice(icmsTotal), bold: false, size: 10, color: light, fill: false },
             { label: 'TOTAL COM ICMS-ST', val: formatPrice(totalTabela + icmsTotal), bold: true, size: 12, color: brand, fill: true }
         ] : [])
-    ] : (icmsTotal > 0 && isDymarPdf ? [
+    ] : (isDymarPdf ? [
         { label: 'TOTAL (preço de tabela)', val: formatPrice(totalTabela), bold: true, size: 10, color: brand, fill: false },
         { label: 'ICMS-ST (percentuais dos itens Dymar)', val: formatPrice(icmsTotal), bold: false, size: 10, color: light, fill: false },
         { label: 'TOTAL COM ICMS-ST', val: formatPrice(totalTabela + icmsTotal), bold: true, size: 12, color: brand, fill: true }
@@ -1053,7 +1023,7 @@ async function downloadQuotePDF(id, mode) { const q = quotes.find(x => String(x.
         doc.text(r.val, subX - 4, y + i * tRowH + 6.2, { align: 'right' });
     });
     y += tBoxH + 6;
-    if (q.pagamento) { const totalPagamento = Number(q.total) + ((isDymarPdf && icmsTotal > 0) ? icmsTotal : 0); const payLines = buildPaymentLines(q.pagamento, q.created_at, totalPagamento); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
+    if (q.pagamento) { const totalPagamento = Number(q.total) + ((isDymarPdf) ? icmsTotal : 0); const payLines = buildPaymentLines(q.pagamento, q.created_at, totalPagamento); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
     if (q.obs) { if (y > 255) { doc.addPage(); y = margin; } y += 3; doc.setFontSize(10); doc.setTextColor(31, 157, 85); doc.setFont('helvetica', 'bold'); doc.text('Prêmio / Observações:', margin, y); y += 6; doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); const obsLines = doc.splitTextToSize(String(q.obs), width); obsLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.text(l, margin, y); y += 5.5; }); }
     for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
     const clientName = getQuoteClientName(q) || 'Cliente';

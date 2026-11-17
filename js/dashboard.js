@@ -50,7 +50,7 @@ const legendTopSpacer = {
         const originalFit = chart.legend.fit;
         chart.legend.fit = function fit() {
             originalFit.bind(chart.legend)();
-            this.height += 20;
+            this.height += 30;
         };
     }
 };
@@ -68,6 +68,42 @@ function formatDate(ts) { if (!ts) return ''; const d = new Date(ts); return d.t
 // Data de referencia da VENDA = quando o status virou 'concluido' (concluido_em).
 // Quando nao ha conclusao (ex.: status antigo sem carimbo), usa a criacao.
 function saleDate(q) { if (q && q.concluido_em) { const d = new Date(q.concluido_em); if (!isNaN(d.getTime())) return d; } return new Date(q.created_at); }
+
+// ---------- ICMS-ST ----------
+// Regra do PDF: a aliquota do catalogo tem precedencia sobre o snapshot do item.
+// So produtos Dymar tem icmsst > 0, mas o calculo vale para qualquer item com ST.
+let _productsByCodeCacheSource = null;
+let _productsByCodeCache = null;
+function productByCode(codigo) {
+    if (!codigo) return null;
+    if (_productsByCodeCacheSource !== products || !_productsByCodeCache) {
+        const map = {};
+        products.forEach(p => { if (p.codigo) map[String(p.codigo).trim().toLowerCase()] = p; });
+        _productsByCodeCache = map;
+        _productsByCodeCacheSource = products;
+    }
+    return _productsByCodeCache[String(codigo).trim().toLowerCase()] || null;
+}
+function itemIcmsRate(it) {
+    if (!it) return 0;
+    const prod = productByCode(it.codigo);
+    const prodRate = prod ? (Number(prod.icmsst) || 0) : 0;
+    const snapRate = Number(it.icmsst) || 0;
+    return prodRate > 0 ? prodRate : snapRate;
+}
+function itemSubtotalForSt(it) {
+    if (!it) return 0;
+    if (it.subtotal != null && it.subtotal !== '') return Number(it.subtotal) || 0;
+    return (Number(it.preco) || 0) * (Number(it.quantidade) || 0);
+}
+function quoteIcmsSt(q) {
+    if (!q || !Array.isArray(q.itens)) return 0;
+    return q.itens.reduce((s, it) => {
+        const rate = itemIcmsRate(it);
+        return rate > 0 ? s + itemSubtotalForSt(it) * rate / 100 : s;
+    }, 0);
+}
+function quoteTotalWithSt(q) { return (Number(q && q.total) || 0) + quoteIcmsSt(q); }
 function toast(msg, isError) { const t = document.getElementById('toast'); if (!t) return; t.className = 'toast show' + (isError ? ' error' : ''); t.innerHTML = (isError ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>') + '<span>' + escapeHtml(msg) + '</span>'; clearTimeout(t._timer); t._timer = setTimeout(() => { t.className = 'toast'; }, 2600); }
 
 // ---------- Navigation ----------
@@ -133,6 +169,7 @@ function buildQuoteChart(period) {
 
 const labels = [];
     const dataAcum = [];
+    const dataAcumSt = [];
     const dataMeta = [];
     const buckets = [];
     if (period === 'today') {
@@ -183,12 +220,16 @@ const labels = [];
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const dayMs = 86400000;
 
-    let sum = 0, metaAcum = 0, di = 0;
+    let sum = 0, sumSt = 0, metaAcum = 0, di = 0;
     buckets.forEach(bkt => {
         labels.push(bkt.label);
-        const val = periodQ.reduce((s, q) => { const d = saleDate(q); return (d >= bkt.start && d < bkt.end) ? s + (Number(q.total) || 0) : s; }, 0);
+        const noBucket = q => { const d = saleDate(q); return d >= bkt.start && d < bkt.end; };
+        const val = periodQ.reduce((s, q) => s + (noBucket(q) ? (Number(q.total) || 0) : 0), 0);
+        const valSt = periodQ.reduce((s, q) => s + (noBucket(q) ? quoteTotalWithSt(q) : 0), 0);
         sum += val;
+        sumSt += valSt;
         dataAcum.push(sum);
+        dataAcumSt.push(sumSt);
         if (period === 'today') {
             const dm = metaDoDiaEm(dayStart);
             dataMeta.push(dm * Math.min(1, Math.max(0, (bkt.end.getTime() - dayStart.getTime()) / dayMs)));
@@ -232,6 +273,22 @@ const labels = [];
                     pointHoverBorderWidth: 2,
                     hoverBorderColor: '#4f6bff',
                     hoverBorderWidth: 3
+                },
+                {
+                    label: 'Vendas acumuladas c/ ST (R$)',
+                    data: dataAcumSt,
+                    fill: false,
+                    tension: 0.45,
+                    borderColor: '#a855f7',
+                    backgroundColor: 'rgba(168,85,247,0.08)',
+                    borderWidth: 2.5,
+                    pointRadius: 2,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#a855f7',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: '#a855f7',
+                    pointHoverBorderColor: '#fff'
                 },
                 { 
                     label: 'Meta diária acumulada (R$)', 
@@ -434,21 +491,25 @@ function buildPaymentChart() {
     const el = document.getElementById('chartPayments');
     const empty = document.getElementById('chartPaymentsEmpty');
     const map = {};
+    const stMap = {};
     getSalesInPeriod(currentChartPeriod).forEach(q => {
         (Array.isArray(q.itens) ? q.itens : []).forEach(i => {
             let cat = i.categoria;
             if (!cat) {
-                const prod = products.find(p => (p.codigo && p.codigo === i.codigo) || (p.nome && p.nome === i.nome));
+                const prod = productByCode(i.codigo) || products.find(p => (p.nome && p.nome === i.nome));
                 cat = prod?.categoria || 'Sem categoria';
             }
-            const sub = (i.subtotal != null && i.subtotal !== '') ? Number(i.subtotal) : (Number(i.preco) || 0) * (Number(i.quantidade) || 0);
-            map[cat] = (map[cat] || 0) + (sub || 0);
+            const sub = itemSubtotalForSt(i);
+            const st = sub * itemIcmsRate(i) / 100;
+            map[cat] = (map[cat] || 0) + (sub || 0) + st;
+            stMap[cat] = (stMap[cat] || 0) + st;
         });
     });
-    // Maior faturamento primeiro (R$ decrescente).
+    // Maior faturamento primeiro (R$ decrescente, já com ST).
     const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
     const labels = sorted.map(([cat]) => cat);
     const data = sorted.map(([, value]) => value);
+    const stData = sorted.map(([cat]) => stMap[cat] || 0);
     if (empty) empty.style.display = labels.length ? 'none' : '';
     if (chartPaymentsInstance) { chartPaymentsInstance.destroy(); chartPaymentsInstance = null; }
     if (!el || !labels.length) return;
@@ -494,7 +555,7 @@ function buildPaymentChart() {
         data: {
             labels: labels.map(cat => rotuloCurto(cat, 16)),
             datasets: [{
-                label: 'Faturamento (R$)',
+                label: 'Faturamento c/ ST (R$)',
                 data,
                 backgroundColor: colors.slice(0, labels.length),
                 hoverBackgroundColor: colors.slice(0, labels.length),
@@ -525,7 +586,12 @@ function buildPaymentChart() {
                     borderWidth: 1.5,
                     callbacks: {
                         title: (itens) => labels[itens[0].dataIndex] || 'Categoria',
-                        label: (ctx) => ` Faturamento: ${formatPrice(ctx.parsed.y)}`
+                        label: (ctx) => {
+                            const st = stData[ctx.dataIndex] || 0;
+                            const linhas = [` Faturamento c/ ST: ${formatPrice(ctx.parsed.y)}`];
+                            if (st > 0) linhas.push(` ICMS-ST incluído: ${formatPrice(st)}`);
+                            return linhas;
+                        }
                     }
                 }
             },
@@ -591,7 +657,7 @@ function renderTopClients() {
         const displayName = client?.razao_social || q.nome_cliente || q.email || 'Desconhecido';
         const key = displayName.toLowerCase();
         if (!map[key]) map[key] = { nome: displayName, total: 0, pedidos: 0 };
-        map[key].total += Number(q.total) || 0;
+        map[key].total += quoteTotalWithSt(q);
         map[key].pedidos += 1;
     });
     const top = Object.values(map).sort((a, b) => b.total - a.total).slice(0, 10);
@@ -712,8 +778,9 @@ function updateChartTitles() {
     const g = GROUP_LABELS[currentChartGroup] || 'Java';
     const qTitle = document.getElementById('chartQuotesTitle');
     const pTitle = document.getElementById('chartPaymentsTitle');
-    if (qTitle) qTitle.innerHTML = '<i class="fas fa-chart-line"></i> Total em Vendas (R$) — ' + g;
-    if (pTitle) pTitle.innerHTML = '<i class="fas fa-chart-pie"></i> Vendas por categoria (' + g + ')';
+    const stTag = currentChartGroup === 'dymar' ? ' • c/ ST' : '';
+    if (qTitle) qTitle.innerHTML = '<i class="fas fa-chart-line"></i> Total em Vendas (R$) — ' + g + stTag;
+    if (pTitle) pTitle.innerHTML = '<i class="fas fa-chart-column"></i> Vendas por categoria — ' + g + stTag;
 }
 
 async function renderOverview() {
@@ -726,8 +793,17 @@ async function renderOverview() {
     } catch (e) { acessos = 0; }
     document.getElementById('metricVisits').textContent = acessos;
     document.getElementById('metricSales').textContent = salesQ.length;
-    const totalSold = salesQ.reduce((s, q) => s + (Number(q.total) || 0), 0);
+    const totalSt = salesQ.reduce((s, q) => s + quoteIcmsSt(q), 0);
+    const totalSold = salesQ.reduce((s, q) => s + quoteTotalWithSt(q), 0);
+    const comStLinha = currentChartGroup === 'dymar' || totalSt > 0;
     document.getElementById('metricSold').textContent = formatPrice(totalSold);
+    const soldLabel = document.getElementById('metricSoldLabel');
+    if (soldLabel) soldLabel.textContent = comStLinha ? 'Total vendido c/ ST' : 'Total vendido';
+    const soldBase = document.getElementById('metricSoldBase');
+    if (soldBase) {
+        soldBase.textContent = comStLinha ? 'sem ST: ' + formatPrice(totalSold - totalSt) : '';
+        soldBase.style.display = comStLinha ? '' : 'none';
+    }
     const soldClients = new Set(salesQ.map(q => q.email || q.nome_cliente));
     document.getElementById('metricClients').textContent = soldClients.size;
     const soldItems = salesQ.reduce((s, q) => s + (Array.isArray(q.itens) ? q.itens.reduce((a, i) => a + (Number(i.quantidade) || 0), 0) : 0), 0);
@@ -791,6 +867,8 @@ function groupsHtml(list) {
 }
 
 function quoteCardHtml(q) {
+    const st = quoteIcmsSt(q);
+    const comSt = String(q.linha || '').toLowerCase() === 'dymar' || st > 0;
     const isSite = (q.origem === 'site') || (q.origem == null && !(q.codigo_cliente && /^C-\d{4,}$/.test(String(q.codigo_cliente))) && (q.status_entrega != null && String(q.status_entrega).trim() !== ''));
     return `
         <div class="quote-card">
@@ -806,7 +884,10 @@ function quoteCardHtml(q) {
                 </div>
                 <div class="quote-card-footer">
                     <span class="quote-status-before-total status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span>
-                    <div class="quote-card-total">${formatPrice(q.total)}</div>
+                    <div class="quote-card-amounts">
+                        <div class="quote-card-total">${formatPrice(q.total)}</div>
+                        ${comSt ? `<div class="quote-card-st">c/ ST ${formatPrice(quoteTotalWithSt(q))}</div>` : ''}
+                    </div>
                 </div>
                 <div class="quote-card-actions">
                     <button class="icon-btn" onclick="openQuoteDetail('${q.id}')" title="Detalhes"><i class="fas fa-eye"></i></button>
@@ -826,6 +907,8 @@ function openQuoteDetail(id) {
     const q = quotes.find(x => String(x.id) === String(id));
     if (!q) return;
     const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null;
+    const st = quoteIcmsSt(q);
+    const comSt = String(q.linha || '').toLowerCase() === 'dymar' || st > 0;
     let itemsHtml = '';
     if (items) { itemsHtml = '<div class="qd-items">' + items.map(it => `<div class="qd-item"><span>${escapeHtml(it.nome || '')} ${it.codigo ? '(' + escapeHtml(it.codigo) + ')' : ''} <small>${it.quantidade}x</small></span><span>${formatPrice(it.subtotal || (it.preco * it.quantidade))}</span></div>`).join('') + '</div>'; }
     else if (q.itens && typeof q.itens === 'string') { itemsHtml = '<p style="color:var(--text-secondary);font-size:0.85rem;white-space:pre-wrap">' + escapeHtml(q.itens) + '</p>'; }
@@ -840,6 +923,8 @@ function openQuoteDetail(id) {
         ${q.pagamento ? `<div class="qd-row"><span>Prazo</span><span>${escapeHtml(q.pagamento)}</span></div>` : ''}
         ${q.obs ? `<div class="qd-row" style="align-items:flex-start"><span>Observações</span><span style="text-align:right;color:#1f9d55;font-weight:600;white-space:pre-wrap">${escapeHtml(q.obs)}</span></div>` : ''}
         <div class="qd-row"><span>Total</span><span style="font-weight:700;color:var(--accent)">${formatPrice(q.total)}</span></div>
+        ${comSt ? `<div class="qd-row"><span>ICMS-ST</span><span>${formatPrice(st)}</span></div>
+        <div class="qd-row"><span>Total com ICMS-ST</span><span style="font-weight:700;color:var(--accent)">${formatPrice(quoteTotalWithSt(q))}</span></div>` : ''}
         <div class="qd-actions">
             <button class="btn btn-whatsapp-outline" onclick="downloadQuotePDF('${q.id}')"><i class="fas fa-file-pdf"></i> Ver PDF</button>
             <button class="btn btn-whatsapp-outline" onclick="downloadQuotePDF('${q.id}', 'share')"><i class="fas fa-share-nodes"></i> Compartilhar PDF</button>
@@ -865,7 +950,7 @@ async function advanceQuote(id) { const q = quotes.find(x => String(x.id) === St
 
 async function deleteQuote(id) { if (!confirm('Excluir este orçamento?')) return; const qq = quotes.find(x => String(x.id) === String(id)); try { await adminCall('admin_excluir_orcamento', { _id: id }); } catch (e) { toast('Erro: ' + e.message, true); return; } quotes = quotes.filter(x => String(x.id) !== String(id)); trackAction('Orçamento excluído: ' + (qq ? (qq.codigo_cliente || qq.nome_cliente || qq.id) : id)); updatePendingBadge(); renderQuotes(); loadProducts().then(() => { try { renderProducts(); } catch (e) {} }).catch(() => {}); toast('Orçamento excluído'); }
 
-function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA*', '']; const quoteName = getQuoteClientName(q); if (q.codigo_cliente) lines.push('Cliente: ' + quoteName + ' (#' + q.codigo_cliente + ')'); else lines.push('Cliente: ' + quoteName); if (q.codigo_retirada) lines.push('Cód. Retirada: ' + q.codigo_retirada); lines.push('Data: ' + formatDate(q.created_at)); lines.push(''); if (Array.isArray(q.itens) && q.itens.length) { q.itens.forEach(it => { lines.push('• ' + it.nome + ' (' + (it.codigo||'') + ')'); lines.push('  ' + it.quantidade + 'x ' + formatPrice(it.preco) + ' = ' + formatPrice(it.subtotal || (it.preco * it.quantidade))); }); } else { lines.push(String(q.itens || '')); } lines.push(''); lines.push('Total: ' + formatPrice(q.total)); if (q.pagamento) lines.push('Prazo de pagamento: ' + q.pagamento); if (q.obs) { lines.push(''); lines.push('Observações: ' + q.obs); } lines.push(''); lines.push('WhatsApp: (12) 99778-0047'); return lines.join('\n'); }
+function buildQuoteMessage(q) { const lines = ['*ORÇAMENTO - JAVA DISTRIBUIDORA*', '']; const quoteName = getQuoteClientName(q); if (q.codigo_cliente) lines.push('Cliente: ' + quoteName + ' (#' + q.codigo_cliente + ')'); else lines.push('Cliente: ' + quoteName); if (q.codigo_retirada) lines.push('Cód. Retirada: ' + q.codigo_retirada); lines.push('Data: ' + formatDate(q.created_at)); lines.push(''); if (Array.isArray(q.itens) && q.itens.length) { q.itens.forEach(it => { lines.push('• ' + it.nome + ' (' + (it.codigo||'') + ')'); lines.push('  ' + it.quantidade + 'x ' + formatPrice(it.preco) + ' = ' + formatPrice(it.subtotal || (it.preco * it.quantidade))); }); } else { lines.push(String(q.itens || '')); } lines.push(''); lines.push('Total: ' + formatPrice(q.total)); const st = quoteIcmsSt(q); const comSt = String(q.linha || '').toLowerCase() === 'dymar' || st > 0; if (comSt) lines.push('Total com ICMS-ST: ' + formatPrice(quoteTotalWithSt(q))); if (q.pagamento) lines.push('Prazo de pagamento: ' + q.pagamento); if (q.obs) { lines.push(''); lines.push('Observações: ' + q.obs); } lines.push(''); lines.push('WhatsApp: (12) 99778-0047'); return lines.join('\n'); }
 
 function buildPaymentLines(pagamento, baseDate, total) { if (!pagamento) return []; const p = String(pagamento).trim(); const pLower = p.toLowerCase(); const nums = p.match(/\d+/g) || []; if (/^(?:à|a)\s*vista$/.test(pLower)) { const baseV = baseDate ? new Date(baseDate) : new Date(); const valorV = Number(total) > 0 ? formatPrice(Number(total)) : ''; return ['Vencimento imediato — ' + baseV.toLocaleDateString('pt-BR') + (valorV ? ' — ' + valorV : '')]; } let prazos = []; if (/^\d+x$/i.test(p)) { const n = parseInt(nums[0]); if (n > 1) for (let i = 1; i <= n; i++) prazos.push(30 * i); } else if (/boleto/.test(pLower)) { prazos.push(nums.length ? parseInt(nums[0]) : 30); } else if (nums.length) { prazos = nums.map(n => parseInt(n)).filter(n => n > 0); } if (!prazos.length) return []; const base = baseDate ? new Date(baseDate) : new Date(); const qtd = prazos.length; const valorParcela = Number(total) > 0 ? Number(total) / qtd : 0; return prazos.map((dias, i) => { const dt = new Date(base.getTime() + dias * 86400000); const dia = dt.toLocaleDateString('pt-BR'); const parcelaText = prazos.length === 1 ? 'Vencimento em ' + dia + ' (' + dias + ' dias)' : (i + 1) + 'ª parcela' + (dias ? ' (' + dias + ' dias)' : '') + ' — ' + dia; return valorParcela > 0 ? parcelaText + ' — ' + formatPrice(valorParcela) : parcelaText; }); }
 

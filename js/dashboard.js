@@ -55,19 +55,6 @@ const legendTopSpacer = {
     }
 };
 
-// Espaco lateral entre a legenda (direita) e a area do grafico.
-const legendRightSpacer = {
-    id: 'legendRightSpacer',
-    beforeInit(chart) {
-        if (!chart.legend) return;
-        const originalFit = chart.legend.fit;
-        chart.legend.fit = function fit() {
-            originalFit.bind(chart.legend)();
-            this.width += 24;
-        };
-    }
-};
-
 // ---------- Helpers ----------
 function formatPrice(v) { return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function parsePrice(str) { if (str == null || str === '') return 0; let s = String(str).replace(/\./g, '').replace(/,/g, '.').replace(/[^\d.]/g, ''); const n = parseFloat(s); return isNaN(n) ? 0 : n; }
@@ -469,69 +456,61 @@ function buildPaymentChart() {
     const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#10b981', '#f97316', '#ec4899', '#64748b'];
     const chartFont = "'Manrope', 'Inter', sans-serif";
 
+    // Nomes longos (ex.: "Discos & Serras") encurtam só no eixo; o tooltip mostra o nome completo.
+    const rotuloCurto = (texto, max) => {
+        const txt = String(texto || 'Sem categoria');
+        return txt.length > max ? txt.slice(0, max - 1).trimEnd() + '…' : txt;
+    };
+    const valorCompacto = (v) => {
+        const n = Number(v) || 0;
+        if (Math.abs(n) >= 1000000) return 'R$ ' + (n / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi';
+        if (Math.abs(n) >= 1000) return 'R$ ' + (n / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mil';
+        return formatPrice(n);
+    };
+
+    // Com poucas categorias há espaço para mostrar o valor em cima de cada coluna.
+    const valoresSobreColunas = {
+        id: 'valoresSobreColunas',
+        afterDatasetsDraw(chart) {
+            if (chart.data.labels.length > 8) return;
+            const ctx = chart.ctx;
+            const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data) return;
+            ctx.save();
+            ctx.font = `700 11px ${chartFont}`;
+            ctx.fillStyle = '#5b4a6b';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            meta.data.forEach((bar, i) => {
+                ctx.fillText(valorCompacto(data[i]), bar.x, bar.y - 7);
+            });
+            ctx.restore();
+        }
+    };
+
     chartPaymentsInstance = new Chart(el, {
-        type: 'doughnut',
-        plugins: [legendRightSpacer],
-        data: { 
-            labels, 
-            datasets: [{ 
-                data, 
+        type: 'bar',
+        plugins: [valoresSobreColunas],
+        data: {
+            labels: labels.map(cat => rotuloCurto(cat, 16)),
+            datasets: [{
+                label: 'Faturamento (R$)',
+                data,
                 backgroundColor: colors.slice(0, labels.length),
-                borderWidth: 3,
-                borderColor: '#fff',
-                hoverOffset: 12,
-                hoverBorderColor: '#fff',
-                hoverBorderWidth: 3
-            }] 
+                hoverBackgroundColor: colors.slice(0, labels.length),
+                borderRadius: 7,
+                borderSkipped: false,
+                maxBarThickness: 48
+            }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             devicePixelRatio: 2,
-            cutout: '70%',
-            animation: { 
-                animateRotate: true, 
-                animateScale: true,
-                duration: 1000,
-                easing: 'easeOutQuart'
-            },
-            layout: { padding: 20 },
+            animation: { duration: 900, easing: 'easeOutQuart' },
+            layout: { padding: { top: 20, right: 10, bottom: 2, left: 2 } },
             plugins: {
-                legend: {
-                    position: 'right',
-                    align: 'center',
-                    maxWidth: 240,
-                    labels: {
-                        font: { family: chartFont, size: 14, weight: '600' },
-                        color: '#1a1028',
-                        padding: 22,
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        boxWidth: 14,
-                        boxHeight: 14,
-                        generateLabels: (chart) => {
-                            const data = chart.data;
-                            if (data.labels.length && data.datasets.length) {
-                                return data.labels.map((label, i) => {
-                                    const raw = String(label || '');
-                                    const shortLabel = raw.length > 30 ? raw.slice(0, 29) + '…' : raw;
-                                    const value = data.datasets[0].data[i];
-                                    return {
-                                        text: `${shortLabel} — ${formatPrice(value)}`,
-                                        fillStyle: chart.data.datasets[0].backgroundColor[i],
-                                        strokeStyle: 'transparent',
-                                        lineWidth: 0,
-                                        pointStyle: 'circle',
-                                        hidden: false,
-                                        index: i
-                                    };
-                                });
-                            }
-                            return [];
-                        }
-                    },
-                    padding: { top: 8, right: 6, bottom: 8, left: 6 }
-                },
+                legend: { display: false },
                 tooltip: {
                     backgroundColor: 'rgba(11,6,20,0.96)',
                     titleFont: { family: chartFont, size: 13, weight: '700' },
@@ -545,16 +524,43 @@ function buildPaymentChart() {
                     borderColor: 'rgba(239,68,68,0.4)',
                     borderWidth: 1.5,
                     callbacks: {
-                        label: (ctx) => ` ${ctx.label}: ${formatPrice(ctx.parsed)}`
+                        title: (itens) => labels[itens[0].dataIndex] || 'Categoria',
+                        label: (ctx) => ` Faturamento: ${formatPrice(ctx.parsed.y)}`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    border: { color: 'rgba(88,28,135,.18)' },
+                    ticks: {
+                        font: { family: chartFont, size: 10.5, weight: '600' },
+                        color: '#6b6275',
+                        maxRotation: 45,
+                        minRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 14
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(88,28,135,.08)' },
+                    border: { display: false },
+                    ticks: {
+                        font: { family: chartFont, size: 11, weight: '600' },
+                        color: '#6b6275',
+                        padding: 8,
+                        maxTicksLimit: 6,
+                        callback: (v) => valorCompacto(v)
                     }
                 }
             }
         }
     });
 
-    // Redesenha a legenda quando a Manrope terminar de carregar.
+    // Redesenha os rótulos quando a Manrope terminar de carregar.
     if (document.fonts && document.fonts.load) {
-        document.fonts.load('600 14px Manrope')
+        document.fonts.load('600 12px Manrope')
             .then(() => { if (chartPaymentsInstance) chartPaymentsInstance.update('none'); })
             .catch(() => {});
     }

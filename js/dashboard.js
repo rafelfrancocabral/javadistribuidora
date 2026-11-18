@@ -252,7 +252,7 @@ const labels = [];
             labels, 
             datasets: [
                 {
-                    label: 'Vendas acumuladas c/ ST (R$)',
+                    label: 'Vendas acumuladas (R$)',
                     data: dataAcumSt,
                     fill: true,
                     tension: 0.45,
@@ -471,7 +471,6 @@ function buildPaymentChart() {
     const el = document.getElementById('chartPayments');
     const empty = document.getElementById('chartPaymentsEmpty');
     const map = {};
-    const stMap = {};
     getSalesInPeriod(currentChartPeriod).forEach(q => {
         (Array.isArray(q.itens) ? q.itens : []).forEach(i => {
             let cat = i.categoria;
@@ -482,14 +481,12 @@ function buildPaymentChart() {
             const sub = itemSubtotalForSt(i);
             const st = sub * itemIcmsRate(i) / 100;
             map[cat] = (map[cat] || 0) + (sub || 0) + st;
-            stMap[cat] = (stMap[cat] || 0) + st;
         });
     });
     // Maior faturamento primeiro (R$ decrescente, já com ST).
     const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
     const labels = sorted.map(([cat]) => cat);
     const data = sorted.map(([, value]) => value);
-    const stData = sorted.map(([cat]) => stMap[cat] || 0);
     if (empty) empty.style.display = labels.length ? 'none' : '';
     if (chartPaymentsInstance) { chartPaymentsInstance.destroy(); chartPaymentsInstance = null; }
     if (!el || !labels.length) return;
@@ -535,7 +532,7 @@ function buildPaymentChart() {
         data: {
             labels: labels.map(cat => rotuloCurto(cat, 16)),
             datasets: [{
-                label: 'Faturamento c/ ST (R$)',
+                label: 'Faturamento (R$)',
                 data,
                 backgroundColor: colors.slice(0, labels.length),
                 hoverBackgroundColor: colors.slice(0, labels.length),
@@ -552,28 +549,7 @@ function buildPaymentChart() {
             layout: { padding: { top: 20, right: 10, bottom: 2, left: 2 } },
             plugins: {
                 legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(11,6,20,0.96)',
-                    titleFont: { family: chartFont, size: 13, weight: '700' },
-                    titleColor: '#fff',
-                    bodyFont: { family: chartFont, size: 12.5, weight: '500' },
-                    bodyColor: '#f3f0fc',
-                    padding: 14,
-                    cornerRadius: 12,
-                    displayColors: true,
-                    boxPadding: 6,
-                    borderColor: 'rgba(239,68,68,0.4)',
-                    borderWidth: 1.5,
-                    callbacks: {
-                        title: (itens) => labels[itens[0].dataIndex] || 'Categoria',
-                        label: (ctx) => {
-                            const st = stData[ctx.dataIndex] || 0;
-                            const linhas = [` Faturamento c/ ST: ${formatPrice(ctx.parsed.y)}`];
-                            if (st > 0) linhas.push(` ICMS-ST incluído: ${formatPrice(st)}`);
-                            return linhas;
-                        }
-                    }
-                }
+                tooltip: { enabled: false }
             },
             scales: {
                 x: {
@@ -758,9 +734,8 @@ function updateChartTitles() {
     const g = GROUP_LABELS[currentChartGroup] || 'Java';
     const qTitle = document.getElementById('chartQuotesTitle');
     const pTitle = document.getElementById('chartPaymentsTitle');
-    const stTag = currentChartGroup === 'dymar' ? ' • c/ ST' : '';
-    if (qTitle) qTitle.innerHTML = '<i class="fas fa-chart-line"></i> Total em Vendas (R$) — ' + g + stTag;
-    if (pTitle) pTitle.innerHTML = '<i class="fas fa-chart-column"></i> Vendas por categoria — ' + g + stTag;
+    if (qTitle) qTitle.innerHTML = '<i class="fas fa-chart-line"></i> Total em Vendas (R$) — ' + g;
+    if (pTitle) pTitle.innerHTML = '<i class="fas fa-chart-column"></i> Vendas por categoria — ' + g;
 }
 
 async function renderOverview() {

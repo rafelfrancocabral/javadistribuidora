@@ -11,7 +11,7 @@
     <script>
         try { var _t = localStorage.getItem('jv2_tema'); if (_t === 'dark' || _t === 'light') document.documentElement.dataset.theme = _t; } catch (e) {}
     </script>
-    <link rel="stylesheet" href="css/dashboard.css?v=38">
+    <link rel="stylesheet" href="css/dashboard.css?v=39">
 </head>
 <body>
     <script>
@@ -154,22 +154,36 @@
                 </div>
             </section>
 
-            <!-- ===== Orçamentos ===== -->
-            <section class="dash-view" id="view-orcamentos" style="display:none;">
-                <div class="dash-toolbar">
-                    <div class="dash-toolbar-left">
-                        <button class="btn btn-primary" id="btnNewQuote"><i class="fas fa-plus"></i> Novo Orçamento</button>
-                        <select id="statusFilter" class="dash-select">
-                <option value="all">Todos os status</option>
-                <option value="em_andamento">Em andamento</option>
-                <option value="recebido">Recebido</option>
-                            <option value="analise">Em análise</option>
-                            <option value="aprovado">Aprovado</option>
-                            <option value="concluido">Concluído</option>
-                            <option value="cancelado">Cancelado</option>
-                        </select>
+            <!-- ===== Orçamentos (visual Gerencia) ===== -->
+            <section class="dash-view gv-view" id="view-orcamentos" style="display:none;">
+                <div class="gv-head">
+                    <div class="seg" id="quoteStoreTabs" role="group" aria-label="Loja"><i></i>
+                        <button class="group-tab active" aria-pressed="true" data-group="java"><i class="fas fa-cube"></i> Java</button>
+                        <button class="group-tab" aria-pressed="false" data-group="dymar"><i class="fas fa-gem"></i> Dymar</button>
                     </div>
-                    <input type="text" id="quoteSearch" class="dash-input" placeholder="Buscar por cliente ou telefone...">
+                    <div class="seg" id="quotePeriodTabs2" role="group" aria-label="Período"><i></i>
+                        <button class="chart-tab" aria-pressed="false" data-period="today">Hoje</button>
+                        <button class="chart-tab" aria-pressed="false" data-period="7">7 dias</button>
+                        <button class="chart-tab active" aria-pressed="true" data-period="month">Este mês</button>
+                        <button class="chart-tab" aria-pressed="false" data-period="30">30 dias</button>
+                        <button class="chart-tab" aria-pressed="false" data-period="90">90 dias</button>
+                        <button class="chart-tab" aria-pressed="false" data-period="365">365 dias</button>
+                    </div>
+                </div>
+                <div class="gv-sum" id="quoteTiles"></div>
+                <div class="gv-tools">
+                    <button class="btn btn-primary" id="btnNewQuote"><i class="fas fa-plus"></i> Novo Orçamento</button>
+                    <select id="statusFilter" class="dash-select">
+                        <option value="all">Todos os status</option>
+                        <option value="em_andamento">Em andamento</option>
+                        <option value="recebido">Recebido</option>
+                        <option value="analise">Em análise</option>
+                        <option value="aprovado">Aprovado</option>
+                        <option value="concluido">Concluído</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                    <span class="gv-count" id="quoteCount"></span>
+                    <label class="gv-search"><i class="fas fa-magnifying-glass"></i><input type="text" id="quoteSearch" class="dash-input" placeholder="Buscar por cliente ou telefone…" autocomplete="off"><kbd>/</kbd></label>
                 </div>
                 <div class="quote-list" id="quoteList"></div>
             </section>
@@ -627,7 +641,7 @@
     </div>
 
     <!-- ===== Modal Detalhes Orçamento ===== -->
-    <div class="modal-overlay" id="quoteDetailModal">
+    <div class="modal-overlay quote-drawer" id="quoteDetailModal">
         <div class="modal">
             <div class="modal-header"><h3>Detalhes do Orçamento</h3><button class="modal-close" id="quoteDetailClose"><i class="fas fa-xmark"></i></button></div>
             <div class="modal-body" id="quoteDetailBody"></div>
@@ -805,7 +819,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=3"></script>
-    <script src="js/dashboard.js?v=163"></script>
+    <script src="js/dashboard.js?v=165"></script>
 </body>
 </html><!-- redeploy:20261016104944 prize/rules/league -->
 <!-- pub:20261016105831 -->

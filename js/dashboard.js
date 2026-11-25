@@ -165,6 +165,7 @@ function switchView(view) {
     if (view === 'league') { _podiumConfettiPending = true; loadLeague(); }
     if (view === 'dashboard') renderOverview();
     document.getElementById('dashSidebar').classList.remove('open');
+    jpPlaceSegments();
 }
 
 // Make setCurrentGroup globally accessible for group tabs
@@ -672,12 +673,37 @@ function updatePendingBadge() { const badge = document.getElementById('pendingQu
 function renderQuotes() {
     const statusFilter = document.getElementById('statusFilter').value;
     const search = document.getElementById('quoteSearch').value.trim().toLowerCase();
-    let list = quotes.filter(q => q.linha === currentChartGroup);
+    const base = getQuotesInPeriod(currentChartPeriod, currentChartGroup);
+    const searched = search ? base.filter(q => (q.nome_cliente || '').toLowerCase().includes(search) || (q.email || '').toLowerCase().includes(search) || (q.telefone || '').toLowerCase().includes(search) || (q.codigo_cliente || '').toLowerCase().includes(search)) : base;
+
+    // Resumo do gerencia.html: contadores e totais animados por status.
+    const tiles = [['all', 'Todos'], ['em_andamento', 'Em andamento'], ['recebido', 'Recebidos'], ['concluido', 'Concluídos']];
+    const tilesEl = document.getElementById('quoteTiles');
+    if (tilesEl) {
+        if (!tilesEl.children.length) tilesEl.innerHTML = tiles.map(t => `<button class="gv-tile" data-s="${t[0]}" aria-pressed="false"><span class="l"><i></i>${t[1]}</span><div class="n">0</div><div class="t">R$ 0,00</div></button>`).join('');
+        tiles.forEach(([k]) => {
+            const tile = tilesEl.querySelector('.gv-tile[data-s="' + k + '"]');
+            if (!tile) return;
+            const sub = k === 'all' ? searched : searched.filter(q => q.status === k);
+            tile.setAttribute('aria-pressed', String(statusFilter === k));
+            jpCountUp(tile.querySelector('.n'), sub.length, jpInt);
+            jpCountUp(tile.querySelector('.t'), sub.reduce((a, q) => a + quoteTotalWithSt(q), 0), formatPrice);
+        });
+    }
+
+    let list = searched;
     if (statusFilter !== 'all') list = list.filter(q => q.status === statusFilter);
-    if (search) list = list.filter(q => (q.nome_cliente || '').toLowerCase().includes(search) || (q.email || '').toLowerCase().includes(search) || (q.telefone || '').toLowerCase().includes(search) || (q.codigo_cliente || '').toLowerCase().includes(search));
     const el = document.getElementById('quoteList');
-    if (!list.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum orçamento encontrado</p></div>'; return; }
+    const count = document.getElementById('quoteCount');
+    if (count) count.textContent = list.length + ' orçamento' + (list.length === 1 ? '' : 's') + ' · ' + formatPrice(list.reduce((a, q) => a + quoteTotalWithSt(q), 0));
+    if (!list.length) {
+        el.innerHTML = '<div class="gv-empty"><i class="fas fa-inbox"></i><b>Nenhum orçamento encontrado</b><span>Tente outro período, status ou termo de busca.</span><button class="btn btn-primary" id="resetQuoteFilters">Limpar filtros</button></div>';
+        const reset = document.getElementById('resetQuoteFilters');
+        if (reset) reset.onclick = () => { document.getElementById('statusFilter').value = 'all'; document.getElementById('quoteSearch').value = ''; renderQuotes(); };
+        return;
+    }
     el.innerHTML = groupsHtml(list);
+    jpPlaceSegments();
 }
 
 function groupsHtml(list) {
@@ -692,53 +718,40 @@ function groupsHtml(list) {
         else if (diff === 1) yesterday.push(q);
         else older.push(q);
     });
-    const dateOf = ts => new Date(ts).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const head = (name, ts, count) => `<div class="quote-day-head">
-        <span class="quote-day-name">${name}</span>
-        <span class="quote-day-date">${dateOf(ts)}</span>
-        <span class="quote-day-count">${count}</span>
-    </div>`;
-    let html = '';
-    if (today.length) html += `<div class="quote-day-group today">${head('Hoje', today[0].created_at, today.length)}<div class="quote-day-body">${today.map(quoteCardHtml).join('')}</div></div>`;
-    if (yesterday.length) html += `<div class="quote-day-group">${head('Ontem', yesterday[0].created_at, yesterday.length)}<div class="quote-day-body">${yesterday.map(quoteCardHtml).join('')}</div></div>`;
-    if (older.length) html += `<div class="quote-day-group"><div class="quote-day-head">
-        <span class="quote-day-name">Outros dias</span>
-        <span class="quote-day-count">${older.length}</span>
-    </div><div class="quote-day-body">${older.map(quoteCardHtml).join('')}</div></div>`;
+    const dateOf = ts => new Date(ts).toLocaleDateString('pt-BR');
+    const head = (name, ts, count, todayFlag) => `<div class="gv-grp${todayFlag ? ' today' : ''}"><b>${name}</b>${ts ? `<em>${dateOf(ts)}</em>` : ''}<span>${count}</span></div>`;
+    let html = '', n = 0;
+    if (today.length) html += head('Hoje', today[0].created_at, today.length, true) + `<div class="gv-rows">${today.map(q => quoteCardHtml(q, n++)).join('')}</div>`;
+    if (yesterday.length) html += head('Ontem', yesterday[0].created_at, yesterday.length, false) + `<div class="gv-rows">${yesterday.map(q => quoteCardHtml(q, n++)).join('')}</div>`;
+    if (older.length) html += head('Outros dias', null, older.length, false) + `<div class="gv-rows">${older.map(q => quoteCardHtml(q, n++)).join('')}</div>`;
     return html;
 }
 
-function quoteCardHtml(q) {
+function quoteCardHtml(q, i) {
     const st = quoteIcmsSt(q);
     const comSt = String(q.linha || '').toLowerCase() === 'dymar' || st > 0;
     const isSite = (q.origem === 'site') || (q.origem == null && !(q.codigo_cliente && /^C-\d{4,}$/.test(String(q.codigo_cliente))) && (q.status_entrega != null && String(q.status_entrega).trim() !== ''));
     return `
-        <div class="quote-card">
-            <div class="quote-card-row">
-                <div class="quote-main-info">
-                    <span class="quote-code-badge">#${escapeHtml(q.codigo_cliente || q.id)}</span>
-                    <span class="quote-card-name">${escapeHtml(getQuoteClientName(q))}</span>
-                    <span class="quote-meta-icons">
-                        <span class="quote-origin-badge ${isSite ? 'site' : ''}" title="${isSite ? 'Pedido feito pelo site' : 'Orçamento manual (painel)'}"><i class="fas ${isSite ? 'fa-globe' : 'fa-pen-to-square'}"></i>${isSite ? 'Site' : 'Manual'}</span>
-                        <span class="quote-meta-date" title="Data"><i class="fas fa-clock"></i>${formatDate(q.created_at)}</span>
-                        ${q.pagamento ? `<span title="Prazo"><i class="fas fa-calendar-alt"></i>${escapeHtml(q.pagamento)}</span>` : ''}
-                    </span>
-                </div>
-                <div class="quote-card-footer">
-                    <span class="quote-status-before-total status-${escapeHtml(q.status)}">${statusLabel(q.status)}</span>
-                    <div class="quote-card-total">${formatPrice(comSt ? quoteTotalWithSt(q) : q.total)}</div>
-                </div>
-                <div class="quote-card-actions">
-                    <button class="icon-btn" onclick="openQuoteDetail('${q.id}')" title="Detalhes"><i class="fas fa-eye"></i></button>
-                    <button class="icon-btn pdf" onclick="downloadQuotePDF('${q.id}')" title="Abrir PDF do orçamento no navegador"><i class="fas fa-file-pdf"></i></button>
-                    <button class="icon-btn" onclick="downloadQuotePDF('${q.id}', 'share')" title="Compartilhar o PDF"><i class="fas fa-share-nodes"></i></button>
-                    <button class="icon-btn" onclick="editQuote('${q.id}')" title="Editar"><i class="fas fa-pen"></i></button>
-                    <button class="icon-btn" onclick="advanceQuote('${q.id}')" title="Avançar status"><i class="fas fa-arrow-right"></i></button>
-                    <a class="icon-btn" href="https://wa.me/${(q.telefone||'').replace(/\D/g,'') || WHATSAPP_NUMBER}" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                    <button class="icon-btn danger" onclick="deleteQuote('${q.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
-                </div>
+        <article class="gv-row s-${escapeHtml(q.status)}" style="--n:${Math.min(i || 0, 14)}" data-id="${q.id}" tabindex="0">
+            <div class="gv-main">
+                <span class="gv-id">#${escapeHtml(q.codigo_cliente || q.id)}</span>
+                <b class="gv-client">${escapeHtml(getQuoteClientName(q))}</b>
+                <span class="gv-origin ${isSite ? 'site' : 'manual'}" title="${isSite ? 'Pedido feito pelo site' : 'Orçamento manual (painel)'}"><i class="fas ${isSite ? 'fa-globe' : 'fa-pen-to-square'}"></i>${isSite ? 'Site' : 'Manual'}</span>
+                <span class="gv-meta d" title="Data"><i class="fas fa-clock"></i>${formatDate(q.created_at)}</span>
+                ${q.pagamento ? `<span class="gv-meta" title="Prazo"><i class="fas fa-calendar-alt"></i>${escapeHtml(q.pagamento)}</span>` : ''}
             </div>
-        </div>`;
+            <span class="gv-pill">${statusLabel(q.status)}</span>
+            <span class="gv-val">${formatPrice(comSt ? quoteTotalWithSt(q) : q.total)}</span>
+            <div class="gv-acts">
+                <button class="ab" onclick="openQuoteDetail('${q.id}')" data-tip="Ver detalhes" aria-label="Detalhes"><i class="fas fa-eye"></i></button>
+                <button class="ab" onclick="downloadQuotePDF('${q.id}')" data-tip="Baixar PDF" aria-label="PDF"><i class="fas fa-file-pdf"></i></button>
+                <button class="ab" onclick="downloadQuotePDF('${q.id}', 'share')" data-tip="Compartilhar PDF" aria-label="Compartilhar"><i class="fas fa-share-nodes"></i></button>
+                <button class="ab" onclick="editQuote('${q.id}')" data-tip="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button class="ab" onclick="advanceQuote('${q.id}')" data-tip="Avançar status" aria-label="Avançar"><i class="fas fa-arrow-right"></i></button>
+                <a class="ab wa" href="https://wa.me/${(q.telefone || '').replace(/\D/g, '') || WHATSAPP_NUMBER}" target="_blank" data-tip="WhatsApp" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <button class="ab del" onclick="deleteQuote('${q.id}')" data-tip="Excluir" aria-label="Excluir"><i class="fas fa-trash"></i></button>
+            </div>
+        </article>`;
 }
 
 function openQuoteDetail(id) {
@@ -752,7 +765,10 @@ function openQuoteDetail(id) {
     if (items) { itemsHtml = '<div class="qd-items">' + items.map(it => `<div class="qd-item"><span>${escapeHtml(it.nome || '')} ${it.codigo ? '(' + escapeHtml(it.codigo) + ')' : ''} <small>${it.quantidade}x</small></span><span>${formatPrice(it.subtotal || (it.preco * it.quantidade))}</span></div>`).join('') + '</div>'; }
     else if (q.itens && typeof q.itens === 'string') { itemsHtml = '<p style="color:var(--text-secondary);font-size:0.85rem;white-space:pre-wrap">' + escapeHtml(q.itens) + '</p>'; }
 
+    const quoteFlow = ['em_andamento', 'recebido', 'analise', 'aprovado', 'concluido'];
     document.getElementById('quoteDetailBody').innerHTML = `
+        <div class="gv-big">${formatPrice(comSt ? quoteTotalWithSt(q) : q.total)}</div>
+        <div class="gv-steps">${quoteFlow.map(s => `<button class="gv-step ${q.status === s ? 'on' : ''}" data-s="${s}" onclick="document.getElementById('qdStatusSelect').value='${s}';changeQuoteStatus('${q.id}')"><i></i>${statusLabel(s)}</button>`).join('')}</div>
         <div class="qd-row"><span>Cliente</span><span>${escapeHtml(getQuoteClientName(q))}</span></div>
         <div class="qd-row"><span>Código Cliente</span><span>${escapeHtml(q.codigo_cliente || '')}</span></div>
         
@@ -1802,7 +1818,7 @@ function renderVisitFrequencia() {
 }
 
 // ---------- Manual quote ----------
-function openQuoteModal() { document.getElementById('quoteForm').reset(); const cl = document.getElementById('mqClientList'); if (cl) cl.innerHTML = clients.map(c => `<option value="${escapeHtml(c.razao_social)}">${escapeHtml(c.cnpj || c.email || '')}</option>`).join(''); setMqLine(currentChartGroup === 'dymar' ? 'dymar' : 'java'); renderMqPaymentOptions(0, ''); document.getElementById('quoteModal').classList.add('open'); }
+function openQuoteModal() { document.getElementById('quoteDetailModal').classList.remove('open'); document.getElementById('quoteForm').reset(); const cl = document.getElementById('mqClientList'); if (cl) cl.innerHTML = clients.map(c => `<option value="${escapeHtml(c.razao_social)}">${escapeHtml(c.cnpj || c.email || '')}</option>`).join(''); setMqLine(currentChartGroup === 'dymar' ? 'dymar' : 'java'); renderMqPaymentOptions(0, ''); document.getElementById('quoteModal').classList.add('open'); }
 function closeQuoteModal() { document.getElementById('quoteModal').classList.remove('open'); }
 
 function setMqLine(line) {
@@ -1946,7 +1962,7 @@ function updateQuoteTotal() { let total = 0; document.querySelectorAll('#mqItems
 
 function collectQuoteItems() { const itens = []; document.querySelectorAll('#mqItems .quote-item').forEach(row => { const nome = (row.querySelector('.qi-search').value || '').trim(); const qtyEl = row.querySelector('.qi-qty'); const qty = parseInt(qtyEl.value) || parseInt(qtyEl.min) || 1; const subText = row.querySelector('.qi-sub').textContent; if (!nome || !subText) return; const sub = parseFloat(String(subText).replace('R$', '').replace(/\./g, '').replace(',', '.')) || 0; const di = row.querySelector('.qi-desc'); const dv = di ? parseFloat(String(di.value).replace(',', '.')) : 0; const descPct = (isFinite(dv) && dv > 0) ? Math.round(Math.min(100, dv) * 100) / 100 : 0; const ui = row.querySelector('.qi-unit'); const unitStr = ui ? String(ui.value || '').trim() : ''; const unitFinal = unitStr ? (unitStr.indexOf(',') !== -1 ? (parseFloat(unitStr.replace(/\./g, '').replace(',', '.')) || 0) : (parseFloat(unitStr) || 0)) : 0; let tableUnit = (descPct > 0 && descPct < 100 && qty) ? (sub / qty) / (1 - descPct / 100) : (unitFinal || (qty ? sub / qty : 0)); tableUnit = Math.round((tableUnit || 0) * 100) / 100; const codigo = row.dataset.codigo || ''; const prod = codigo ? products.find(p => p && p.codigo && String(p.codigo).trim().toLowerCase() === String(codigo).trim().toLowerCase()) : null; const icmsst = prod ? (Number(prod.icmsst) || 0) : ((row.dataset.icmsst != null && row.dataset.icmsst !== '') ? (Number(row.dataset.icmsst) || 0) : 0); itens.push({ nome, codigo, quantidade: qty, preco: tableUnit, desconto: descPct, subtotal: sub, icmsst }); }); return itens; }
 
-function editQuote(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; document.getElementById('quoteForm').reset(); document.getElementById('mqEditId').value = q.id; mqLine = q.linha === 'dymar' ? 'dymar' : 'java'; document.querySelectorAll('#mqLineTabs .mq-line-tab').forEach(b => b.classList.toggle('active', b.dataset.mqline === mqLine)); const cl = document.getElementById('mqClientList'); if (cl) cl.innerHTML = clients.map(c => `<option value="${escapeHtml(c.razao_social)}">${escapeHtml(c.cnpj || c.email || '')}</option>`).join(''); const container = document.getElementById('mqItems'); if (container) container.innerHTML = ''; (q.itens || []).forEach(it => { addQuoteItem(); const lastRow = container.lastElementChild; if (lastRow) { lastRow.querySelector('.qi-search').value = it.nome || ''; lastRow.querySelector('.qi-code').value = it.codigo || ''; lastRow.dataset.codigo = it.codigo || ''; lastRow.dataset.preco = String(Number(it.preco) || 0); if (it.icmsst != null && it.icmsst !== '') lastRow.dataset.icmsst = String(Number(it.icmsst) || 0); const ep = it.codigo ? products.find(x => x && x.codigo && String(x.codigo) === String(it.codigo)) : null; const embE = ep ? (parseInt(ep.embalagem) || 1) : 1; const rawQtyE = parseInt(it.quantidade) || embE; const qtyE = (embE > 1 && rawQtyE % embE) ? Math.ceil(rawQtyE / embE) * embE : rawQtyE; const qtyElE = lastRow.querySelector('.qi-qty'); qtyElE.value = qtyE; qtyElE.min = embE; qtyElE.step = embE; qtyElE.placeholder = String(embE); const dq = (it.desconto != null && it.desconto !== '') ? Math.max(0, Math.min(100, Number(it.desconto) || 0)) : 0; lastRow.querySelector('.qi-desc').value = dq > 0 ? String(dq).replace('.', ',') : ''; lastRow.querySelector('.qi-unit').value = priceInput((Number(it.preco) || 0) * (1 - dq / 100)); lastRow.querySelector('.qi-sub').textContent = formatPrice((Number(it.preco) || 0) * (1 - dq / 100) * qtyE); } }); updateQuoteTotal(); document.getElementById('mqName').value = q.nome_cliente || ''; document.getElementById('mqPhone').value = q.telefone || ''; const _mqTotal = parseFloat(String(document.getElementById('mqTotalDisplay').textContent).replace('R$', '').replace(/\./g, '').replace(',', '.')) || 0; renderMqPaymentOptions(_mqTotal, q.pagamento || ''); document.getElementById('mqObs').value = ''; document.querySelector('#quoteModal h3').textContent = 'Editar Orçamento'; document.getElementById('quoteModal').classList.add('open'); }
+function editQuote(id) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; document.getElementById('quoteDetailModal').classList.remove('open'); document.getElementById('quoteForm').reset(); document.getElementById('mqEditId').value = q.id; mqLine = q.linha === 'dymar' ? 'dymar' : 'java'; document.querySelectorAll('#mqLineTabs .mq-line-tab').forEach(b => b.classList.toggle('active', b.dataset.mqline === mqLine)); const cl = document.getElementById('mqClientList'); if (cl) cl.innerHTML = clients.map(c => `<option value="${escapeHtml(c.razao_social)}">${escapeHtml(c.cnpj || c.email || '')}</option>`).join(''); const container = document.getElementById('mqItems'); if (container) container.innerHTML = ''; (q.itens || []).forEach(it => { addQuoteItem(); const lastRow = container.lastElementChild; if (lastRow) { lastRow.querySelector('.qi-search').value = it.nome || ''; lastRow.querySelector('.qi-code').value = it.codigo || ''; lastRow.dataset.codigo = it.codigo || ''; lastRow.dataset.preco = String(Number(it.preco) || 0); if (it.icmsst != null && it.icmsst !== '') lastRow.dataset.icmsst = String(Number(it.icmsst) || 0); const ep = it.codigo ? products.find(x => x && x.codigo && String(x.codigo) === String(it.codigo)) : null; const embE = ep ? (parseInt(ep.embalagem) || 1) : 1; const rawQtyE = parseInt(it.quantidade) || embE; const qtyE = (embE > 1 && rawQtyE % embE) ? Math.ceil(rawQtyE / embE) * embE : rawQtyE; const qtyElE = lastRow.querySelector('.qi-qty'); qtyElE.value = qtyE; qtyElE.min = embE; qtyElE.step = embE; qtyElE.placeholder = String(embE); const dq = (it.desconto != null && it.desconto !== '') ? Math.max(0, Math.min(100, Number(it.desconto) || 0)) : 0; lastRow.querySelector('.qi-desc').value = dq > 0 ? String(dq).replace('.', ',') : ''; lastRow.querySelector('.qi-unit').value = priceInput((Number(it.preco) || 0) * (1 - dq / 100)); lastRow.querySelector('.qi-sub').textContent = formatPrice((Number(it.preco) || 0) * (1 - dq / 100) * qtyE); } }); updateQuoteTotal(); document.getElementById('mqName').value = q.nome_cliente || ''; document.getElementById('mqPhone').value = q.telefone || ''; const _mqTotal = parseFloat(String(document.getElementById('mqTotalDisplay').textContent).replace('R$', '').replace(/\./g, '').replace(',', '.')) || 0; renderMqPaymentOptions(_mqTotal, q.pagamento || ''); document.getElementById('mqObs').value = ''; document.querySelector('#quoteModal h3').textContent = 'Editar Orçamento'; document.getElementById('quoteModal').classList.add('open'); }
 
 function closeQuoteModal() { document.getElementById('quoteModal').classList.remove('open'); document.getElementById('mqEditId').value = ''; document.querySelector('#quoteModal h3').textContent = 'Novo Orçamento Manual'; }
 
@@ -2926,12 +2942,12 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.classList.add('jp-loading');
         document.querySelectorAll('.chart-tab[data-period]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); jpPlaceSegments();
         currentChartPeriod = tab.dataset.period; const periodSel = document.getElementById('quotePeriodSelect'); if (periodSel) periodSel.value = tab.dataset.period;
-        setTimeout(() => { document.body.classList.remove('jp-loading'); renderOverview(); }, reducedMotion() ? 0 : 260);
+        setTimeout(() => { document.body.classList.remove('jp-loading'); renderOverview(); if (document.querySelector('.dash-nav-item.active[data-view]')?.dataset.view === 'orcamentos') renderQuotes(); }, reducedMotion() ? 0 : 260);
     }); });
     const periodSel = document.getElementById('quotePeriodSelect'); if (periodSel) periodSel.addEventListener('change', () => {
         document.body.classList.add('jp-loading');
         currentChartPeriod = periodSel.value; document.querySelectorAll('.chart-tab[data-period]').forEach(t => t.classList.toggle('active', t.dataset.period === periodSel.value)); jpPlaceSegments();
-        setTimeout(() => { document.body.classList.remove('jp-loading'); renderOverview(); }, reducedMotion() ? 0 : 260);
+        setTimeout(() => { document.body.classList.remove('jp-loading'); renderOverview(); if (document.querySelector('.dash-nav-item.active[data-view]')?.dataset.view === 'orcamentos') renderQuotes(); }, reducedMotion() ? 0 : 260);
     });
     const pl = document.getElementById('prodLinha'); if (pl) pl.addEventListener('change', toggleIcmsField);
 document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener('click', () => {
@@ -2941,6 +2957,11 @@ document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener(
     }); });
     document.getElementById('statusFilter').addEventListener('change', renderQuotes);
     const qSearch = document.getElementById('quoteSearch'); let qDeb; qSearch.addEventListener('input', () => { clearTimeout(qDeb); qDeb = setTimeout(renderQuotes, 250); });
+    const quoteListEl = document.getElementById('quoteList');
+    if (quoteListEl) quoteListEl.addEventListener('pointermove', e => { const row = e.target.closest('.gv-row'); if (!row) return; const b = row.getBoundingClientRect(); row.style.setProperty('--mx', (e.clientX - b.left) + 'px'); row.style.setProperty('--my', (e.clientY - b.top) + 'px'); });
+    const qdOverlay = document.getElementById('quoteDetailModal');
+    if (qdOverlay) qdOverlay.addEventListener('click', e => { if (e.target === qdOverlay) qdOverlay.classList.remove('open'); });
+    addEventListener('keydown', e => { if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.querySelector('.dash-nav-item.active[data-view]')?.dataset.view === 'orcamentos') { e.preventDefault(); document.getElementById('quoteSearch').focus(); } });
     document.getElementById('btnNewQuote').addEventListener('click', openQuoteModal);
     document.getElementById('mqName').addEventListener('change', () => { const nome = document.getElementById('mqName').value.trim().toLowerCase(); const c = clients.find(x => x && x.razao_social && x.razao_social.toLowerCase() === nome); const tel = document.getElementById('mqPhone'); if (c && tel) tel.value = c.telefone || ''; });
     document.getElementById('quoteModalClose').addEventListener('click', closeQuoteModal);

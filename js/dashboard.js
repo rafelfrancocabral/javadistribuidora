@@ -743,11 +743,11 @@ function quoteCardHtml(q, i) {
             <span class="gv-pill">${statusLabel(q.status)}</span>
             <span class="gv-val">${formatPrice(comSt ? quoteTotalWithSt(q) : q.total)}</span>
             <div class="gv-acts">
-                <button class="ab" onclick="openQuoteDetail('${q.id}')" data-tip="Ver detalhes" aria-label="Detalhes"><i class="fas fa-eye"></i></button>
-                <button class="ab" onclick="downloadQuotePDF('${q.id}')" data-tip="Baixar PDF" aria-label="PDF"><i class="fas fa-file-pdf"></i></button>
-                <button class="ab" onclick="downloadQuotePDF('${q.id}', 'share')" data-tip="Compartilhar PDF" aria-label="Compartilhar"><i class="fas fa-share-nodes"></i></button>
-                <button class="ab" onclick="editQuote('${q.id}')" data-tip="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
-                <button class="ab" onclick="advanceQuote('${q.id}')" data-tip="Avançar status" aria-label="Avançar"><i class="fas fa-arrow-right"></i></button>
+                <button class="ab view" onclick="openQuoteDetail('${q.id}')" data-tip="Ver detalhes" aria-label="Detalhes"><i class="fas fa-eye"></i></button>
+                <button class="ab pdf" onclick="downloadQuotePDF('${q.id}')" data-tip="Baixar PDF" aria-label="PDF"><i class="fas fa-file-pdf"></i></button>
+                <button class="ab share" onclick="downloadQuotePDF('${q.id}', 'share')" data-tip="Compartilhar PDF" aria-label="Compartilhar"><i class="fas fa-share-nodes"></i></button>
+                <button class="ab edit" onclick="editQuote('${q.id}')" data-tip="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button class="ab go" onclick="advanceQuote('${q.id}')" data-tip="Avançar status" aria-label="Avançar"><i class="fas fa-arrow-right"></i></button>
                 <a class="ab wa" href="https://wa.me/${(q.telefone || '').replace(/\D/g, '') || WHATSAPP_NUMBER}" target="_blank" data-tip="WhatsApp" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                 <button class="ab del" onclick="deleteQuote('${q.id}')" data-tip="Excluir" aria-label="Excluir"><i class="fas fa-trash"></i></button>
             </div>

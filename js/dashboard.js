@@ -33,27 +33,11 @@ let currentChartPeriod = 'month';
 let currentChartGroup = 'java';
 let mqLine = 'java';
 let goals = [];
-let chartQuotesInstance = null;
-let chartPaymentsInstance = null;
 
 const STATUS_FLOW = ['em_andamento', 'recebido', 'analise', 'aprovado', 'concluido', 'cancelado'];
 const STATUS_NEXT = { em_andamento: 'recebido', recebido: 'analise', analise: 'aprovado', aprovado: 'concluido', concluido: 'recebido', entregue: 'concluido' };
 const PRODUCT_SELECT = 'id, codigo, nome, marca, categoria, subcategoria, preco, preco_custo, unidade, descricao, palavraschave, imagens, video, visivel, estoque, isdestaque, ispromocao, precopromocional, black_friday, somente_orcamento, linha, icmsst, embalagem, created_at, updated_at';
 const PDF_HEADER_STYLE = 1;
-
-// Chart.js v4 nao tem opcao nativa de espaco entre a legenda (topo) e a area
-// do grafico. Este plugin aumenta a altura da legenda para afasta-la do eixo.
-const legendTopSpacer = {
-    id: 'legendTopSpacer',
-    beforeInit(chart) {
-        if (!chart.legend) return;
-        const originalFit = chart.legend.fit;
-        chart.legend.fit = function fit() {
-            originalFit.bind(chart.legend)();
-            this.height += 30;
-        };
-    }
-};
 
 // ---------- Helpers ----------
 function formatPrice(v) { return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -105,6 +89,51 @@ function quoteIcmsSt(q) {
 }
 function quoteTotalWithSt(q) { return (Number(q && q.total) || 0) + quoteIcmsSt(q); }
 function toast(msg, isError) { const t = document.getElementById('toast'); if (!t) return; t.className = 'toast show' + (isError ? ' error' : ''); t.innerHTML = (isError ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>') + '<span>' + escapeHtml(msg) + '</span>'; clearTimeout(t._timer); t._timer = setTimeout(() => { t.className = 'toast'; }, 2600); }
+
+// ---------- Javapai UI: animacoes, tema e graficos SVG ----------
+function reducedMotion() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches; }
+function jpInt(v) { return Math.round(Number(v) || 0).toLocaleString('pt-BR'); }
+function jpMoneyShort(v) {
+    const n = Number(v) || 0;
+    if (Math.abs(n) >= 1000000) return 'R$ ' + (n / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi';
+    if (Math.abs(n) >= 1000) return 'R$ ' + (n / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mil';
+    return formatPrice(n).replace(',00', '');
+}
+function jpCountUp(el, to, fmt) {
+    if (!el) return;
+    const target = Number(to) || 0;
+    if (reducedMotion()) { el.textContent = fmt(target); el._v = target; return; }
+    const t0 = performance.now(), from = el._v || 0;
+    el._v = target;
+    (function frame(t) {
+        const p = Math.min((t - t0) / 700, 1), e = 1 - Math.pow(1 - p, 3);
+        el.textContent = fmt(from + (target - from) * e);
+        if (p < 1) setTimeout(() => frame(performance.now()), 16);
+    })(t0);
+}
+function jpPlaceSegments() {
+    document.querySelectorAll('.seg').forEach(seg => {
+        const ind = seg.querySelector(':scope > i');
+        const active = seg.querySelector('button.active') || seg.querySelector('button[aria-pressed="true"]');
+        if (!ind || !active) return;
+        seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b === active ? 'true' : 'false'));
+        ind.style.width = active.offsetWidth + 'px';
+        ind.style.transform = 'translateX(' + (active.offsetLeft - 4) + 'px)';
+    });
+}
+function jpInitUI() {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.addEventListener('click', () => {
+        const dark = root.dataset.theme ? root.dataset.theme === 'dark' : (window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches);
+        root.dataset.theme = dark ? 'light' : 'dark';
+        try { localStorage.setItem('jv2_tema', root.dataset.theme); } catch (e) {}
+    });
+    document.addEventListener('click', () => jpPlaceSegments());
+    window.addEventListener('resize', jpPlaceSegments);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(jpPlaceSegments).catch(() => {});
+    jpPlaceSegments();
+}
 
 // ---------- Navigation ----------
 const VIEW_TITLES = { 'dashboard': 'Painel do Lojista', 'orcamentos': 'Gerenciar Orçamentos', 'produtos': 'Gerenciar Produtos', 'categorias': 'Gerenciar Categorias', 'clientes': 'Gerenciar Clientes', 'agendar': 'Agendar Visita', 'playbook': 'Playbook — Metas e Estratégias', 'tracker': 'Tracker — Atividades', 'log': 'Log — Buscas', 'prize': 'Prize — Regras de Prêmios', 'rules': 'Rules — Regras de Pontuação', 'league': 'League — Pontos e Resgates' };
@@ -162,12 +191,73 @@ function getSalesInPeriod(period, group = currentChartGroup) {
     return quotes.filter(q => q.status === 'concluido' && q.linha === group && saleDate(q) >= since);
 }
 
+function jpRenderLineChart(el, labels, sales, meta) {
+    const W = 720, H = 300, L = 62, R = 14, T = 12, B = 40;
+    const n = labels.length;
+    if (!n) { el.innerHTML = ''; return; }
+    const top = Math.max(1000, Math.ceil(Math.max.apply(null, sales.concat(meta)) / 10000) * 10000);
+    const x = i => L + i * (W - L - R) / Math.max(1, n - 1);
+    const y = v => T + (H - T - B) * (1 - Math.max(0, Number(v) || 0) / top);
+    const path = arr => arr.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join('');
+    const line = path(sales);
+    const area = line + `L${x(n - 1)} ${y(0)}L${x(0)} ${y(0)}Z`;
+    let grid = '';
+    for (let i = 0; i <= 5; i++) {
+        const v = top * i / 5;
+        grid += `<line class="jp-gl" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="jp-ax" x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${jpMoneyShort(v)}</text>`;
+    }
+    const step = n > 20 ? Math.ceil(n / 12) : (n > 12 ? 2 : 1);
+    let xs = '';
+    for (let i = 0; i < n; i += step) xs += `<text class="jp-ax" x="${x(i)}" y="${H - 14}" text-anchor="middle">${escapeHtml(labels[i])}</text>`;
+
+    const tip = document.getElementById('jpTip');
+    if (tip && tip.parentNode === el) tip.remove();
+    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Vendas acumuladas contra meta diária">
+        <defs><linearGradient id="jpAreaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16a870" stop-opacity=".30"/><stop offset="1" stop-color="#16a870" stop-opacity="0"/></linearGradient></defs>
+        ${grid}${xs}
+        <path d="${area}" fill="url(#jpAreaGrad)"/>
+        <path d="${path(meta)}" fill="none" stroke="var(--jp-warn)" stroke-width="2" stroke-dasharray="6 5"/>
+        <path id="jpLine" d="${line}" fill="none" stroke="var(--jp-ok)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset 1.2s ease"/>
+        <line id="jpCross" class="jp-gl" y1="${T}" y2="${H - B}" stroke-dasharray="3 3" opacity="0"/>
+        <circle id="jpDot" r="5.5" fill="var(--jp-card)" stroke="var(--jp-ok)" stroke-width="3" opacity="0"/>
+        <rect id="jpHit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/>
+    </svg>`;
+    if (tip) el.appendChild(tip);
+    // setTimeout tambem funciona quando a pagina carrega em aba oculta (rAF fica pausado).
+    setTimeout(() => { const ln = el.querySelector('#jpLine'); if (ln) ln.style.strokeDashoffset = 0; }, 40);
+
+    const svg = el.querySelector('svg');
+    const cross = el.querySelector('#jpCross'), dot = el.querySelector('#jpDot'), hit = el.querySelector('#jpHit');
+    if (!svg || !hit) return;
+    const move = e => {
+        const r = svg.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width * W;
+        const i = Math.max(0, Math.min(n - 1, Math.round((px - L) / ((W - L - R) / Math.max(1, n - 1)))));
+        const X = x(i), Y = y(sales[i]);
+        if (cross) { cross.setAttribute('x1', X); cross.setAttribute('x2', X); cross.setAttribute('opacity', 1); }
+        if (dot) { dot.setAttribute('cx', X); dot.setAttribute('cy', Y); dot.setAttribute('opacity', 1); }
+        if (tip) {
+            tip.innerHTML = '<b>' + escapeHtml(labels[i]) + '</b>Vendas: ' + formatPrice(sales[i]) + '<br>Meta: ' + formatPrice(meta[i] || 0);
+            tip.style.left = X / W * r.width + 'px';
+            tip.style.top = Y / H * r.height + 'px';
+            tip.style.opacity = 1;
+        }
+    };
+    const out = () => {
+        if (tip) tip.style.opacity = 0;
+        if (cross) cross.setAttribute('opacity', 0);
+        if (dot) dot.setAttribute('opacity', 0);
+    };
+    hit.addEventListener('pointermove', move);
+    hit.addEventListener('pointerleave', out);
+}
+
 function buildQuoteChart(period) {
     const el = document.getElementById('chartQuotes');
     const empty = document.getElementById('chartQuotesEmpty');
     const periodQ = getSalesInPeriod(period);
 
-const labels = [];
+    const labels = [];
     const dataAcumSt = [];
     const dataMeta = [];
     const buckets = [];
@@ -201,7 +291,6 @@ const labels = [];
         }
     }
 
-    // Meta diaria = meta mensal da linha / dias do mes.
     function metaDoDiaEm(d) {
         const ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
         const g = goals.find(x => x && x.tipo === 'mensal' && x.linha === currentChartGroup && String(x.mes).slice(0, 7) === ym);
@@ -209,7 +298,6 @@ const labels = [];
         const dim = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
         return dim ? (goal / dim) : 0;
     }
-
     const first = buckets.length ? buckets[0].start : new Date();
     const last = buckets.length ? buckets[buckets.length - 1].end : new Date();
     const daily = [];
@@ -218,13 +306,11 @@ const labels = [];
     }
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const dayMs = 86400000;
-
     let sumSt = 0, metaAcum = 0, di = 0;
     buckets.forEach(bkt => {
         labels.push(bkt.label);
         const noBucket = q => { const d = saleDate(q); return d >= bkt.start && d < bkt.end; };
-        const valSt = periodQ.reduce((s, q) => s + (noBucket(q) ? quoteTotalWithSt(q) : 0), 0);
-        sumSt += valSt;
+        sumSt += periodQ.reduce((s, q) => s + (noBucket(q) ? quoteTotalWithSt(q) : 0), 0);
         dataAcumSt.push(sumSt);
         if (period === 'today') {
             const dm = metaDoDiaEm(dayStart);
@@ -234,122 +320,19 @@ const labels = [];
             dataMeta.push(metaAcum);
         }
     });
-
     if (empty) empty.style.display = (periodQ.length || dataMeta.some(v => v > 0)) ? 'none' : '';
 
-    if (chartQuotesInstance) { chartQuotesInstance.destroy(); chartQuotesInstance = null; }
-    if (!el) return;
+    const vendas = dataAcumSt.length ? dataAcumSt[dataAcumSt.length - 1] : 0;
+    const previstos = dataMeta.length ? dataMeta[dataMeta.length - 1] : 0;
+    const pct = previstos > 0 ? Math.min(100, vendas / previstos * 100) : 0;
+    const ring = document.getElementById('goalRing');
+    if (ring) ring.style.strokeDashoffset = 220 * (1 - pct / 100);
+    const pctEl = document.getElementById('goalPercent');
+    if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+    const goalText = document.getElementById('goalText');
+    if (goalText) goalText.textContent = previstos > 0 ? formatPrice(vendas) + ' de ' + formatPrice(previstos) + ' previstos' : 'Sem meta mensal cadastrada neste período';
 
-    const gradientApproved = el.getContext('2d').createLinearGradient(0, 0, 0, 320);
-    gradientApproved.addColorStop(0, 'rgba(0,255,163,0.25)');
-    gradientApproved.addColorStop(0.6, 'rgba(0,229,255,0.08)');
-    gradientApproved.addColorStop(1, 'rgba(46,213,115,0)');
-
-    chartQuotesInstance = new Chart(el, {
-        type: 'line',
-        plugins: [legendTopSpacer],
-        data: { 
-            labels, 
-            datasets: [
-                {
-                    label: 'Vendas acumuladas (R$)',
-                    data: dataAcumSt,
-                    fill: true,
-                    tension: 0.45,
-                    borderColor: '#00ffa3',
-                    backgroundColor: gradientApproved,
-                    borderWidth: 3,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#00ffa3',
-                    pointBorderWidth: 2,
-                    pointRadius: 3,
-                    pointHoverRadius: 7,
-                    pointHoverBackgroundColor: '#4f6bff',
-                    pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 2,
-                    hoverBorderColor: '#4f6bff',
-                    hoverBorderWidth: 3
-                },
-                { 
-                    label: 'Meta diária acumulada (R$)', 
-                    data: dataMeta, 
-                    fill: false,
-                    tension: 0.3,
-                    borderColor: '#ffa502',
-                    borderWidth: 2.5,
-                    borderDash: [7, 5],
-                    pointRadius: 0,
-                    pointHoverRadius: 5,
-                    pointHoverBackgroundColor: '#ffa502',
-                    pointHoverBorderColor: '#fff'
-                }
-            ]},
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            devicePixelRatio: 2,
-            interaction: { intersect: false, mode: 'index' },
-            animation: { duration: 900, easing: 'easeOutQuart' },
-            layout: { padding: { top: 10, right: 16, bottom: 8, left: 8 } },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    align: 'start',
-                    labels: {
-                        font: { family: 'Inter', weight: '600', size: 13 },
-                        color: '#3a3146',
-                        padding: 20,
-                        usePointStyle: true,
-                        pointStyle: 'rectRounded',
-                        boxWidth: 14,
-                        boxHeight: 14
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(11,6,20,0.96)',
-                    titleFont: { family: 'Inter', size: 13, weight: '700' },
-                    titleColor: '#fff',
-                    bodyFont: { family: 'Inter', size: 12.5, weight: '500' },
-                    bodyColor: '#f3f0fc',
-                    padding: 14,
-                    cornerRadius: 12,
-                    displayColors: true,
-                    boxPadding: 6,
-                    borderColor: 'rgba(0,229,255,0.4)',
-                    borderWidth: 1.5,
-                    callbacks: {
-                        label: (ctx) => ` ${ctx.dataset.label}: ${formatPrice(ctx.parsed.y)}`
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    grid: { display: false, drawBorder: false },
-                    ticks: {
-                        font: { family: 'Inter', size: 12, weight: '600' },
-                        color: '#5b5466',
-                        padding: 10
-                    },
-                    border: { display: false }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(168,85,247,0.10)',
-                        drawBorder: false,
-                        drawTicks: false
-                    },
-                    ticks: {
-                        font: { family: 'Inter', size: 12 },
-                        color: '#5b5466',
-                        padding: 10,
-                        callback: (value) => 'R$ ' + Number(value).toLocaleString('pt-BR')
-                    },
-                    border: { display: false }
-                }
-            }
-        }
-    });
+    if (el) jpRenderLineChart(el, labels, dataAcumSt, dataMeta);
 }
 
 const BIBLE_VERSES = [
@@ -483,109 +466,18 @@ function buildPaymentChart() {
             map[cat] = (map[cat] || 0) + (sub || 0) + st;
         });
     });
-    // Maior faturamento primeiro (R$ decrescente, já com ST).
     const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
     const labels = sorted.map(([cat]) => cat);
     const data = sorted.map(([, value]) => value);
     if (empty) empty.style.display = labels.length ? 'none' : '';
-    if (chartPaymentsInstance) { chartPaymentsInstance.destroy(); chartPaymentsInstance = null; }
-    if (!el || !labels.length) return;
+    if (!el || !labels.length) { if (el) el.innerHTML = ''; return; }
 
-    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#10b981', '#f97316', '#ec4899', '#64748b'];
-    const chartFont = "'Manrope', 'Inter', sans-serif";
-
-    // Nomes longos (ex.: "Discos & Serras") encurtam só no eixo; o tooltip mostra o nome completo.
-    const rotuloCurto = (texto, max) => {
-        const txt = String(texto || 'Sem categoria');
-        return txt.length > max ? txt.slice(0, max - 1).trimEnd() + '…' : txt;
-    };
-    const valorCompacto = (v) => {
-        const n = Number(v) || 0;
-        if (Math.abs(n) >= 1000000) return 'R$ ' + (n / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi';
-        if (Math.abs(n) >= 1000) return 'R$ ' + (n / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mil';
-        return formatPrice(n);
-    };
-
-    // Com poucas categorias há espaço para mostrar o valor em cima de cada coluna.
-    const valoresSobreColunas = {
-        id: 'valoresSobreColunas',
-        afterDatasetsDraw(chart) {
-            if (chart.data.labels.length > 8) return;
-            const ctx = chart.ctx;
-            const meta = chart.getDatasetMeta(0);
-            if (!meta || !meta.data) return;
-            ctx.save();
-            ctx.font = `700 11px ${chartFont}`;
-            ctx.fillStyle = '#5b4a6b';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
-            meta.data.forEach((bar, i) => {
-                ctx.fillText(valorCompacto(data[i]), bar.x, bar.y - 7);
-            });
-            ctx.restore();
-        }
-    };
-
-    chartPaymentsInstance = new Chart(el, {
-        type: 'bar',
-        plugins: [valoresSobreColunas],
-        data: {
-            labels: labels.map(cat => rotuloCurto(cat, 16)),
-            datasets: [{
-                label: 'Faturamento (R$)',
-                data,
-                backgroundColor: colors.slice(0, labels.length),
-                hoverBackgroundColor: colors.slice(0, labels.length),
-                borderRadius: 7,
-                borderSkipped: false,
-                maxBarThickness: 48
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            devicePixelRatio: 2,
-            animation: { duration: 900, easing: 'easeOutQuart' },
-            layout: { padding: { top: 20, right: 10, bottom: 2, left: 2 } },
-            plugins: {
-                legend: { display: false },
-                tooltip: { enabled: false }
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    border: { color: 'rgba(88,28,135,.18)' },
-                    ticks: {
-                        font: { family: chartFont, size: 10.5, weight: '600' },
-                        color: '#6b6275',
-                        maxRotation: 45,
-                        minRotation: 0,
-                        autoSkip: true,
-                        maxTicksLimit: 14
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(88,28,135,.08)' },
-                    border: { display: false },
-                    ticks: {
-                        font: { family: chartFont, size: 11, weight: '600' },
-                        color: '#6b6275',
-                        padding: 8,
-                        maxTicksLimit: 6,
-                        callback: (v) => valorCompacto(v)
-                    }
-                }
-            }
-        }
-    });
-
-    // Redesenha os rótulos quando a Manrope terminar de carregar.
-    if (document.fonts && document.fonts.load) {
-        document.fonts.load('600 12px Manrope')
-            .then(() => { if (chartPaymentsInstance) chartPaymentsInstance.update('none'); })
-            .catch(() => {});
-    }
+    // Barras animadas, sem tooltip: o usuario pediu para nao exibir legenda ao passar o mouse.
+    const colors = ['#4cc16a', '#4a7cf0', '#eaa23a', '#e0504f', '#8b5cf6', '#3fb0d0', '#3fa878', '#ee7d3a', '#e0509a', '#6b7488', '#8a8fa3'];
+    const mx = data[0] || 1;
+    el.innerHTML = labels.map((cat, i) => `<div class="jp-bar" style="--c:${colors[i % colors.length]}" tabindex="0"><span>${escapeHtml(cat)}</span><span class="t"><i data-w="${Math.max(2, data[i] / mx * 100)}"></i></span><em>${jpMoneyShort(data[i])}</em></div>`).join('');
+    // setTimeout tambem funciona quando a pagina carrega em aba oculta (rAF fica pausado).
+    setTimeout(() => el.querySelectorAll('[data-w]').forEach(b => { b.style.width = b.dataset.w + '%'; }), 40);
 }
 
 // ---------- Helpers ----------
@@ -746,18 +638,18 @@ async function renderOverview() {
         const r = await adminCall('admin_contar_acessos', { _desde: periodSince(currentChartPeriod).toISOString() });
         if (typeof r === 'number') acessos = r;
     } catch (e) { acessos = 0; }
-    document.getElementById('metricVisits').textContent = acessos;
-    document.getElementById('metricSales').textContent = salesQ.length;
     const totalSt = salesQ.reduce((s, q) => s + quoteIcmsSt(q), 0);
     const totalSold = salesQ.reduce((s, q) => s + quoteTotalWithSt(q), 0);
     const comStLinha = currentChartGroup === 'dymar' || totalSt > 0;
-    document.getElementById('metricSold').textContent = formatPrice(totalSold);
+    const soldClients = new Set(salesQ.map(q => q.email || q.nome_cliente));
+    const soldItems = salesQ.reduce((s, q) => s + (Array.isArray(q.itens) ? q.itens.reduce((a, i) => a + (Number(i.quantidade) || 0), 0) : 0), 0);
+    jpCountUp(document.getElementById('metricVisits'), acessos, jpInt);
+    jpCountUp(document.getElementById('metricSales'), salesQ.length, jpInt);
+    jpCountUp(document.getElementById('metricSold'), totalSold, formatPrice);
     const soldLabel = document.getElementById('metricSoldLabel');
     if (soldLabel) soldLabel.textContent = comStLinha ? 'Total vendido c/ ST' : 'Total vendido';
-    const soldClients = new Set(salesQ.map(q => q.email || q.nome_cliente));
-    document.getElementById('metricClients').textContent = soldClients.size;
-    const soldItems = salesQ.reduce((s, q) => s + (Array.isArray(q.itens) ? q.itens.reduce((a, i) => a + (Number(i.quantidade) || 0), 0) : 0), 0);
-    document.getElementById('metricSoldItems').textContent = soldItems;
+    jpCountUp(document.getElementById('metricClients'), soldClients.size, jpInt);
+    jpCountUp(document.getElementById('metricSoldItems'), soldItems, jpInt);
 
     buildQuoteChart(currentChartPeriod);
     buildPaymentChart();
@@ -3026,13 +2918,27 @@ async function deleteGoal(id) {
 
 // ---------- Init ----------
 document.addEventListener('DOMContentLoaded', function () {
+    jpInitUI();
     document.querySelectorAll('.dash-nav-item[data-view]').forEach(item => { item.addEventListener('click', (e) => { e.preventDefault(); switchView(item.dataset.view); }); });
     document.getElementById('dashMenuToggle').addEventListener('click', () => { document.getElementById('dashSidebar').classList.toggle('open'); });
     document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); if (confirm('Deseja realmente sair?')) { localStorage.removeItem(AUTH_KEY); window.location.href = 'login.html'; } });
-    document.querySelectorAll('.chart-tab[data-period]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('.chart-tab[data-period]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); currentChartPeriod = tab.dataset.period; const periodSel = document.getElementById('quotePeriodSelect'); if (periodSel) periodSel.value = tab.dataset.period; renderOverview(); }); });
-    const periodSel = document.getElementById('quotePeriodSelect'); if (periodSel) periodSel.addEventListener('change', () => { currentChartPeriod = periodSel.value; document.querySelectorAll('.chart-tab[data-period]').forEach(t => t.classList.toggle('active', t.dataset.period === periodSel.value)); renderOverview(); });
+    document.querySelectorAll('.chart-tab[data-period]').forEach(tab => { tab.addEventListener('click', () => {
+        document.body.classList.add('jp-loading');
+        document.querySelectorAll('.chart-tab[data-period]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); jpPlaceSegments();
+        currentChartPeriod = tab.dataset.period; const periodSel = document.getElementById('quotePeriodSelect'); if (periodSel) periodSel.value = tab.dataset.period;
+        setTimeout(() => { document.body.classList.remove('jp-loading'); renderOverview(); }, reducedMotion() ? 0 : 260);
+    }); });
+    const periodSel = document.getElementById('quotePeriodSelect'); if (periodSel) periodSel.addEventListener('change', () => {
+        document.body.classList.add('jp-loading');
+        currentChartPeriod = periodSel.value; document.querySelectorAll('.chart-tab[data-period]').forEach(t => t.classList.toggle('active', t.dataset.period === periodSel.value)); jpPlaceSegments();
+        setTimeout(() => { document.body.classList.remove('jp-loading'); renderOverview(); }, reducedMotion() ? 0 : 260);
+    });
     const pl = document.getElementById('prodLinha'); if (pl) pl.addEventListener('change', toggleIcmsField);
-document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('[data-group]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); setCurrentGroup(tab.dataset.group); }); });
+document.querySelectorAll('[data-group]').forEach(tab => { tab.addEventListener('click', () => {
+        document.body.classList.add('jp-loading');
+        document.querySelectorAll('[data-group]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); jpPlaceSegments();
+        setTimeout(() => { document.body.classList.remove('jp-loading'); setCurrentGroup(tab.dataset.group); }, reducedMotion() ? 0 : 260);
+    }); });
     document.getElementById('statusFilter').addEventListener('change', renderQuotes);
     const qSearch = document.getElementById('quoteSearch'); let qDeb; qSearch.addEventListener('input', () => { clearTimeout(qDeb); qDeb = setTimeout(renderQuotes, 250); });
     document.getElementById('btnNewQuote').addEventListener('click', openQuoteModal);

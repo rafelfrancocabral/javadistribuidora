@@ -6,8 +6,12 @@
     <title>Painel — Java Distribuidora</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=35">
+    <script>
+        try { var _t = localStorage.getItem('jv2_tema'); if (_t === 'dark' || _t === 'light') document.documentElement.dataset.theme = _t; } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="css/dashboard.css?v=38">
 </head>
 <body>
     <script>
@@ -49,19 +53,19 @@
             <button class="dash-menu-toggle" id="dashMenuToggle"><i class="fas fa-bars"></i></button>
             <div class="dash-title-group">
                 <h1 id="dashPageTitle">Painel do Lojista</h1>
-                <div class="chart-group-tabs" id="quoteGroupTabs">
-                    <button class="group-tab active" data-group="java"><i class="fas fa-cube"></i> Java</button>
-                    <button class="group-tab" data-group="dymar"><i class="fas fa-gem"></i> Dymar</button>
+                <div class="chart-group-tabs seg" id="quoteGroupTabs"><i></i>
+                    <button class="group-tab active" aria-pressed="true" data-group="java"><i class="fas fa-cube"></i> Java</button>
+                    <button class="group-tab" aria-pressed="false" data-group="dymar"><i class="fas fa-gem"></i> Dymar</button>
                 </div>
             </div>
             <div class="dash-header-actions">
-                <div class="chart-period-tabs" id="quotePeriodTabs">
-                    <button class="chart-tab" data-period="today">Hoje</button>
-                    <button class="chart-tab" data-period="7">7 dias</button>
-                    <button class="chart-tab active" data-period="month">Este mês</button>
-                    <button class="chart-tab" data-period="30">30 dias</button>
-                    <button class="chart-tab" data-period="90">90 dias</button>
-                    <button class="chart-tab" data-period="365">365 dias</button>
+                <div class="chart-period-tabs seg" id="quotePeriodTabs"><i></i>
+                    <button class="chart-tab" aria-pressed="false" data-period="today">Hoje</button>
+                    <button class="chart-tab" aria-pressed="false" data-period="7">7 dias</button>
+                    <button class="chart-tab active" aria-pressed="true" data-period="month">Este mês</button>
+                    <button class="chart-tab" aria-pressed="false" data-period="30">30 dias</button>
+                    <button class="chart-tab" aria-pressed="false" data-period="90">90 dias</button>
+                    <button class="chart-tab" aria-pressed="false" data-period="365">365 dias</button>
                 </div>
                 <select id="quotePeriodSelect" class="dash-select period-select" aria-label="Período">
                     <option value="today">Hoje</option>
@@ -71,7 +75,8 @@
                     <option value="90">90 dias</option>
                     <option value="365">365 dias</option>
                 </select>
-                <span class="dash-live"><i class="fas fa-circle"></i> Online</span>
+                <button class="icon-btn jp-theme" id="themeToggle" aria-label="Alternar tema" title="Alternar tema"><i class="fas fa-circle-half-stroke"></i></button>
+                <span class="dash-live jp-status"><span class="jp-dot"></span> Online</span>
             </div>
         </header>
 
@@ -94,22 +99,36 @@
                     </div>
                 </div>
                 <div class="dash-cards">
-                    <div class="dash-card"><div class="dash-card-icon blue"><i class="fas fa-eye"></i></div><div><h3 id="metricVisits">0</h3><span>Acessos</span></div></div>
-                    <div class="dash-card"><div class="dash-card-icon green"><i class="fas fa-cart-shopping"></i></div><div><h3 id="metricSales">0</h3><span>Vendas</span></div></div>
-                    <div class="dash-card"><div class="dash-card-icon orange"><i class="fas fa-money-bill-wave"></i></div><div><h3 id="metricSold">R$ 0,00</h3><span id="metricSoldLabel">Total vendido</span></div></div>
-                    <div class="dash-card"><div class="dash-card-icon purple"><i class="fas fa-users"></i></div><div><h3 id="metricClients">0</h3><span>Clientes</span></div></div>
-                    <div class="dash-card"><div class="dash-card-icon purple"><i class="fas fa-boxes-stacked"></i></div><div><h3 id="metricSoldItems">0</h3><span>Produtos vendidos</span></div></div>
+                    <div class="dash-card" style="--c:#6d3df0"><span class="dash-card-label"><b class="dash-card-ico"><i class="fas fa-eye"></i></b>Acessos</span><h3 class="dash-card-value" id="metricVisits">0</h3></div>
+                    <div class="dash-card" style="--c:#16a870"><span class="dash-card-label"><b class="dash-card-ico"><i class="fas fa-cart-shopping"></i></b>Vendas</span><h3 class="dash-card-value" id="metricSales">0</h3></div>
+                    <div class="dash-card" style="--c:#f0a030"><span class="dash-card-label"><b class="dash-card-ico"><i class="fas fa-money-bill-wave"></i></b><span id="metricSoldLabel">Total vendido</span></span><h3 class="dash-card-value" id="metricSold">R$ 0,00</h3></div>
+                    <div class="dash-card" style="--c:#8b5cf6"><span class="dash-card-label"><b class="dash-card-ico"><i class="fas fa-users"></i></b>Clientes</span><h3 class="dash-card-value" id="metricClients">0</h3></div>
+                    <div class="dash-card" style="--c:#c64bf0"><span class="dash-card-label"><b class="dash-card-ico"><i class="fas fa-boxes-stacked"></i></b>Produtos vendidos</span><h3 class="dash-card-value" id="metricSoldItems">0</h3></div>
                 </div>
 
                 <div class="dash-charts-grid">
-                    <div class="dash-chart-panel">
+                    <div class="dash-chart-panel jp-card">
                         <h3 id="chartQuotesTitle"><i class="fas fa-chart-line"></i> Total em Vendas (R$)</h3>
-                        <canvas id="chartQuotes" width="500" height="260"></canvas>
+                        <div class="jp-goalhead">
+                            <div class="jp-ring">
+                                <svg viewBox="0 0 84 84" width="84" height="84" aria-hidden="true">
+                                    <circle cx="42" cy="42" r="35" fill="none" stroke="var(--jp-soft)" stroke-width="9"/>
+                                    <circle id="goalRing" cx="42" cy="42" r="35" fill="none" stroke="url(#jpGoalGrad)" stroke-width="9" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="220" transform="rotate(-90 42 42)"/>
+                                    <defs><linearGradient id="jpGoalGrad"><stop offset="0" stop-color="#6d3df0"/><stop offset="1" stop-color="#c64bf0"/></linearGradient></defs>
+                                </svg>
+                                <span id="goalPercent">0%</span>
+                            </div>
+                            <div class="jp-goalinfo">
+                                <div class="jp-goaltext" id="goalText"></div>
+                                <div class="jp-legend"><span><i></i>Vendas acumuladas</span><span><i class="g"></i>Meta diária acumulada</span></div>
+                            </div>
+                        </div>
+                        <div class="jp-chart" id="chartQuotes"><div class="jp-tip" id="jpTip"></div></div>
                         <p class="chart-empty-msg" id="chartQuotesEmpty" style="display:none;">Nenhum orçamento neste período.</p>
                     </div>
-                    <div class="dash-chart-panel">
+                    <div class="dash-chart-panel jp-card">
                         <h3 id="chartPaymentsTitle"><i class="fas fa-chart-column"></i> Vendas por categoria</h3>
-                        <canvas id="chartPayments" width="500" height="260"></canvas>
+                        <div class="jp-bars" id="chartPayments"></div>
                         <p class="chart-empty-msg" id="chartPaymentsEmpty" style="display:none;">Nenhuma venda concluída.</p>
                     </div>
                 </div>
@@ -783,11 +802,10 @@
 
     <script src="js/jspdf.umd.min.js"></script>
     <script src="js/logo-data.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js?v=3"></script>
-    <script src="js/dashboard.js?v=159"></script>
+    <script src="js/dashboard.js?v=163"></script>
 </body>
 </html><!-- redeploy:20261016104944 prize/rules/league -->
 <!-- pub:20261016105831 -->

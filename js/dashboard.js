@@ -827,31 +827,51 @@ function loadDymarLogoData() {
     return _dymarLogoDataPromise;
 }
 
-async function downloadQuotePDF(id, mode) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; const shareMode = mode === 'share'; if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada (verifique a conexão).', true); return; } const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || '')); let win = null; if (!shareMode) { try { win = window.open('', '_blank'); } catch (e) { win = null; } if (win) { try { win.document.write('<title>Gerando PDF…</title><p style="font-family:sans-serif;padding:24px;color:#5b5466;">Gerando o PDF…</p>'); } catch (e) {} } } const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const pageW = 210, margin = 16; const width = pageW - margin * 2; let y = margin; const brand = '#581c87'; const light = '#5b5466'; const subX = pageW - margin; const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null; const byCode = {}; if (products.length) products.forEach(p => { if (p.codigo) byCode[String(p.codigo).trim().toLowerCase()] = p; }); const _isDymarItem = it => { const p = it && it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; return (p && String(p.linha || '').toLowerCase() === 'dymar') || Number(it && it.icmsst) > 0; }; const isDymarPdf = (String(q.linha || '').toLowerCase() === 'dymar') || (items ? items.some(_isDymarItem) : false); const isOrderPdf = ['aprovado', 'concluido'].includes(String(q.status || '').toLowerCase()); const pdfTitle = isOrderPdf ? 'PEDIDO Nº ' : 'ORÇAMENTO Nº '; const itemsTitle = isOrderPdf ? 'ITENS DO PEDIDO' : 'ITENS DO ORÇAMENTO'; const dymarLogoData = isDymarPdf ? await loadDymarLogoData() : null;
+async function downloadQuotePDF(id, mode) { const q = quotes.find(x => String(x.id) === String(id)); if (!q) return; const shareMode = mode === 'share'; if (!window.jspdf || !window.jspdf.jsPDF) { toast('Biblioteca de PDF não carregada (verifique a conexão).', true); return; } const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || '')); let win = null; if (!shareMode) { try { win = window.open('', '_blank'); } catch (e) { win = null; } if (win) { try { win.document.write('<title>Gerando PDF…</title><p style="font-family:sans-serif;padding:24px;color:#5b5466;">Gerando o PDF…</p>'); } catch (e) {} } } const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const pageW = 210, margin = 16; const width = pageW - margin * 2; let y = margin; const brand = '#5B2399'; const light = '#6b6b78';
+    const pk = [242,47,227], pu = [176,42,224], dp = [91,35,153], ink = [31,26,46];
+    const muted = [107,107,120], cardBg = [248,245,254], cardLine = [228,214,249];
+    const headBg = [239,230,252], headLine = [220,200,248], zebra = [250,247,254];
+    const rowLine = [238,230,251], codeGray = [141,138,160], white = [255,255,255];
+    const hGrad = (gx, gy, gw, gh, stops, steps) => {
+        steps = steps || 60;
+        const colorAt = t0 => { let i = 0; while (i < stops.length - 2 && t0 > stops[i+1][0]) i++; const a = stops[i], b = stops[i+1]; const f = Math.max(0, Math.min(1, (t0 - a[0]) / ((b[0] - a[0]) || 1))); return [0,1,2].map(k => Math.round(a[1][k] + (b[1][k] - a[1][k]) * f)); };
+        for (let k = 0; k < steps; k++) { const t0 = k / steps, t1 = (k + 1) / steps; const c = colorAt((t0 + t1) / 2); doc.setFillColor(c[0], c[1], c[2]); doc.rect(gx + gw * t0, gy, gw * (t1 - t0) + 0.25, gh, 'F'); }
+    };
+    const sectionTitle = (label) => {
+        doc.setTextColor(dp[0], dp[1], dp[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(label, margin, y);
+        doc.setDrawColor(dp[0], dp[1], dp[2]); doc.setLineWidth(0.5); doc.line(margin, y + 2, pageW - margin, y + 2);
+        doc.setDrawColor(pk[0], pk[1], pk[2]); doc.setLineWidth(1); doc.line(margin, y + 2, margin + 22, y + 2);
+        y += 9;
+    }; const subX = pageW - margin; const items = (Array.isArray(q.itens) && q.itens.length) ? q.itens : null; const byCode = {}; if (products.length) products.forEach(p => { if (p.codigo) byCode[String(p.codigo).trim().toLowerCase()] = p; }); const _isDymarItem = it => { const p = it && it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; return (p && String(p.linha || '').toLowerCase() === 'dymar') || Number(it && it.icmsst) > 0; }; const isDymarPdf = (String(q.linha || '').toLowerCase() === 'dymar') || (items ? items.some(_isDymarItem) : false); const isOrderPdf = ['aprovado', 'concluido'].includes(String(q.status || '').toLowerCase()); const pdfTitle = isOrderPdf ? 'PEDIDO Nº ' : 'ORÇAMENTO Nº '; const itemsTitle = isOrderPdf ? 'ITENS DO PEDIDO' : 'ITENS DO ORÇAMENTO'; const dymarLogoData = isDymarPdf ? await loadDymarLogoData() : null;
 
-    const Hd = 40; const hStyle = PDF_HEADER_STYLE || 1; const pink = [255, 47, 230]; let bg, tc, sc, divC;
+    const Hd = 48; const stripeH = 9; const pink = pk; const hStyle = PDF_HEADER_STYLE || 1; let bg, tc, sc, divC;
     if (hStyle === 3) { bg = [72, 72, 78]; tc = [255, 255, 255]; sc = [238, 214, 244]; divC = [255, 255, 255]; }
     else if (hStyle === 2) { bg = [230, 230, 233]; tc = [20, 20, 26]; sc = [96, 96, 106]; divC = [210, 170, 225]; }
-    else { bg = [255, 255, 255]; tc = [20, 20, 26]; sc = [96, 96, 106]; divC = [226, 120, 210]; }
+    else { bg = [255, 255, 255]; tc = ink; sc = muted; divC = pk; }
     doc.setFillColor(bg[0], bg[1], bg[2]); doc.rect(0, 0, pageW, Hd, 'F');
-    doc.setFillColor(pink[0], pink[1], pink[2]); doc.rect(0, Hd, pageW, 2.2, 'F');
+    hGrad(0, 0, pageW, stripeH, [[0, pk], [0.55, pu], [1, dp]]);
+    doc.setFillColor(pk[0], pk[1], pk[2]); doc.rect(0, stripeH, pageW, 1, 'F');
 
-    const dymarLogoOk = !!(isDymarPdf && dymarLogoData); const headerLogo = dymarLogoOk ? dymarLogoData : (typeof COMPANY_LOGO_DATA === 'string' ? COMPANY_LOGO_DATA : null); if (headerLogo) { try { if (hStyle === 3) { doc.setFillColor(255, 255, 255); doc.rect(margin, 5, 34, 24, 'F'); if (dymarLogoOk) doc.addImage(headerLogo, 'JPEG', margin + 6, 6, 22, 22); else doc.addImage(headerLogo, 'PNG', margin + 2, 7, 30, 20); } else { if (dymarLogoOk) doc.addImage(headerLogo, 'JPEG', margin, 7, 24, 24); else doc.addImage(headerLogo, 'PNG', margin, 8, 34, 24); } } catch (e) {} }
+    const dymarLogoOk = !!(isDymarPdf && dymarLogoData); const headerLogo = dymarLogoOk ? dymarLogoData : (typeof COMPANY_LOGO_DATA === 'string' ? COMPANY_LOGO_DATA : null); if (headerLogo) { try { if (hStyle === 3) { doc.setFillColor(255, 255, 255); doc.rect(margin, 14, 34, 24, 'F'); if (dymarLogoOk) doc.addImage(headerLogo, 'JPEG', margin + 6, 15, 22, 22); else doc.addImage(headerLogo, 'PNG', margin + 2, 16, 30, 20); } else { if (dymarLogoOk) doc.addImage(headerLogo, 'JPEG', margin, 16, 24, 24); else doc.addImage(headerLogo, 'PNG', margin, 17, 34, 24); } } catch (e) {} }
 
-    doc.setTextColor(sc[0], sc[1], sc[2]); doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.text('EMITIDO EM ' + formatDate(q.created_at), pageW - margin, 12, { align: 'right' });
-    doc.setTextColor(tc[0], tc[1], tc[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text(pdfTitle + String(q.codigo_cliente || q.id || ''), pageW / 2, 20, { align: 'center' });
-    doc.setDrawColor(divC[0], divC[1], divC[2]); doc.setLineWidth(0.4); doc.line(pageW / 2 - 42, 24.5, pageW / 2 + 42, 24.5);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(sc[0], sc[1], sc[2]); doc.text('Java Distribuidora', pageW / 2, 30, { align: 'center' }); doc.setLineWidth(0.2);
-    y = Hd + 12;
+    doc.setFillColor(245, 240, 253); doc.setDrawColor(headLine[0], headLine[1], headLine[2]); doc.setLineWidth(0.3); doc.roundedRect(pageW - margin - 46, 16, 46, 8, 2.5, 2.5, 'FD');
+    doc.setTextColor(dp[0], dp[1], dp[2]); doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.text('EMITIDO EM ' + formatDate(q.created_at), pageW - margin - 23, 21.2, { align: 'center' });
+    const docTitle = pdfTitle + String(q.codigo_cliente || q.id || '');
+    doc.setTextColor(ink[0], ink[1], ink[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.text(docTitle, pageW / 2, 28, { align: 'center' });
+    const titleW = doc.getTextWidth(docTitle); doc.setDrawColor(pk[0], pk[1], pk[2]); doc.setLineWidth(0.9); doc.line(pageW / 2 - titleW / 2, 32.5, pageW / 2 + titleW / 2, 32.5);
+    y = Hd + 4;
 
-    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('DADOS DO CLIENTE', margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
-    doc.setTextColor(30, 30, 40); doc.setFontSize(10);
+    sectionTitle('DADOS DO CLIENTE');
     let cnpjCliente = ''; const cCliente = findQuoteClient(q); if (cCliente && cCliente.cnpj) cnpjCliente = formatCnpj(cCliente.cnpj);
+    const clientRows = [['Razão Social', getQuoteClientName(q)], ['CNPJ', cnpjCliente], ['Email', q.email], ['Telefone', q.telefone]].filter(r => r[1]);
+    const nRows = Math.max(1, Math.ceil(clientRows.length / 2)); const cardTop = y - 7; const cardH = nRows * 12 + 3;
+    doc.setFillColor(cardBg[0], cardBg[1], cardBg[2]); doc.setDrawColor(cardLine[0], cardLine[1], cardLine[2]); doc.setLineWidth(0.3); doc.roundedRect(margin, cardTop, width, cardH, 2.5, 2.5, 'FD');
+    doc.setFillColor(pk[0], pk[1], pk[2]); doc.roundedRect(margin, cardTop, 1.4, cardH, 0.7, 0.7, 'F');
     const colHalf = pageW / 2; let colIdx = 0;
-    [['Razão Social', getQuoteClientName(q)], ['CNPJ', cnpjCliente], ['Email', q.email], ['Telefone', q.telefone]].filter(r => r[1]).forEach(row => { const cx = colIdx % 2 === 0 ? margin : colHalf; const cy = y + Math.floor(colIdx / 2) * 12; doc.setFont('helvetica', 'bold'); doc.setTextColor(light); doc.setFontSize(8); doc.text(row[0].toUpperCase(), cx, cy); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(10); let val = String(row[1]); if (doc.getTextWidth(val) > colHalf - margin - 4) val = doc.splitTextToSize(val, colHalf - margin - 4)[0]; doc.text(val, cx, cy + 6); colIdx++; });
-    y += Math.ceil(colIdx / 2) * 12 + 4;
+    clientRows.forEach(row => { const cx = (colIdx % 2 === 0 ? margin : colHalf) + 3.5; const cy = y + Math.floor(colIdx / 2) * 12; doc.setFont('helvetica', 'bold'); doc.setTextColor(muted[0], muted[1], muted[2]); doc.setFontSize(7.5); doc.text(row[0].toUpperCase(), cx, cy); doc.setFont('helvetica', 'normal'); doc.setTextColor(ink[0], ink[1], ink[2]); doc.setFontSize(10.5); let val = String(row[1]); if (doc.getTextWidth(val) > colHalf - margin - 8) val = doc.splitTextToSize(val, colHalf - margin - 8)[0]; doc.text(val, cx, cy + 6); colIdx++; });
+    y += nRows * 12 + 4;
 
-    doc.setTextColor(brand); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(itemsTitle, margin, y); doc.setDrawColor(216, 180, 254); doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 9;
+    sectionTitle(itemsTitle);
     let codeX, descX, qtyX, tabX, dscX, liqX, icmsX, codeC, prodC, qtyC, tabC, dscC, liqC, icmsC, subC, prodTrunc, seps;
     if (isDymarPdf) {
         codeX = 14; descX = 26; qtyX = 80; tabX = 96; dscX = 110; liqX = 126; icmsX = 142;
@@ -865,14 +885,14 @@ async function downloadQuotePDF(id, mode) { const q = quotes.find(x => String(x.
         seps = [descX, qtyX, tabX, dscX, liqX, icmsX];
     }
 
-    doc.setFillColor(247, 243, 255); doc.setDrawColor(216, 200, 236); doc.setLineWidth(0.3); doc.rect(margin, y, width, 7, 'FD');
+    doc.setFillColor(headBg[0], headBg[1], headBg[2]); doc.setDrawColor(headLine[0], headLine[1], headLine[2]); doc.setLineWidth(0.3); doc.roundedRect(margin, y, width, 7, 1.5, 1.5, 'FD');
     seps.forEach(col => { if (col !== subX) doc.line(col, y, col, y + 7); });
-    doc.setTextColor(brand); doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(dp[0], dp[1], dp[2]); doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
     doc.text('CÓD', codeC, y + 4.8, { align: 'center' }); doc.text('PRODUTO', prodC, y + 4.8, { align: 'center' }); doc.text('QTDE', qtyC, y + 4.8, { align: 'center' }); doc.text('TABELA', tabC, y + 4.8, { align: 'center' }); doc.text('DESC', dscC, y + 4.8, { align: 'center' }); doc.text('P.LÍQ', liqC, y + 4.8, { align: 'center' }); if (isDymarPdf) doc.text('ICMS-ST', icmsC, y + 4.8, { align: 'center' }); doc.text('SUBTOTAL', subC, y + 4.8, { align: 'center' }); y += 11;
     doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.setFontSize(8.5);
-    if (items) { items.forEach(it => { if (y > (isDymarPdf ? 270 : 272)) { doc.addPage(); y = margin; } const name = it.nome || ''; const code = it.codigo || ''; const qty = it.quantidade || 0; const unit = it.preco || 0; const descPct = (it.desconto != null && it.desconto !== '') ? Math.max(0, Math.min(100, Number(it.desconto) || 0)) : 0; const liqUnit = unit * (1 - descPct / 100); const sub = (it.subtotal != null && it.subtotal !== '') ? Number(it.subtotal) : liqUnit * qty; const __p = it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; const _prodIcms = __p ? (Number(__p.icmsst) || 0) : 0; const _itIcms = Number(it.icmsst) || 0; const icmsRate = _prodIcms > 0 ? _prodIcms : _itIcms; const hasIcms = icmsRate > 0; let _dl = doc.splitTextToSize(String(name), prodTrunc); if (isDymarPdf) { if (_dl.length > 3) _dl = _dl.slice(0, 3); } else { if (_dl.length > 4) _dl = _dl.slice(0, 4); } const _nLines = _dl.length; const _vy = y + (_nLines - 1) * (isDymarPdf ? 1.4 : 1.7); const rowH = isDymarPdf ? (10 + Math.max(0, _nLines - 1) * 2.6) : (14 + Math.max(0, _nLines - 2) * 3.4); doc.setFillColor(245, 245, 248); doc.setDrawColor(235, 230, 242); doc.setLineWidth(0.2); doc.rect(margin, y - (isDymarPdf ? 4 : 5.5), width, rowH, 'FD'); doc.setDrawColor(220, 210, 232); doc.setLineWidth(0.25); const _cT = y - (isDymarPdf ? 4 : 5.5); const _cB = _cT + rowH; seps.forEach(col => { if (col !== subX) doc.line(col, _cT, col, _cB); }); doc.setFont('helvetica', 'bold'); doc.setFontSize(isDymarPdf ? 7.2 : 9); doc.setTextColor(130, 130, 140); doc.text(String(code), codeC, _vy, { align: 'center' }); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 40); doc.setFontSize(isDymarPdf ? 7.2 : 8); _dl.forEach((ln, li) => doc.text(ln, prodC, y + li * (isDymarPdf ? 2.4 : 3.4), { align: 'center' })); doc.setFont('helvetica', 'normal'); doc.setFontSize(isDymarPdf ? 8 : 9); doc.text(String(qty), qtyC, _vy, { align: 'center' }); doc.text(formatPrice(unit), tabC, _vy, { align: 'center' }); doc.text(descPct > 0 ? descPct.toLocaleString('pt-BR') + '%' : '', dscC, _vy, { align: 'center' }); doc.text(formatPrice(liqUnit), liqC, _vy, { align: 'center' }); if (isDymarPdf) doc.text(hasIcms ? icmsRate.toLocaleString('pt-BR') + '%' : '', icmsC, _vy, { align: 'center' }); doc.setFont('helvetica', 'bold'); doc.text(formatPrice(sub), subC, _vy, { align: 'center' }); doc.setFontSize(9.5); y += rowH + (isDymarPdf ? 0.8 : 2); }); }
+    if (items) { items.forEach((it, ri) => { if (y > (isDymarPdf ? 270 : 272)) { doc.addPage(); y = margin; } const name = it.nome || ''; const code = it.codigo || ''; const qty = it.quantidade || 0; const unit = it.preco || 0; const descPct = (it.desconto != null && it.desconto !== '') ? Math.max(0, Math.min(100, Number(it.desconto) || 0)) : 0; const liqUnit = unit * (1 - descPct / 100); const sub = (it.subtotal != null && it.subtotal !== '') ? Number(it.subtotal) : liqUnit * qty; const __p = it.codigo ? byCode[String(it.codigo).trim().toLowerCase()] : null; const _prodIcms = __p ? (Number(__p.icmsst) || 0) : 0; const _itIcms = Number(it.icmsst) || 0; const icmsRate = _prodIcms > 0 ? _prodIcms : _itIcms; const hasIcms = icmsRate > 0; let _dl = doc.splitTextToSize(String(name), prodTrunc); if (isDymarPdf) { if (_dl.length > 3) _dl = _dl.slice(0, 3); } else { if (_dl.length > 4) _dl = _dl.slice(0, 4); } const _nLines = _dl.length; const _vy = y + (_nLines - 1) * (isDymarPdf ? 1.4 : 1.7); const rowH = isDymarPdf ? (10 + Math.max(0, _nLines - 1) * 2.6) : (14 + Math.max(0, _nLines - 2) * 3.4); const rowBg = ri % 2 === 0 ? zebra : white; doc.setFillColor(rowBg[0], rowBg[1], rowBg[2]); doc.setDrawColor(rowLine[0], rowLine[1], rowLine[2]); doc.setLineWidth(0.2); doc.rect(margin, y - (isDymarPdf ? 4 : 5.5), width, rowH, 'FD'); doc.setDrawColor(headLine[0], headLine[1], headLine[2]); doc.setLineWidth(0.25); const _cT = y - (isDymarPdf ? 4 : 5.5); const _cB = _cT + rowH; seps.forEach(col => { if (col !== subX) doc.line(col, _cT, col, _cB); }); doc.setFont('helvetica', 'bold'); doc.setFontSize(isDymarPdf ? 7.2 : 9); doc.setTextColor(codeGray[0], codeGray[1], codeGray[2]); doc.text(String(code), codeC, _vy, { align: 'center' }); doc.setFont('helvetica', 'bold'); doc.setTextColor(ink[0], ink[1], ink[2]); doc.setFontSize(isDymarPdf ? 7.2 : 8); _dl.forEach((ln, li) => doc.text(ln, descX + 2, y + li * (isDymarPdf ? 2.4 : 3.4), { align: 'left' })); doc.setFont('helvetica', 'normal'); doc.setTextColor(ink[0], ink[1], ink[2]); doc.setFontSize(isDymarPdf ? 7 : 9); doc.text(String(qty), qtyC, _vy, { align: 'center' }); doc.text(formatPrice(unit), tabC, _vy, { align: 'center' }); doc.text(descPct > 0 ? descPct.toLocaleString('pt-BR') + '%' : '', dscC, _vy, { align: 'center' }); doc.text(formatPrice(liqUnit), liqC, _vy, { align: 'center' }); if (isDymarPdf) doc.text(hasIcms ? icmsRate.toLocaleString('pt-BR') + '%' : '', icmsC, _vy, { align: 'center' }); doc.setFont('helvetica', 'bold'); doc.setFontSize(isDymarPdf ? 7.5 : 9); doc.text(formatPrice(sub), subC, _vy, { align: 'center' }); doc.setFontSize(9.5); y += rowH + (isDymarPdf ? 0.8 : 2); }); }
     y += 4; if (y > 275) { doc.addPage(); y = margin; }
-    doc.setDrawColor(216, 180, 254); doc.line(margin, y, pageW - margin, y); y += 7;
+    doc.setDrawColor(headLine[0], headLine[1], headLine[2]); doc.setLineWidth(0.5); doc.line(margin, y, pageW - margin, y); y += 7;
     const totalTabela = Number(q.total) || 0;
     let icmsTotal = 0;
     if (items) {
@@ -883,7 +903,7 @@ async function downloadQuotePDF(id, mode) { const q = quotes.find(x => String(x.
     const trows = descTotal > 0 ? [
         { label: 'SUBTOTAL (preço de tabela)', val: formatPrice(brutoTotal), bold: false, size: 10, color: light, fill: false },
         { label: 'DESCONTO', val: '- ' + formatPrice(descTotal), bold: false, size: 10, color: light, fill: false },
-        { label: 'TOTAL', val: formatPrice(totalTabela), bold: true, size: 12, color: brand, fill: !isDymarPdf },
+        { label: 'TOTAL', val: formatPrice(totalTabela), bold: true, size: 12, color: brand, fill: false },
         ...(isDymarPdf ? [
             { label: 'ICMS-ST (percentuais dos itens Dymar)', val: formatPrice(icmsTotal), bold: false, size: 10, color: light, fill: false },
             { label: 'TOTAL COM ICMS-ST', val: formatPrice(totalTabela + icmsTotal), bold: true, size: 12, color: brand, fill: true }
@@ -893,22 +913,25 @@ async function downloadQuotePDF(id, mode) { const q = quotes.find(x => String(x.
         { label: 'ICMS-ST (percentuais dos itens Dymar)', val: formatPrice(icmsTotal), bold: false, size: 10, color: light, fill: false },
         { label: 'TOTAL COM ICMS-ST', val: formatPrice(totalTabela + icmsTotal), bold: true, size: 12, color: brand, fill: true }
     ] : [
-        { label: 'TOTAL', val: formatPrice(totalTabela), bold: true, size: 12, color: brand, fill: false }
+        { label: 'TOTAL', val: formatPrice(totalTabela), bold: true, size: 12, color: brand, fill: true }
     ]);
     const tRowH = 9, tBoxH = tRowH * trows.length;
     if (y + tBoxH > 278) { doc.addPage(); y = margin; }
-    doc.setDrawColor(216, 180, 254); doc.setLineWidth(0.4); doc.rect(margin, y, width, tBoxH, 'D');
+    doc.setFillColor(cardBg[0], cardBg[1], cardBg[2]); doc.setDrawColor(headLine[0], headLine[1], headLine[2]); doc.setLineWidth(0.4); doc.roundedRect(margin, y, width, tBoxH, 2.5, 2.5, 'FD');
+    const totalStops = [[0, dp], [0.7, [142,43,196]], [1, [196,43,221]]];
     trows.forEach((r, i) => {
-        if (i > 0) { doc.setDrawColor(216, 180, 254); doc.setLineWidth(0.2); doc.line(margin, y + i * tRowH, pageW - margin, y + i * tRowH); }
-        if (r.fill) { doc.setFillColor(247, 243, 255); doc.rect(margin, y + i * tRowH, width, tRowH, 'F'); }
-        doc.setFont('helvetica', r.bold ? 'bold' : 'normal'); doc.setFontSize(r.size); doc.setTextColor(r.color);
-        doc.text(r.label, margin + 4, y + i * tRowH + 6.2);
-        doc.text(r.val, subX - 4, y + i * tRowH + 6.2, { align: 'right' });
+        const ry = y + i * tRowH;
+        if (i > 0) { doc.setDrawColor(headLine[0], headLine[1], headLine[2]); doc.setLineWidth(0.2); doc.line(margin, ry, pageW - margin, ry); }
+        if (r.fill) hGrad(margin + 0.5, ry + 0.5, width - 1, tRowH - 1, totalStops, 48);
+        const fg = r.fill ? white : dp;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(r.fill ? 13 : 10); doc.setTextColor(fg[0], fg[1], fg[2]);
+        doc.text(r.label, margin + 4, ry + 6.2);
+        doc.setFontSize(r.fill ? 15 : 10); doc.text(r.val, subX - 4, ry + 6.2, { align: 'right' });
     });
     y += tBoxH + 6;
-    if (q.pagamento) { const totalPagamento = Number(q.total) + ((isDymarPdf) ? icmsTotal : 0); const payLines = buildPaymentLines(q.pagamento, q.created_at, totalPagamento); doc.setFontSize(10); doc.setTextColor(30, 30, 40); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
+    if (q.pagamento) { const totalPagamento = Number(q.total) + ((isDymarPdf) ? icmsTotal : 0); const payLines = buildPaymentLines(q.pagamento, q.created_at, totalPagamento); doc.setFontSize(10); doc.setTextColor(dp[0], dp[1], dp[2]); doc.setFont('helvetica', 'bold'); doc.text('Forma de pagamento:', margin, y); doc.setFont('helvetica', 'normal'); doc.text(String(q.pagamento), margin + 50, y); y += 7; payLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); doc.text('• ' + l, margin, y); y += 6; }); }
     if (q.obs) { if (y > 255) { doc.addPage(); y = margin; } y += 3; doc.setFontSize(10); doc.setTextColor(31, 157, 85); doc.setFont('helvetica', 'bold'); doc.text('Prêmio / Observações:', margin, y); y += 6; doc.setFontSize(9.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40); const obsLines = doc.splitTextToSize(String(q.obs), width); obsLines.forEach(l => { if (y > 275) { doc.addPage(); y = margin; } doc.text(l, margin, y); y += 5.5; }); }
-    for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(154, 147, 168); doc.setFont('helvetica', 'normal'); doc.text('Java Distribuidora • (12) 99778-0047 • Pedido mínimo R$ 300,00', pageW / 2, 289, { align: 'center' }); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 289, { align: 'right' }); }
+    for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.setDrawColor(cardLine[0], cardLine[1], cardLine[2]); doc.setLineWidth(0.4); doc.line(margin, 285, pageW - margin, 285); doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(dp[0], dp[1], dp[2]); doc.text('Java Distribuidora', margin, 290); doc.setFont('helvetica', 'normal'); doc.setTextColor(codeGray[0], codeGray[1], codeGray[2]); doc.text('  •  (12) 99778-0047  •  Pedido mínimo R$ 300,00', margin + 29, 290); doc.text('Página ' + i + '/' + doc.internal.getNumberOfPages(), pageW - margin, 290, { align: 'right' }); }
     const clientName = getQuoteClientName(q) || 'Cliente';
     const docNumber = String(q.codigo_cliente || q.id || '');
     const docKind = isOrderPdf ? 'Pedido' : 'Orçamento';

@@ -1156,6 +1156,7 @@ body { font:400 15px/1.45 var(--jp-body); background:var(--jp-bg); color:var(--j
     --ac:var(--jp-brand); position:relative; width:36px; height:36px; border-radius:11px;
     display:grid; place-items:center; font-size:15px;
     background:color-mix(in srgb,var(--ac) 13%,var(--jp-card)); color:var(--ac);
+    border:1px solid color-mix(in srgb,var(--ac) 26%,transparent);
     transition:transform .15s,background .15s,color .15s,box-shadow .15s;
 }
 .gv-acts .ab.view { --ac:var(--jp-brand); }

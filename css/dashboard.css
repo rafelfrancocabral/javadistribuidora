@@ -1094,7 +1094,7 @@ body { font:400 15px/1.45 var(--jp-body); background:var(--jp-bg); color:var(--j
 .gv-tile .l { display:flex; align-items:center; gap:8px; color:var(--jp-muted); font-weight:600; font-size:.85rem; }
 .gv-tile .l i { width:9px; height:9px; border-radius:50%; background:var(--c); }
 .gv-tile .n { font:700 28px/1.1 var(--jp-display); letter-spacing:-.02em; margin-top:4px; font-variant-numeric:tabular-nums; }
-.gv-tile .t { color:var(--jp-muted); font-size:13px; font-variant-numeric:tabular-nums; }
+.gv-tile .t { color:var(--jp-text); font:700 17px/1.2 var(--jp-display); letter-spacing:-.01em; margin-top:3px; font-variant-numeric:tabular-nums; }
 .gv-tile[data-s="all"] { --c:var(--jp-brand); }
 .gv-tile[data-s="em_andamento"] { --c:var(--jp-warn); }
 .gv-tile[data-s="recebido"] { --c:var(--jp-brand); }
